@@ -1,0 +1,12 @@
+server:
+  port: 8080
+  error:
+    include-message: always
+
+spring:
+  datasource:
+    url:
+    username:
+    password:
+  main:
+    web-application-type: none
