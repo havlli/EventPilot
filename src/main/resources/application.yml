@@ -10,3 +10,6 @@ spring:
     password:
   main:
     web-application-type: none
+
+discord:
+  token: MTA3NTg4Nzc5MzkyODE1NTI0Nw.GC27kH.mp2EnHueTQ1HX_oI-2lnYTPC7RgdeetWkgdJjs
