@@ -1,0 +1,12 @@
+{
+  "name": "delete-event",
+  "description": "Delete event by message ID",
+  "options": [
+    {
+      "name": "message-id",
+      "description": "Message ID of the event",
+      "type": 3,
+      "required": true
+    }
+  ]
+}

@@ -2,29 +2,30 @@ package com.github.havlli.EventPilot.core;
 
 import discord4j.core.DiscordClient;
 import discord4j.core.GatewayDiscordClient;
-import jakarta.annotation.PostConstruct;
+import discord4j.core.object.presence.ClientActivity;
+import discord4j.core.object.presence.ClientPresence;
+import discord4j.rest.RestClient;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.DependsOn;
 import org.springframework.stereotype.Component;
 
 @Component
-@DependsOn("discordClient")
 public class Client {
 
-    private final GatewayDiscordClient gateway;
+    @Value("${discord.token}")
+    private String token;
 
-    public Client(DiscordClient discordClient) {
-        this.gateway = discordClient.login().block();
-    }
-
-    @PostConstruct
-    public void init() {
-        // TODO: Register and subscribe events
-        gateway.onDisconnect().block();
+    @Bean
+    public GatewayDiscordClient discordClient() {
+        return DiscordClient.create(token)
+                .gateway()
+                .setInitialPresence(ignore -> ClientPresence.online(ClientActivity.listening("to /commands")))
+                .login()
+                .block();
     }
 
     @Bean
-    public GatewayDiscordClient getGateway() {
-        return this.gateway;
+    public RestClient restClient(GatewayDiscordClient client) {
+        return client.getRestClient();
     }
 }

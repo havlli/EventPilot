@@ -1,0 +1,4 @@
+{
+  "name": "clear-expired",
+  "description": "Delete all expired events in this channel."
+}
