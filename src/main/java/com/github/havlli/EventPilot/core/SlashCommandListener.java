@@ -1,6 +1,6 @@
-package com.github.havlli.EventPilot.core.listeners;
+package com.github.havlli.EventPilot.core;
 
-import com.github.havlli.EventPilot.core.commands.SlashCommand;
+import com.github.havlli.EventPilot.command.SlashCommand;
 import discord4j.core.GatewayDiscordClient;
 import discord4j.core.event.domain.interaction.ChatInputInteractionEvent;
 import org.springframework.stereotype.Component;

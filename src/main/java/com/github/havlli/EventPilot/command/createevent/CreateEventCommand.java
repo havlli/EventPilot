@@ -1,5 +1,6 @@
-package com.github.havlli.EventPilot.core.commands;
+package com.github.havlli.EventPilot.command.createevent;
 
+import com.github.havlli.EventPilot.command.SlashCommand;
 import discord4j.core.event.domain.interaction.ChatInputInteractionEvent;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;

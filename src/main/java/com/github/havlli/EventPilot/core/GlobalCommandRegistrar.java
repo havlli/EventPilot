@@ -17,11 +17,11 @@ import java.util.List;
 
 @Component
 @DependsOn("restClient")
-public class GlobalCommands implements ApplicationRunner {
+public class GlobalCommandRegistrar implements ApplicationRunner {
 
     private final RestClient restClient;
 
-    public GlobalCommands(RestClient restClient) {
+    public GlobalCommandRegistrar(RestClient restClient) {
         this.restClient = restClient;
     }
 
