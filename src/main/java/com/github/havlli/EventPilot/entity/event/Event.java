@@ -1,6 +1,10 @@
 package com.github.havlli.EventPilot.entity.event;
 
+import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.time.format.DateTimeFormatter;
+import java.util.List;
 import java.util.Objects;
 
 public class Event {
@@ -34,6 +38,17 @@ public class Event {
         this.destinationChannelId = destinationChannelId;
         this.instances = instances;
         this.memberSize = memberSize;
+    }
+
+    public Event(Event.Builder builder) {
+        this.eventId = builder.eventId;
+        this.name = builder.name;
+        this.description = builder.description;
+        this.author = builder.author;
+        this.dateTime = builder.dateTime;
+        this.destinationChannelId = builder.destinationChannelId;
+        this.instances = builder.instances;
+        this.memberSize = builder.memberSize;
     }
 
     public String getEventId() {
@@ -125,5 +140,74 @@ public class Event {
                 ", instances='" + instances + '\'' +
                 ", memberSize='" + memberSize + '\'' +
                 '}';
+    }
+
+    private static Builder builder() {
+        return new Builder();
+    }
+
+    public static class Builder {
+        private Event event;
+        private String eventId;
+        private String name;
+        private String description;
+        private String author;
+        private LocalDateTime dateTime;
+        private String destinationChannelId;
+        private String instances;
+        private String memberSize;
+
+        private Builder() { }
+
+        public Builder withEventId(String eventId) {
+            this.eventId = eventId;
+            return this;
+        }
+
+        public Builder withName(String name) {
+            this.name = name;
+            return this;
+        }
+
+        public Builder withDescription(String description) {
+            this.description = description;
+            return this;
+        }
+
+        public Builder withAuthor(String authorName) {
+            this.author = authorName;
+            return this;
+        }
+
+        public Builder withDateTime(String date, String time) {
+            LocalDate localDate = LocalDate.parse(date, DateTimeFormatter.ofPattern("yyyy-MM-dd"));
+            LocalTime localTime = LocalTime.parse(time, DateTimeFormatter.ofPattern("HH:mm"));
+            this.dateTime = LocalDateTime.of(localDate, localTime);
+            return this;
+        }
+
+        public Builder withDestinationChannel(String channelId) {
+            this.destinationChannelId = channelId;
+            return this;
+        }
+
+        public Builder withInstances(List<String> instances) {
+            this.instances = String.join(", ", instances);
+            return this;
+        }
+
+        public Builder withMemberSize(String memberSize) {
+            this.memberSize = memberSize;
+            return this;
+        }
+
+        public Event build() {
+            this.event = new Event(this);
+            return this.event;
+        }
+
+        public Event getEvent() {
+            return this.event;
+        }
     }
 }
