@@ -14,7 +14,6 @@ import reactor.core.publisher.Mono;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicBoolean;
-import java.util.function.Function;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -33,7 +32,6 @@ class GlobalCommandListenerTest {
     void setUp() {
         autoCloseable = MockitoAnnotations.openMocks(this);
         slashCommands = new ArrayList<>();
-        when(client.on(any(Class.class), any(Function.class))).thenReturn(Flux.empty());
         underTest = new GlobalCommandListener(slashCommands, client);
     }
 
@@ -43,63 +41,58 @@ class GlobalCommandListenerTest {
     }
 
     @Test
-    void handle_WithMatchingCommand_ShouldInvokeCommandHandle() {
+    void constructListeners_WithMatchingCommand_ShouldInvoke() {
         // Arrange
         SlashCommand matchingCommand = mock(SlashCommand.class);
         when(matchingCommand.getName()).thenReturn("commandName");
         when(matchingCommand.handle(any())).thenReturn(Mono.empty());
+        matchingCommand.setEventType(ChatInputInteractionEvent.class);
 
         slashCommands.add(matchingCommand);
 
-        ChatInputInteractionEvent event = mock(ChatInputInteractionEvent.class);
-        when(event.getCommandName()).thenReturn("commandName");
+        when(client.on(any(),any())).thenReturn(Flux.just(5));
 
         // Act
-        underTest.handle(event).block();
+        underTest.constructListeners()
+                .then()
+                .block();
 
         // Assert
-        verify(matchingCommand, times(1)).handle(event);
+        verify(client, times(1)).on(any(), any());
     }
 
     @Test
-    void handle_WithNoMatchingCommand_ShouldNotInvokeCommandHandle() {
+    void constructListeners_WithNoMatchingCommand_ShouldNotInvoke() {
         // Arrange
-        SlashCommand nonMatchingCommand = mock(SlashCommand.class);
-        when(nonMatchingCommand.getName()).thenReturn("commandName");
-        when(nonMatchingCommand.handle(any())).thenReturn(Mono.empty());
-
-        slashCommands.add(nonMatchingCommand);
-
-        ChatInputInteractionEvent event = mock(ChatInputInteractionEvent.class);
-        when(event.getCommandName()).thenReturn("differentCommandName");
+        slashCommands = new ArrayList<>();
 
         // Act
-        underTest.handle(event).block();
+        underTest.constructListeners()
+                .then()
+                .block();
 
         // Assert
-        verify(nonMatchingCommand, never()).handle(event);
+        verify(client, never()).on(any(),any());
     }
 
     @Test
-    void handle_WithCommandHandlingError_ShouldHandleErrorGracefully() {
+    void constructListeners_WithCommandHandlingError_ShouldHandleErrorGracefully() {
         // Arrange
         SlashCommand errorCommand = mock(SlashCommand.class);
-        when(errorCommand.getName()).thenReturn("commandName");
+        errorCommand.setEventType(ChatInputInteractionEvent.class);
         when(errorCommand.handle(any())).thenReturn(Mono.error(new RuntimeException("Command handling error")));
 
         slashCommands.add(errorCommand);
 
-        ChatInputInteractionEvent event = mock(ChatInputInteractionEvent.class);
-        when(event.getCommandName()).thenReturn("commandName");
-
         AtomicBoolean errorHandled = new AtomicBoolean(false);
 
         // Act
-        underTest.handle(event)
+        underTest.constructListeners()
                 .onErrorResume(error -> {
                     errorHandled.set(true);
                     return Mono.empty();
                 })
+                .then()
                 .block();
 
         // Assert

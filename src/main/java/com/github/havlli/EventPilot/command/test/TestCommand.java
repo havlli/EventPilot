@@ -8,6 +8,8 @@ import reactor.core.publisher.Mono;
 
 @Component
 public class TestCommand implements SlashCommand {
+
+    private Class<? extends Event> eventType = ChatInputInteractionEvent.class;
     @Override
     public String getName() {
         return "test";
@@ -15,7 +17,12 @@ public class TestCommand implements SlashCommand {
 
     @Override
     public Class<? extends Event> getEventType() {
-        return ChatInputInteractionEvent.class;
+        return eventType;
+    }
+
+    @Override
+    public void setEventType(Class<? extends Event> eventType) {
+        this.eventType = eventType;
     }
 
     @Override
