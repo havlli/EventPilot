@@ -1,6 +1,8 @@
 package com.github.havlli.EventPilot.core;
 
 import com.github.havlli.EventPilot.command.SlashCommand;
+import com.github.havlli.EventPilot.command.createevent.CreateEventCommand;
+import com.github.havlli.EventPilot.command.test.TestCommand;
 import discord4j.core.GatewayDiscordClient;
 import discord4j.core.event.domain.interaction.ChatInputInteractionEvent;
 import org.junit.jupiter.api.AfterEach;
@@ -41,7 +43,21 @@ class GlobalCommandListenerTest {
     }
 
     @Test
-    void constructListeners_WithMatchingCommand_ShouldInvoke() {
+    void constructListeners_WithMultipleCommands() {
+        // Arrange
+        slashCommands.add(new CreateEventCommand());
+        slashCommands.add(new TestCommand());
+
+        // Act
+        Flux<?> result = underTest.constructListeners();
+
+        // Assert
+        assertThat(result).isNotNull();
+        verify(client, times(2)).on(eq(ChatInputInteractionEvent.class), any());
+    }
+
+    @Test
+    void constructListeners_WithOneCommand_ShouldInvoke() {
         // Arrange
         SlashCommand matchingCommand = mock(SlashCommand.class);
         when(matchingCommand.getName()).thenReturn("commandName");
@@ -64,7 +80,6 @@ class GlobalCommandListenerTest {
     @Test
     void constructListeners_WithNoMatchingCommand_ShouldNotInvoke() {
         // Arrange
-        slashCommands = new ArrayList<>();
 
         // Act
         underTest.constructListeners()
