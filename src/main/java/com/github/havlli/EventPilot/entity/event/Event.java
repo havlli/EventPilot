@@ -186,6 +186,11 @@ public class Event {
             return this;
         }
 
+        public Builder withDateTime(LocalDateTime localDateTime) {
+            this.dateTime = localDateTime;
+            return this;
+        }
+
         public Builder withDestinationChannel(String channelId) {
             this.destinationChannelId = channelId;
             return this;
