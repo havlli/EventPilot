@@ -53,13 +53,7 @@ public class CreateEventInteraction {
         this.user = event.getInteraction().getUser();
         this.privateChannelMono = user.getPrivateChannel();
 
-        return chainedPrompts();
-    }
-
-    private Mono<Message> chainedPrompts() {
-        return promptName()
-                .flatMap(ignore -> promptDescription())
-                .flatMap(ignore -> promptDateTime());
+        return promptName();
     }
 
     private Mono<Message> promptName() {
@@ -73,10 +67,9 @@ public class CreateEventInteraction {
                             .next()
                             .flatMap(event -> {
                                 System.out.println(event.getMessage().getContent());
-                                return Mono.just(event.getMessage());
+                                return promptDescription();
                             });
-                })
-                .flatMap(ignore -> promptDescription());
+                });
     }
 
     private Mono<Message> promptDescription() {
@@ -90,10 +83,9 @@ public class CreateEventInteraction {
                             .next()
                             .flatMap(event -> {
                                 System.out.println(event.getMessage().getContent());
-                                return Mono.just(event.getMessage());
+                                return promptDateTime();
                             });
-                })
-                .flatMap(ignore -> promptDateTime());
+                });
     }
 
     private Mono<Message> promptDateTime() {
@@ -102,6 +94,7 @@ public class CreateEventInteraction {
                 .flatMap(privateChannel -> privateChannel.createMessage(prompt))
                 .flatMap(promptedMessage -> {
                     messageCollector.collect(promptedMessage);
+
                     return client.getEventDispatcher().on(MessageCreateEvent.class)
                             .filter(event -> event.getMessage().getAuthor().equals(Optional.of(user)))
                             .next()
@@ -111,19 +104,20 @@ public class CreateEventInteraction {
                                 LocalDateTime localDateTime = LocalDateTime.parse(messageContent, formatter);
                                 System.out.println(event.getMessage().getContent());
                                 System.out.println(localDateTime);
-                                return Mono.just(event.getMessage());
+
+                                return promptRaidSelect();
                             })
                             .onErrorResume(DateTimeParseException.class, error -> {
                                 String errorMessage = "**Error** Invalid format: %s".formatted(error.getParsedString());
+
                                 return privateChannelMono.flatMap(channel -> channel.createMessage(errorMessage)
                                         .flatMap(message -> {
                                             messageCollector.collect(message);
-                                            return Mono.just(message);
+                                            return Mono.empty();
                                         })
                                 ).then(promptDateTime());
                             });
-                })
-                .flatMap(ignore -> promptRaidSelect());
+                });
     }
 
     private Mono<Message> promptRaidSelect() {
@@ -148,10 +142,10 @@ public class CreateEventInteraction {
                                         .then(event.editReply(InteractionReplyEditSpec.builder()
                                                 .contentOrNull(result.toString())
                                                 .componentsOrNull(null)
-                                                .build()));
+                                                .build()))
+                                        .then(promptDestinationChannel());
                             });
-                })
-                .flatMap(ignore -> promptDestinationChannel());
+                });
     }
 
 //    private Mono<Message> promptMemberSize() {
@@ -181,11 +175,7 @@ public class CreateEventInteraction {
                 .content("**Step 6**\nChoose in which channel post this raid signup")
                 .addComponent(channelSelectMenu.getActionRow())
                 .build();
-        Predicate<SelectMenuInteractionEvent> eventFilter = (event) -> {
-            boolean isSameUser = event.getInteraction().getUser().equals(user);
-            boolean isComponent = event.getCustomId().equals(channelSelectMenu.getCustomId());
-            return isSameUser && isComponent;
-        };
+
         return privateChannelMono
                 .flatMap(privateChannel -> privateChannel.createMessage(prompt))
                 .flatMap(promptedMessage -> {
