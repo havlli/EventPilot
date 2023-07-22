@@ -1,9 +1,11 @@
 package com.github.havlli.EventPilot.command.createevent;
 
-import com.github.havlli.EventPilot.component.SelectMenuComponent;
 import com.github.havlli.EventPilot.component.selectmenu.ChannelSelectMenu;
+import com.github.havlli.EventPilot.component.selectmenu.MemberSizeSelectMenu;
 import com.github.havlli.EventPilot.component.selectmenu.RaidSelectMenu;
+import com.github.havlli.EventPilot.entity.event.Event;
 import com.github.havlli.EventPilot.prompt.MessageCollector;
+import com.github.havlli.EventPilot.prompt.PromptFilter;
 import com.github.havlli.EventPilot.prompt.PromptFormatter;
 import discord4j.common.util.Snowflake;
 import discord4j.core.GatewayDiscordClient;
@@ -24,34 +26,40 @@ import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.List;
-import java.util.Optional;
-import java.util.function.Predicate;
 
 @Component
 public class CreateEventInteraction {
     private final GatewayDiscordClient client;
     private final MessageCollector messageCollector;
     private final PromptFormatter promptFormatter;
+    private final PromptFilter promptFilter;
     private ChatInputInteractionEvent initialEvent;
     private Snowflake guildId;
     private User user;
     private Mono<PrivateChannel> privateChannelMono;
+    private Event.Builder eventBuilder;
 
 
-    public CreateEventInteraction(GatewayDiscordClient client, MessageCollector messageCollector, PromptFormatter promptFormatter) {
+    public CreateEventInteraction(
+            GatewayDiscordClient client,
+            MessageCollector messageCollector,
+            PromptFormatter promptFormatter,
+            PromptFilter promptFilter
+    ) {
         this.client = client;
         this.messageCollector = messageCollector;
         this.promptFormatter = promptFormatter;
+        this.promptFilter = promptFilter;
     }
 
-    public Mono<Message> start(
-            ChatInputInteractionEvent event,
-            Snowflake guildId
-    ) {
+    public Mono<Message> start(ChatInputInteractionEvent event, Snowflake guildId) {
         this.initialEvent = event;
         this.guildId = guildId;
-        this.user = event.getInteraction().getUser();
+        this.user = initialEvent.getInteraction().getUser();
         this.privateChannelMono = user.getPrivateChannel();
+        this.eventBuilder = Event.builder();
+
+        eventBuilder.withAuthor(user.getUsername());
 
         return promptName();
     }
@@ -62,11 +70,14 @@ public class CreateEventInteraction {
                 .flatMap(privateChannel -> privateChannel.createMessage(prompt))
                 .flatMap(promptedMessage -> {
                     messageCollector.collect(promptedMessage);
+
                     return client.getEventDispatcher().on(MessageCreateEvent.class)
-                            .filter(event -> event.getMessage().getAuthor().equals(Optional.of(user)))
+                            .filter(promptFilter.isMessageAuthor(user))
                             .next()
                             .flatMap(event -> {
+                                eventBuilder.withName(event.getMessage().getContent());
                                 System.out.println(event.getMessage().getContent());
+
                                 return promptDescription();
                             });
                 });
@@ -78,10 +89,12 @@ public class CreateEventInteraction {
                 .flatMap(privateChannel -> privateChannel.createMessage(prompt))
                 .flatMap(promptedMessage -> {
                     messageCollector.collect(promptedMessage);
+
                     return client.getEventDispatcher().on(MessageCreateEvent.class)
-                            .filter(event -> event.getMessage().getAuthor().equals(Optional.of(user)))
+                            .filter(promptFilter.isMessageAuthor(user))
                             .next()
                             .flatMap(event -> {
+                                eventBuilder.withDescription(event.getMessage().getContent());
                                 System.out.println(event.getMessage().getContent());
                                 return promptDateTime();
                             });
@@ -96,12 +109,13 @@ public class CreateEventInteraction {
                     messageCollector.collect(promptedMessage);
 
                     return client.getEventDispatcher().on(MessageCreateEvent.class)
-                            .filter(event -> event.getMessage().getAuthor().equals(Optional.of(user)))
+                            .filter(promptFilter.isMessageAuthor(user))
                             .next()
                             .flatMap(event -> {
                                 String messageContent = event.getMessage().getContent();
                                 DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
                                 LocalDateTime localDateTime = LocalDateTime.parse(messageContent, formatter);
+                                eventBuilder.withDateTime(localDateTime);
                                 System.out.println(event.getMessage().getContent());
                                 System.out.println(localDateTime);
 
@@ -132,15 +146,48 @@ public class CreateEventInteraction {
                 .flatMap(privateChannel -> privateChannel.createMessage(prompt))
                 .flatMap(promptedMessage -> {
                     messageCollector.collect(promptedMessage);
+
                     return client.getEventDispatcher().on(SelectMenuInteractionEvent.class)
-                            .filter(selectMenuInteractionEventPredicate(raidSelectMenu))
+                            .filter(promptFilter.selectInteractionEvent(raidSelectMenu, user))
                             .next()
                             .flatMap(event -> {
+                                eventBuilder.withInstances(event.getValues());
                                 List<String> result = event.getValues();
                                 System.out.println(result);
+
                                 return event.deferEdit()
                                         .then(event.editReply(InteractionReplyEditSpec.builder()
-                                                .contentOrNull(result.toString())
+                                                .components(List.of(raidSelectMenu.getDisabledRow()))
+                                                .build()))
+                                        .then(promptMemberSize());
+                            });
+                });
+    }
+
+    private Mono<Message> promptMemberSize() {
+        MemberSizeSelectMenu memberSizeSelectMenu = new MemberSizeSelectMenu();
+        String defaultSize = "25";
+        MessageCreateSpec prompt = MessageCreateSpec.builder()
+                .content("**Step 5**\nChoose maximum attendants count for this event")
+                .addComponent(memberSizeSelectMenu.getActionRow())
+                .build();
+
+        return privateChannelMono
+                .flatMap(privateChannel -> privateChannel.createMessage(prompt))
+                .flatMap(promptedMessage -> {
+                    messageCollector.collect(promptedMessage);
+
+                    return client.getEventDispatcher().on(SelectMenuInteractionEvent.class)
+                            .filter(promptFilter.selectInteractionEvent(memberSizeSelectMenu, user))
+                            .next()
+                            .flatMap(event -> {
+                                String result = event.getValues().stream().findFirst().orElse(defaultSize);
+                                eventBuilder.withMemberSize(result);
+                                System.out.println(result);
+
+                                return event.deferEdit()
+                                        .then(event.editReply(InteractionReplyEditSpec.builder()
+                                                .contentOrNull(result)
                                                 .componentsOrNull(null)
                                                 .build()))
                                         .then(promptDestinationChannel());
@@ -148,44 +195,31 @@ public class CreateEventInteraction {
                 });
     }
 
-//    private Mono<Message> promptMemberSize() {
-//        String prompt = "**Step 5**\nChoose maximum size for this raid";
-//        return privateChannelMono
-//                .flatMap(privateChannel -> privateChannel.createMessage(prompt))
-//                .flatMap(promptedMessage -> {
-//                    messageCollector.collect(promptedMessage);
-//                    return client.getEventDispatcher().on(SelectMenuInteractionEvent.class)
-//                            .filter(selectMenuInteractionEventPredicate(raidSelectMenu))
-//                            .next()
-//                            .flatMap(event -> {
-//                                List<String> result = event.getValues();
-//                                System.out.println(result);
-//                                return event.deferEdit()
-//                                        .then(event.editReply(InteractionReplyEditSpec.builder()
-//                                                .contentOrNull(result.toString())
-//                                                .componentsOrNull(null)
-//                                                .build()));
-//                            });
-//                });
-//    }
-
     private Mono<Message> promptDestinationChannel() {
         ChannelSelectMenu channelSelectMenu = new ChannelSelectMenu(fetchGuildTextChannels());
         MessageCreateSpec prompt = MessageCreateSpec.builder()
                 .content("**Step 6**\nChoose in which channel post this raid signup")
                 .addComponent(channelSelectMenu.getActionRow())
                 .build();
+        Snowflake originChannelId = initialEvent.getInteraction().getChannelId();
 
         return privateChannelMono
                 .flatMap(privateChannel -> privateChannel.createMessage(prompt))
                 .flatMap(promptedMessage -> {
                     messageCollector.collect(promptedMessage);
+
                     return client.getEventDispatcher().on(SelectMenuInteractionEvent.class)
-                            .filter(selectMenuInteractionEventPredicate(channelSelectMenu))
+                            .filter(promptFilter.selectInteractionEvent(channelSelectMenu, user))
                             .next()
                             .flatMap(event -> {
-                                List<String> result = event.getValues();
+                                String result = event.getValues().stream()
+                                        .findFirst()
+                                        .orElse(originChannelId.asString());
+
+                                eventBuilder.withDestinationChannel(result);
                                 System.out.println(result);
+                                System.out.println(originChannelId.asString());
+
                                 return event.deferEdit()
                                         .then(event.editReply(InteractionReplyEditSpec.builder()
                                                 .contentOrNull(result.toString())
@@ -202,13 +236,5 @@ public class CreateEventInteraction {
                 .flatMapMany(guildId -> client.getGuildChannels(guildId).ofType(TextChannel.class))
                 .collectList()
                 .block();
-    }
-
-    private Predicate<SelectMenuInteractionEvent> selectMenuInteractionEventPredicate(SelectMenuComponent selectMenuComponent) {
-        return event -> {
-            boolean isSameUser = event.getInteraction().getUser().equals(user);
-            boolean isComponent = event.getCustomId().equals(selectMenuComponent.getCustomId());
-            return isSameUser && isComponent;
-        };
     }
 }
