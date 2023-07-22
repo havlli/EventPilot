@@ -7,10 +7,9 @@ import discord4j.core.object.component.SelectMenu;
 import java.util.ArrayList;
 import java.util.List;
 
-public class RaidSelectMenu implements SelectMenuComponent {
-
-    private static final String CUSTOM_ID = "raid_select";
-    private static final String PLACEHOLDER = "Choose Raids for this event!";
+public class MemberSizeSelectMenu implements SelectMenuComponent {
+    private static final String CUSTOM_ID = "member_size";
+    private static final String PLACEHOLDER = "Choose maximum attendants!";
 
     @Override
     public String getCustomId() {
@@ -30,17 +29,16 @@ public class RaidSelectMenu implements SelectMenuComponent {
     private SelectMenu buildSelectMenu() {
         return SelectMenu.of(CUSTOM_ID, buildOptions())
                 .withPlaceholder(PLACEHOLDER)
-                .withMaxValues(3)
+                .withMaxValues(1)
                 .withMinValues(1);
     }
 
     private List<SelectMenu.Option> buildOptions() {
         List<SelectMenu.Option> selectOptions = new ArrayList<>();
-        selectOptions.add(SelectMenu.Option.of("Molten Core - Normal", "Molten Core - Normal"));
-        selectOptions.add(SelectMenu.Option.of("Molten Core - Heroic", "Molten Core - Heroic"));
-        selectOptions.add(SelectMenu.Option.of("Molten Core - Mythic", "Molten Core - Mythic"));
-        selectOptions.add(SelectMenu.Option.of("Molten Core - Ascended", "Molten Core - Ascended"));
-        selectOptions.add(SelectMenu.Option.of("Onyxia - Normal", "Onyxia - Normal"));
+        selectOptions.add(SelectMenu.Option.of("10", "10"));
+        selectOptions.add(SelectMenu.Option.of("15", "15"));
+        selectOptions.add(SelectMenu.Option.of("20", "20"));
+        selectOptions.add(SelectMenu.Option.of("25", "25"));
 
         return selectOptions;
     }

@@ -142,7 +142,7 @@ public class Event {
                 '}';
     }
 
-    private static Builder builder() {
+    public static Builder builder() {
         return new Builder();
     }
 

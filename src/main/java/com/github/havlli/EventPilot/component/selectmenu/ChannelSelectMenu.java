@@ -24,12 +24,19 @@ public class ChannelSelectMenu implements SelectMenuComponent {
 
     @Override
     public ActionRow getActionRow() {
-        SelectMenu selectMenu = SelectMenu.of(CUSTOM_ID, buildOptions())
+        return ActionRow.of(buildSelectMenu());
+    }
+
+    @Override
+    public ActionRow getDisabledRow() {
+        return ActionRow.of(buildSelectMenu().disabled(true));
+    }
+
+    private SelectMenu buildSelectMenu() {
+        return SelectMenu.of(CUSTOM_ID, buildOptions())
                 .withPlaceholder(PLACEHOLDER)
                 .withMaxValues(1)
                 .withMinValues(1);
-
-        return ActionRow.of(selectMenu);
     }
 
     private List<SelectMenu.Option> buildOptions() {
