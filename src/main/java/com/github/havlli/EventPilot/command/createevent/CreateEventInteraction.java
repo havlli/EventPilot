@@ -7,12 +7,12 @@ import com.github.havlli.EventPilot.entity.event.Event;
 import com.github.havlli.EventPilot.prompt.MessageCollector;
 import com.github.havlli.EventPilot.prompt.PromptFilter;
 import com.github.havlli.EventPilot.prompt.PromptFormatter;
+import com.github.havlli.EventPilot.prompt.PromptService;
 import discord4j.common.util.Snowflake;
 import discord4j.core.GatewayDiscordClient;
 import discord4j.core.event.domain.interaction.ChatInputInteractionEvent;
 import discord4j.core.event.domain.interaction.SelectMenuInteractionEvent;
 import discord4j.core.event.domain.message.MessageCreateEvent;
-import discord4j.core.object.entity.Guild;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.User;
 import discord4j.core.object.entity.channel.PrivateChannel;
@@ -33,6 +33,7 @@ public class CreateEventInteraction {
     private final MessageCollector messageCollector;
     private final PromptFormatter promptFormatter;
     private final PromptFilter promptFilter;
+    private final PromptService promptService;
     private ChatInputInteractionEvent initialEvent;
     private Snowflake guildId;
     private User user;
@@ -44,17 +45,19 @@ public class CreateEventInteraction {
             GatewayDiscordClient client,
             MessageCollector messageCollector,
             PromptFormatter promptFormatter,
-            PromptFilter promptFilter
+            PromptFilter promptFilter,
+            PromptService promptService
     ) {
         this.client = client;
         this.messageCollector = messageCollector;
         this.promptFormatter = promptFormatter;
         this.promptFilter = promptFilter;
+        this.promptService = promptService;
     }
 
-    public Mono<Message> start(ChatInputInteractionEvent event, Snowflake guildId) {
+    public Mono<Message> start(ChatInputInteractionEvent event) {
         this.initialEvent = event;
-        this.guildId = guildId;
+        this.guildId = promptService.fetchGuildId(initialEvent);
         this.user = initialEvent.getInteraction().getUser();
         this.privateChannelMono = user.getPrivateChannel();
         this.eventBuilder = Event.builder();
@@ -96,6 +99,7 @@ public class CreateEventInteraction {
                             .flatMap(event -> {
                                 eventBuilder.withDescription(event.getMessage().getContent());
                                 System.out.println(event.getMessage().getContent());
+
                                 return promptDateTime();
                             });
                 });
@@ -196,7 +200,8 @@ public class CreateEventInteraction {
     }
 
     private Mono<Message> promptDestinationChannel() {
-        ChannelSelectMenu channelSelectMenu = new ChannelSelectMenu(fetchGuildTextChannels());
+        List<TextChannel> textChannels = promptService.fetchGuildTextChannels(initialEvent);
+        ChannelSelectMenu channelSelectMenu = new ChannelSelectMenu(textChannels);
         MessageCreateSpec prompt = MessageCreateSpec.builder()
                 .content("**Step 6**\nChoose in which channel post this raid signup")
                 .addComponent(channelSelectMenu.getActionRow())
@@ -227,14 +232,5 @@ public class CreateEventInteraction {
                                                 .build()));
                             });
                 });
-    }
-
-    private List<TextChannel> fetchGuildTextChannels() {
-        return initialEvent.getInteraction()
-                .getGuild()
-                .map(Guild::getId)
-                .flatMapMany(guildId -> client.getGuildChannels(guildId).ofType(TextChannel.class))
-                .collectList()
-                .block();
     }
 }
