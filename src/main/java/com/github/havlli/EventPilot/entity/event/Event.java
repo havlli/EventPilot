@@ -1,14 +1,17 @@
 package com.github.havlli.EventPilot.entity.event;
 
+import com.github.havlli.EventPilot.generator.EmbedPreviewable;
+
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
+import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 import java.util.Objects;
 
 public class Event {
-
     private String eventId;
     private String name;
     private String description;
@@ -146,7 +149,7 @@ public class Event {
         return new Builder();
     }
 
-    public static class Builder {
+    public static class Builder implements EmbedPreviewable {
         private Event event;
         private String eventId;
         private String name;
@@ -206,6 +209,10 @@ public class Event {
             return this;
         }
 
+        public String getDestinationChannelId() {
+            return destinationChannelId;
+        }
+
         public Event build() {
             this.event = new Event(this);
             return this.event;
@@ -213,6 +220,18 @@ public class Event {
 
         public Event getEvent() {
             return this.event;
+        }
+
+        @Override
+        public HashMap<String, String> previewFields() {
+            return new HashMap<>(Map.of(
+                    "name", name,
+                    "description", description,
+                    "date and time", dateTime.toString(),
+                    "instances", instances,
+                    "member size", memberSize,
+                    "destination channel", destinationChannelId
+            ));
         }
     }
 }
