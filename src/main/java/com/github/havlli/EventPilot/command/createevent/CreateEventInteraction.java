@@ -234,7 +234,7 @@ public class CreateEventInteraction {
 
                                 return event.deferEdit()
                                         .then(event.editReply(InteractionReplyEditSpec.builder()
-                                                .contentOrNull(result.toString())
+                                                .contentOrNull(result)
                                                 .componentsOrNull(null)
                                                 .build()))
                                         .then(promptConfirmation());
@@ -266,9 +266,10 @@ public class CreateEventInteraction {
                                 if (event.getCustomId().equals("confirm")) {
 
                                     return event.deferReply()
+                                            .then(finalizePrompt())
                                             .then(messageCollector.cleanup())
                                             .then(event.getInteractionResponse().deleteInitialResponse())
-                                            .then(finalizePrompt());
+                                            .then(Mono.empty());
 
                                 } else if (event.getCustomId().equals("cancel")) {
 
