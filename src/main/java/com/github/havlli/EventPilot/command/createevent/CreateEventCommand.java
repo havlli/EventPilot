@@ -2,7 +2,6 @@ package com.github.havlli.EventPilot.command.createevent;
 
 import com.github.havlli.EventPilot.command.SlashCommand;
 import com.github.havlli.EventPilot.core.SimplePermissionChecker;
-import discord4j.common.util.Snowflake;
 import discord4j.core.event.domain.Event;
 import discord4j.core.event.domain.interaction.ChatInputInteractionEvent;
 import discord4j.core.object.entity.Message;
@@ -44,17 +43,15 @@ public class CreateEventCommand implements SlashCommand {
 
         SimplePermissionChecker permissionChecker = new SimplePermissionChecker(interactionEvent, Permission.MANAGE_CHANNELS);
 
-        Snowflake guildId = interactionEvent.getInteraction().getGuildId().orElse(Snowflake.of(0));
-
         return interactionEvent.deferReply()
                 .withEphemeral(true)
-                .then(permissionChecker.followup(followupMessage(interactionEvent, guildId)));
+                .then(permissionChecker.followup(followupMessage(interactionEvent)));
     }
 
-    private Mono<Message> followupMessage(ChatInputInteractionEvent event, Snowflake guildId) {
+    private Mono<Message> followupMessage(ChatInputInteractionEvent event) {
         String prompt = "Initiated process of creating event in your DMs, please continue there!";
         return event.createFollowup(prompt)
                 .withEphemeral(true)
-                .flatMap(ignored -> createEventInteraction.start(event, guildId));
+                .flatMap(ignored -> createEventInteraction.start(event));
     }
 }

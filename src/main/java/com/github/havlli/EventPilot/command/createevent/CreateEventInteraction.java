@@ -1,24 +1,29 @@
 package com.github.havlli.EventPilot.command.createevent;
 
+import com.github.havlli.EventPilot.component.ButtonRow;
 import com.github.havlli.EventPilot.component.selectmenu.ChannelSelectMenu;
 import com.github.havlli.EventPilot.component.selectmenu.MemberSizeSelectMenu;
 import com.github.havlli.EventPilot.component.selectmenu.RaidSelectMenu;
 import com.github.havlli.EventPilot.entity.event.Event;
+import com.github.havlli.EventPilot.generator.EmbedGenerator;
 import com.github.havlli.EventPilot.prompt.MessageCollector;
 import com.github.havlli.EventPilot.prompt.PromptFilter;
 import com.github.havlli.EventPilot.prompt.PromptFormatter;
 import com.github.havlli.EventPilot.prompt.PromptService;
 import discord4j.common.util.Snowflake;
 import discord4j.core.GatewayDiscordClient;
+import discord4j.core.event.domain.interaction.ButtonInteractionEvent;
 import discord4j.core.event.domain.interaction.ChatInputInteractionEvent;
 import discord4j.core.event.domain.interaction.SelectMenuInteractionEvent;
 import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.User;
+import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.object.entity.channel.PrivateChannel;
 import discord4j.core.object.entity.channel.TextChannel;
 import discord4j.core.spec.InteractionReplyEditSpec;
 import discord4j.core.spec.MessageCreateSpec;
+import discord4j.core.spec.MessageEditSpec;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
@@ -34,6 +39,7 @@ public class CreateEventInteraction {
     private final PromptFormatter promptFormatter;
     private final PromptFilter promptFilter;
     private final PromptService promptService;
+    private final EmbedGenerator embedGenerator;
     private ChatInputInteractionEvent initialEvent;
     private Snowflake guildId;
     private User user;
@@ -46,13 +52,14 @@ public class CreateEventInteraction {
             MessageCollector messageCollector,
             PromptFormatter promptFormatter,
             PromptFilter promptFilter,
-            PromptService promptService
-    ) {
+            PromptService promptService,
+            EmbedGenerator embedGenerator) {
         this.client = client;
         this.messageCollector = messageCollector;
         this.promptFormatter = promptFormatter;
         this.promptFilter = promptFilter;
         this.promptService = promptService;
+        this.embedGenerator = embedGenerator;
     }
 
     public Mono<Message> start(ChatInputInteractionEvent event) {
@@ -229,8 +236,86 @@ public class CreateEventInteraction {
                                         .then(event.editReply(InteractionReplyEditSpec.builder()
                                                 .contentOrNull(result.toString())
                                                 .componentsOrNull(null)
-                                                .build()));
+                                                .build()))
+                                        .then(promptConfirmation());
                             });
                 });
+    }
+
+    private Mono<Message> promptConfirmation() {
+        ButtonRow buttonRow = ButtonRow.builder()
+                .addButton("confirm", "Confirm", ButtonRow.Builder.buttonType.PRIMARY)
+                .addButton("cancel", "Cancel", ButtonRow.Builder.buttonType.DANGER)
+                .addButton("repeat", "Start Again!", ButtonRow.Builder.buttonType.SECONDARY)
+                .build();
+        MessageCreateSpec prompt = MessageCreateSpec.builder()
+                .addEmbed(embedGenerator.generatePreview(eventBuilder))
+                .addComponent(buttonRow.getActionRow())
+                .build();
+
+
+        return privateChannelMono
+                .flatMap(privateChannel -> privateChannel.createMessage(prompt))
+                .flatMap(promptedMessage -> {
+                    messageCollector.collect(promptedMessage);
+
+                    return client.getEventDispatcher().on(ButtonInteractionEvent.class)
+                            .filter(promptFilter.buttonInteractionEvent(buttonRow, user))
+                            .next()
+                            .flatMap(event -> {
+                                if (event.getCustomId().equals("confirm")) {
+
+                                    return event.deferReply()
+                                            .then(messageCollector.cleanup())
+                                            .then(event.getInteractionResponse().deleteInitialResponse())
+                                            .then(finalizePrompt());
+
+                                } else if (event.getCustomId().equals("cancel")) {
+
+                                    return event.deferReply()
+                                            .then(messageCollector.cleanup())
+                                            .then(event.getInteractionResponse().deleteInitialResponse())
+                                            .then(Mono.empty());
+
+                                } else if (event.getCustomId().equals("repeat")) {
+
+                                    return event.deferReply()
+                                            .then(messageCollector.cleanup())
+                                            .then(event.getInteractionResponse().deleteInitialResponse())
+                                            .then(promptName());
+                                }
+
+                                return Mono.empty();
+                            });
+                });
+    }
+
+    private Mono<Message> finalizePrompt() {
+        Snowflake destinationChannel = Snowflake.of(eventBuilder.getDestinationChannelId());
+        return initialEvent.getInteraction()
+                .getGuild()
+                .flatMap(guild -> guild.getChannelById(destinationChannel)
+                        .cast(MessageChannel.class)
+                        .flatMap(channel -> channel.createMessage("Generating event..."))
+                        .flatMap(message -> {
+                            Snowflake messageId = message.getId();
+                            eventBuilder.withEventId(messageId.asString());
+
+                            Event event = eventBuilder.build();
+                            System.out.println(event);
+
+                            String messageUrl = promptFormatter.messageUrl(guildId, destinationChannel, messageId);
+                            Mono<Message> finalMessage = privateChannelMono
+                                    .flatMap(channel -> channel.createMessage("Event created in " + messageUrl));
+
+                            MessageEditSpec finalEmbed = MessageEditSpec.builder()
+                                    .contentOrNull(null)
+                                    .addEmbed(embedGenerator.generatePreview(eventBuilder))
+                                    .build();
+
+                            return message.edit(finalEmbed)
+                                    .then(finalMessage);
+                        })
+                );
     }
 }
