@@ -1,15 +1,13 @@
 package com.github.havlli.EventPilot.entity.event;
 
+import com.github.havlli.EventPilot.entity.participant.Participant;
 import com.github.havlli.EventPilot.generator.EmbedPreviewable;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
+import java.util.*;
 
 public class Event {
     private String eventId;
@@ -20,6 +18,7 @@ public class Event {
     private String destinationChannelId;
     private String instances;
     private String memberSize;
+    private List<Participant> participants;
 
     public Event() { }
 
@@ -31,7 +30,8 @@ public class Event {
             LocalDateTime dateTime,
             String destinationChannelId,
             String instances,
-            String memberSize
+            String memberSize,
+            List<Participant> participants
     ) {
         this.eventId = eventId;
         this.name = name;
@@ -41,6 +41,7 @@ public class Event {
         this.destinationChannelId = destinationChannelId;
         this.instances = instances;
         this.memberSize = memberSize;
+        this.participants = participants;
     }
 
     public Event(Event.Builder builder) {
@@ -52,6 +53,7 @@ public class Event {
         this.destinationChannelId = builder.destinationChannelId;
         this.instances = builder.instances;
         this.memberSize = builder.memberSize;
+        this.participants = new ArrayList<>();
     }
 
     public String getEventId() {
@@ -116,6 +118,14 @@ public class Event {
 
     public void setMemberSize(String memberSize) {
         this.memberSize = memberSize;
+    }
+
+    public List<Participant> getParticipants() {
+        return participants;
+    }
+
+    public void setParticipants(List<Participant> participants) {
+        this.participants = participants;
     }
 
     @Override
