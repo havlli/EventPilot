@@ -315,6 +315,8 @@ public class CreateEventInteraction {
                                     .addAllComponents(embedGenerator.generateComponents(event.getEventId()))
                                     .build();
 
+                            embedGenerator.subscribeInteractions(event);
+
                             return message.edit(finalEmbed)
                                     .then(finalMessage);
                         })
