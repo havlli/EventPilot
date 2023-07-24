@@ -311,7 +311,8 @@ public class CreateEventInteraction {
 
                             MessageEditSpec finalEmbed = MessageEditSpec.builder()
                                     .contentOrNull(null)
-                                    .addEmbed(embedGenerator.generatePreview(eventBuilder))
+                                    .addEmbed(embedGenerator.generateEmbed(event))
+                                    .addAllComponents(embedGenerator.generateComponents(event.getEventId()))
                                     .build();
 
                             return message.edit(finalEmbed)
