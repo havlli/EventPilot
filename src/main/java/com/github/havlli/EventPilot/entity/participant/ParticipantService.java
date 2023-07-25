@@ -9,7 +9,7 @@ public class ParticipantService {
 
     public Participant getParticipant(String id, List<Participant> participants) {
         return participants.stream()
-                .filter(participant -> participant.getUserId().equals(id))
+                .filter(participant -> participant.getId().equals(id))
                 .findFirst()
                 .orElse(null);
     }

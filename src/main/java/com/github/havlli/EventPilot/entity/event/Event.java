@@ -2,6 +2,7 @@ package com.github.havlli.EventPilot.entity.event;
 
 import com.github.havlli.EventPilot.entity.participant.Participant;
 import com.github.havlli.EventPilot.generator.EmbedPreviewable;
+import jakarta.persistence.*;
 
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -9,15 +10,29 @@ import java.time.LocalTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
 
+@Entity
+@Table(name = "event")
 public class Event {
+
+    @Id
+    @Column(name = "id")
     private String eventId;
+    @Column(name = "name", nullable = false)
     private String name;
+    @Column(name = "description", nullable = false)
     private String description;
+
+    @Column(name = "author", nullable = false)
     private String author;
+    @Column(name = "date_time", nullable = false)
     private LocalDateTime dateTime;
+    @Column(name = "dest_channel", nullable = false)
     private String destinationChannelId;
+    @Transient
     private String instances;
+    @Column(name = "member_size", nullable = false)
     private String memberSize;
+    @OneToMany(mappedBy = "event", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Participant> participants;
 
     public Event() { }

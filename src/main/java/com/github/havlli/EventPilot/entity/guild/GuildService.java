@@ -1,6 +1,9 @@
 package com.github.havlli.EventPilot.entity.guild;
 
+import com.github.havlli.EventPilot.exception.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
+
+import java.util.List;
 
 @Service
 public class GuildService {
@@ -11,7 +14,21 @@ public class GuildService {
         this.guildDAO = guildDAO;
     }
 
-    public void insertGuild(Guild guild) {
+    public void saveGuild(Guild guild) {
         guildDAO.insertGuild(guild);
     }
+
+    public List<Guild> getAllGuilds() {
+        return guildDAO.selectAllGuilds();
+    }
+
+    public Guild getGuildById(String id) {
+        return guildDAO.selectGuildById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Guild with id {%s} was not found!".formatted(id)));
+    }
+
+    public boolean existsGuildById(String id) {
+        return guildDAO.existsGuildById(id);
+    }
+
 }

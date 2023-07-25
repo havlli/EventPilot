@@ -1,31 +1,46 @@
 package com.github.havlli.EventPilot.entity.participant;
 
+import com.github.havlli.EventPilot.entity.event.Event;
+import jakarta.persistence.Entity;
+import jakarta.persistence.JoinColumn;
+import jakarta.persistence.ManyToOne;
+import jakarta.persistence.Table;
+
 import java.util.Objects;
 
+@Entity
+@Table(name = "participant")
 public class Participant {
-        private String userId;
+        private String id;
         private String username;
         private Integer position;
         private Integer roleIndex;
 
+        @ManyToOne
+        @JoinColumn(name = "event_id")
+        private Event event;
+
+        public Participant() {
+        }
+
         public Participant(
-                String userId,
+                String id,
                 String username,
                 Integer position,
                 Integer roleIndex
         ) {
-                this.userId = userId;
+                this.id = id;
                 this.username = username;
                 this.position = position;
                 this.roleIndex = roleIndex;
         }
 
-        public String getUserId() {
-                return userId;
+        public String getId() {
+                return id;
         }
 
-        public void setUserId(String userId) {
-                this.userId = userId;
+        public void setId(String id) {
+                this.id = id;
         }
 
         public String getUsername() {
@@ -57,7 +72,7 @@ public class Participant {
                 if (obj == this) return true;
                 if (obj == null || obj.getClass() != this.getClass()) return false;
                 var that = (Participant) obj;
-                return Objects.equals(this.userId, that.userId) &&
+                return Objects.equals(this.id, that.id) &&
                         Objects.equals(this.username, that.username) &&
                         Objects.equals(this.position, that.position) &&
                         Objects.equals(this.roleIndex, that.roleIndex);
@@ -65,13 +80,13 @@ public class Participant {
 
         @Override
         public int hashCode() {
-                return Objects.hash(userId, username, position, roleIndex);
+                return Objects.hash(id, username, position, roleIndex);
         }
 
         @Override
         public String toString() {
                 return "Participant[" +
-                        "userId=" + userId + ", " +
+                        "userId=" + id + ", " +
                         "username=" + username + ", " +
                         "position=" + position + ", " +
                         "roleId=" + roleIndex + ']';
