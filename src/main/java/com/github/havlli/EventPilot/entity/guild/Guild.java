@@ -1,34 +1,44 @@
 package com.github.havlli.EventPilot.entity.guild;
 
+import jakarta.persistence.Column;
+import jakarta.persistence.Entity;
+import jakarta.persistence.Id;
+import jakarta.persistence.Table;
+
 import java.util.Objects;
 
+@Entity
+@Table(name = "guild")
 public class Guild {
 
-    private String snowflakeId;
-    private String guildName;
+    @Id
+    @Column(nullable = false)
+    private String id;
+    @Column(nullable = false)
+    private String name;
 
     public Guild() {
     }
 
-    public Guild(String snowflakeId, String guildName) {
-        this.snowflakeId = snowflakeId;
-        this.guildName = guildName;
+    public Guild(String id, String name) {
+        this.id = id;
+        this.name = name;
     }
 
-    public String getSnowflakeId() {
-        return snowflakeId;
+    public String getId() {
+        return id;
     }
 
-    public void setSnowflakeId(String snowflakeId) {
-        this.snowflakeId = snowflakeId;
+    public void setId(String id) {
+        this.id = id;
     }
 
-    public String getGuildName() {
-        return guildName;
+    public String getName() {
+        return name;
     }
 
-    public void setGuildName(String guildName) {
-        this.guildName = guildName;
+    public void setName(String guildName) {
+        this.name = guildName;
     }
 
     @Override
@@ -36,19 +46,19 @@ public class Guild {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Guild guild = (Guild) o;
-        return Objects.equals(snowflakeId, guild.snowflakeId) && Objects.equals(guildName, guild.guildName);
+        return Objects.equals(id, guild.id) && Objects.equals(name, guild.name);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(snowflakeId, guildName);
+        return Objects.hash(id, name);
     }
 
     @Override
     public String toString() {
         return "Guild{" +
-                "snowflakeId='" + snowflakeId + '\'' +
-                ", guildName='" + guildName + '\'' +
+                "snowflakeId='" + id + '\'' +
+                ", guildName='" + name + '\'' +
                 '}';
     }
 }

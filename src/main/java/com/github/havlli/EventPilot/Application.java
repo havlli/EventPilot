@@ -1,5 +1,7 @@
 package com.github.havlli.EventPilot;
 
+import com.github.havlli.EventPilot.entity.guild.Guild;
+import com.github.havlli.EventPilot.entity.guild.GuildDAO;
 import org.springframework.boot.CommandLineRunner;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
@@ -13,9 +15,10 @@ public class Application {
 	}
 
 	@Bean
-	CommandLineRunner runner() {
+	CommandLineRunner runner(GuildDAO guildDAO) {
 		return args -> {
-			System.out.println("stuck");
+			Guild guild = new Guild("1","test");
+			guildDAO.insertGuild(guild);
 		};
 	}
 

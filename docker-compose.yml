@@ -1,0 +1,23 @@
+name: event-pilot
+services:
+  database:
+    container_name: event-pilot-postgres
+    image: postgres:15
+    environment:
+      POSTGRES_USER: havlli
+      POSTGRES_PASSWORD: password
+      PGDATA: /data/postgres
+    volumes:
+      - postgres:/data/postgres
+    ports:
+      - 5555:5432
+    networks:
+      - postgres
+    restart: unless-stopped
+
+networks:
+  postgres:
+    driver: bridge
+
+volumes:
+  postgres:
