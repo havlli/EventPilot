@@ -9,7 +9,7 @@ public class ParticipantService {
 
     public Participant getParticipant(String id, List<Participant> participants) {
         return participants.stream()
-                .filter(participant -> participant.getId().equals(id))
+                .filter(participant -> participant.getUserId().equals(id))
                 .findFirst()
                 .orElse(null);
     }
@@ -18,7 +18,7 @@ public class ParticipantService {
         participants.add(participant);
     }
 
-    public void updateParticipant(Participant participant, String eventId, Integer roleIndex) {
+    public void updateParticipant(Participant participant, Integer roleIndex) {
         participant.setRoleIndex(roleIndex);
     }
 }

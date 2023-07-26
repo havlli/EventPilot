@@ -1,19 +1,24 @@
 package com.github.havlli.EventPilot.entity.participant;
 
 import com.github.havlli.EventPilot.entity.event.Event;
-import jakarta.persistence.Entity;
-import jakarta.persistence.JoinColumn;
-import jakarta.persistence.ManyToOne;
-import jakarta.persistence.Table;
+import jakarta.persistence.*;
 
 import java.util.Objects;
 
 @Entity
 @Table(name = "participant")
 public class Participant {
-        private String id;
+
+        @Id
+        @GeneratedValue(strategy = GenerationType.IDENTITY)
+        private Long id;
+        @Column(name = "user_id")
+        private String userId;
+        @Column(name = "username")
         private String username;
+        @Column(name = "position")
         private Integer position;
+        @Column(name = "role_index")
         private Integer roleIndex;
 
         @ManyToOne
@@ -24,23 +29,46 @@ public class Participant {
         }
 
         public Participant(
-                String id,
+                Long id,
+                String userId,
+                String username,
+                Integer position,
+                Integer roleIndex,
+                Event event
+        ) {
+                this(userId, username, position, roleIndex, event);
+                this.id = id;
+        }
+
+        public Participant(
+                String userId,
+                String username,
+                Integer position,
+                Integer roleIndex,
+                Event event
+        ) {
+                this(userId, username, position, roleIndex);
+                this.event = event;
+        }
+
+        public Participant(
+                String userId,
                 String username,
                 Integer position,
                 Integer roleIndex
         ) {
-                this.id = id;
+                this.userId = userId;
                 this.username = username;
                 this.position = position;
                 this.roleIndex = roleIndex;
         }
 
-        public String getId() {
-                return id;
+        public String getUserId() {
+                return userId;
         }
 
-        public void setId(String id) {
-                this.id = id;
+        public void setUserId(String id) {
+                this.userId = id;
         }
 
         public String getUsername() {
@@ -67,28 +95,36 @@ public class Participant {
                 this.roleIndex = roleIndex;
         }
 
+        public Event getEvent() {
+                return event;
+        }
+
+        public void setEvent(Event event) {
+                this.event = event;
+        }
+
         @Override
-        public boolean equals(Object obj) {
-                if (obj == this) return true;
-                if (obj == null || obj.getClass() != this.getClass()) return false;
-                var that = (Participant) obj;
-                return Objects.equals(this.id, that.id) &&
-                        Objects.equals(this.username, that.username) &&
-                        Objects.equals(this.position, that.position) &&
-                        Objects.equals(this.roleIndex, that.roleIndex);
+        public boolean equals(Object o) {
+                if (this == o) return true;
+                if (o == null || getClass() != o.getClass()) return false;
+                Participant that = (Participant) o;
+                return Objects.equals(id, that.id) && Objects.equals(userId, that.userId) && Objects.equals(username, that.username) && Objects.equals(position, that.position) && Objects.equals(roleIndex, that.roleIndex) && Objects.equals(event, that.event);
         }
 
         @Override
         public int hashCode() {
-                return Objects.hash(id, username, position, roleIndex);
+                return Objects.hash(id, userId, username, position, roleIndex, event);
         }
 
         @Override
         public String toString() {
-                return "Participant[" +
-                        "userId=" + id + ", " +
-                        "username=" + username + ", " +
-                        "position=" + position + ", " +
-                        "roleId=" + roleIndex + ']';
+                return "Participant{" +
+                        "id=" + id +
+                        ", userId='" + userId + '\'' +
+                        ", username='" + username + '\'' +
+                        ", position=" + position +
+                        ", roleIndex=" + roleIndex +
+                        ", event=" + event.getEventId() +
+                        '}';
         }
 }
