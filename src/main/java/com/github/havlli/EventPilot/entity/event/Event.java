@@ -32,7 +32,7 @@ public class Event {
     private String instances;
     @Column(name = "member_size", nullable = false)
     private String memberSize;
-    @OneToMany(mappedBy = "event", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "event", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private List<Participant> participants;
 
     public Event() { }
@@ -148,12 +148,12 @@ public class Event {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Event event = (Event) o;
-        return Objects.equals(eventId, event.eventId) && Objects.equals(name, event.name) && Objects.equals(description, event.description) && Objects.equals(author, event.author) && Objects.equals(dateTime, event.dateTime) && Objects.equals(destinationChannelId, event.destinationChannelId) && Objects.equals(instances, event.instances) && Objects.equals(memberSize, event.memberSize);
+        return Objects.equals(eventId, event.eventId) && Objects.equals(name, event.name) && Objects.equals(description, event.description) && Objects.equals(author, event.author) && Objects.equals(dateTime, event.dateTime) && Objects.equals(destinationChannelId, event.destinationChannelId) && Objects.equals(instances, event.instances) && Objects.equals(memberSize, event.memberSize) && Objects.equals(participants, event.participants);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(eventId, name, description, author, dateTime, destinationChannelId, instances, memberSize);
+        return Objects.hash(eventId, name, description, author, dateTime, destinationChannelId, instances, memberSize, participants);
     }
 
     @Override
@@ -167,6 +167,7 @@ public class Event {
                 ", destinationChannelId='" + destinationChannelId + '\'' +
                 ", instances='" + instances + '\'' +
                 ", memberSize='" + memberSize + '\'' +
+                ", participants=" + participants +
                 '}';
     }
 

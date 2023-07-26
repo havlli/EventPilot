@@ -1,8 +1,9 @@
 package com.github.havlli.EventPilot.entity.event;
 
-import java.util.HashSet;
+import java.util.List;
 
 public interface EventDAO {
     void insertEvent(Event event);
-    HashSet<Event> fetchEvents();
+    List<Event> fetchEvents();
+    void deleteEvent(Event event);
 }
