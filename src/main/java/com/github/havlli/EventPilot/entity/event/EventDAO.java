@@ -6,5 +6,6 @@ public interface EventDAO {
     void insertEvent(Event event);
     List<Event> fetchEvents();
     void deleteEvent(Event event);
+    void deleteAllEvents(List<Event> events);
     List<Event> fetchExpiredEvents();
 }

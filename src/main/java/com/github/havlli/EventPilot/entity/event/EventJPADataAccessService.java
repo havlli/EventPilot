@@ -29,6 +29,11 @@ public class EventJPADataAccessService implements EventDAO {
     }
 
     @Override
+    public void deleteAllEvents(List<Event> events) {
+        eventRepository.deleteAll(events);
+    }
+
+    @Override
     public List<Event> fetchExpiredEvents() {
         return eventRepository.findAllWithDatetimeBeforeCurrentTime();
     }
