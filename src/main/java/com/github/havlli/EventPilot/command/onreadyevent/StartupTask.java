@@ -4,6 +4,7 @@ import com.github.havlli.EventPilot.entity.event.Event;
 import com.github.havlli.EventPilot.entity.event.EventService;
 import com.github.havlli.EventPilot.generator.EmbedGenerator;
 import org.springframework.stereotype.Component;
+import reactor.core.publisher.Mono;
 
 import java.util.List;
 
@@ -18,9 +19,10 @@ public class StartupTask {
         this.embedGenerator = embedGenerator;
     }
 
-    public void subscribeEventInteractions() {
+    public Mono<Void> subscribeEventInteractions() {
         List<Event> events = eventService.getAllEvents();
         events.forEach(embedGenerator::subscribeInteractions);
         System.out.println("interactions subscribed");
+        return Mono.empty();
     }
 }
