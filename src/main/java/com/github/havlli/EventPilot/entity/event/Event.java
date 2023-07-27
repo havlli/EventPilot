@@ -1,5 +1,6 @@
 package com.github.havlli.EventPilot.entity.event;
 
+import com.github.havlli.EventPilot.entity.guild.Guild;
 import com.github.havlli.EventPilot.entity.participant.Participant;
 import com.github.havlli.EventPilot.generator.EmbedPreviewable;
 import jakarta.persistence.*;
@@ -34,7 +35,9 @@ public class Event {
     private String memberSize;
     @OneToMany(mappedBy = "event", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private List<Participant> participants;
-
+    @ManyToOne
+    @JoinColumn(name = "guild_id")
+    private Guild guild;
     public Event() { }
 
     public Event(
@@ -59,6 +62,22 @@ public class Event {
         this.participants = participants;
     }
 
+    public Event(
+            String eventId,
+            String name,
+            String description,
+            String author,
+            LocalDateTime dateTime,
+            String destinationChannelId,
+            String instances,
+            String memberSize,
+            List<Participant> participants,
+            Guild guild
+    ) {
+        this(eventId, name, description, author, dateTime, destinationChannelId, instances, memberSize, participants);
+        this.guild = guild;
+    }
+
     public Event(Event.Builder builder) {
         this.eventId = builder.eventId;
         this.name = builder.name;
@@ -68,6 +87,7 @@ public class Event {
         this.destinationChannelId = builder.destinationChannelId;
         this.instances = builder.instances;
         this.memberSize = builder.memberSize;
+        this.guild = builder.guild;
         this.participants = new ArrayList<>();
     }
 
@@ -143,17 +163,25 @@ public class Event {
         this.participants = participants;
     }
 
+    public Guild getGuild() {
+        return guild;
+    }
+
+    public void setGuild(Guild guild) {
+        this.guild = guild;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Event event = (Event) o;
-        return Objects.equals(eventId, event.eventId) && Objects.equals(name, event.name) && Objects.equals(description, event.description) && Objects.equals(author, event.author) && Objects.equals(dateTime, event.dateTime) && Objects.equals(destinationChannelId, event.destinationChannelId) && Objects.equals(instances, event.instances) && Objects.equals(memberSize, event.memberSize) && Objects.equals(participants, event.participants);
+        return Objects.equals(eventId, event.eventId) && Objects.equals(name, event.name) && Objects.equals(description, event.description) && Objects.equals(author, event.author) && Objects.equals(dateTime, event.dateTime) && Objects.equals(destinationChannelId, event.destinationChannelId) && Objects.equals(instances, event.instances) && Objects.equals(memberSize, event.memberSize) && Objects.equals(participants, event.participants) && Objects.equals(guild, event.guild);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(eventId, name, description, author, dateTime, destinationChannelId, instances, memberSize, participants);
+        return Objects.hash(eventId, name, description, author, dateTime, destinationChannelId, instances, memberSize, participants, guild);
     }
 
     @Override
@@ -185,6 +213,7 @@ public class Event {
         private String destinationChannelId;
         private String instances;
         private String memberSize;
+        private Guild guild;
 
         private Builder() { }
 
@@ -232,6 +261,11 @@ public class Event {
 
         public Builder withMemberSize(String memberSize) {
             this.memberSize = memberSize;
+            return this;
+        }
+
+        public Builder withGuild(Guild guild) {
+            this.guild = guild;
             return this;
         }
 
