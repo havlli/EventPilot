@@ -5,6 +5,9 @@ import com.github.havlli.EventPilot.component.selectmenu.ChannelSelectMenu;
 import com.github.havlli.EventPilot.component.selectmenu.MemberSizeSelectMenu;
 import com.github.havlli.EventPilot.component.selectmenu.RaidSelectMenu;
 import com.github.havlli.EventPilot.entity.event.Event;
+import com.github.havlli.EventPilot.entity.event.EventService;
+import com.github.havlli.EventPilot.entity.guild.Guild;
+import com.github.havlli.EventPilot.entity.guild.GuildService;
 import com.github.havlli.EventPilot.generator.EmbedGenerator;
 import com.github.havlli.EventPilot.prompt.MessageCollector;
 import com.github.havlli.EventPilot.prompt.PromptFilter;
@@ -40,8 +43,9 @@ public class CreateEventInteraction {
     private final PromptFilter promptFilter;
     private final PromptService promptService;
     private final EmbedGenerator embedGenerator;
+    private final EventService eventService;
+    private final GuildService guildService;
     private ChatInputInteractionEvent initialEvent;
-    private Snowflake guildId;
     private User user;
     private Mono<PrivateChannel> privateChannelMono;
     private Event.Builder eventBuilder;
@@ -53,23 +57,30 @@ public class CreateEventInteraction {
             PromptFormatter promptFormatter,
             PromptFilter promptFilter,
             PromptService promptService,
-            EmbedGenerator embedGenerator) {
+            EmbedGenerator embedGenerator,
+            EventService eventService,
+            GuildService guildService) {
         this.client = client;
         this.messageCollector = messageCollector;
         this.promptFormatter = promptFormatter;
         this.promptFilter = promptFilter;
         this.promptService = promptService;
         this.embedGenerator = embedGenerator;
+        this.eventService = eventService;
+        this.guildService = guildService;
     }
 
     public Mono<Message> start(ChatInputInteractionEvent event) {
         this.initialEvent = event;
-        this.guildId = promptService.fetchGuildId(initialEvent);
         this.user = initialEvent.getInteraction().getUser();
         this.privateChannelMono = user.getPrivateChannel();
-        this.eventBuilder = Event.builder();
 
+        Snowflake guildId = promptService.fetchGuildId(initialEvent);
+        Guild guild = guildService.getGuildById(guildId.asString());
+
+        this.eventBuilder = Event.builder();
         eventBuilder.withAuthor(user.getUsername());
+        eventBuilder.withGuild(guild);
 
         return promptName();
     }
@@ -303,9 +314,10 @@ public class CreateEventInteraction {
                             eventBuilder.withEventId(messageId.asString());
 
                             Event event = eventBuilder.build();
+
                             System.out.println(event);
 
-                            String messageUrl = promptFormatter.messageUrl(guildId, destinationChannel, messageId);
+                            String messageUrl = promptFormatter.messageUrl(guild.getId(), destinationChannel, messageId);
                             Mono<Message> finalMessage = privateChannelMono
                                     .flatMap(channel -> channel.createMessage("Event created in " + messageUrl));
 
@@ -316,6 +328,7 @@ public class CreateEventInteraction {
                                     .build();
 
                             embedGenerator.subscribeInteractions(event);
+                            eventService.saveEvent(event);
 
                             return message.edit(finalEmbed)
                                     .then(finalMessage);
