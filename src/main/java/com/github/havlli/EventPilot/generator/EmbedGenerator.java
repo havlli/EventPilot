@@ -1,6 +1,7 @@
 package com.github.havlli.EventPilot.generator;
 
 import com.github.havlli.EventPilot.entity.event.Event;
+import com.github.havlli.EventPilot.entity.event.EventService;
 import com.github.havlli.EventPilot.entity.participant.Participant;
 import com.github.havlli.EventPilot.entity.participant.ParticipantService;
 import discord4j.core.GatewayDiscordClient;
@@ -12,15 +13,11 @@ import discord4j.core.spec.EmbedCreateFields;
 import discord4j.core.spec.EmbedCreateSpec;
 import discord4j.core.spec.InteractionReplyEditSpec;
 import org.springframework.stereotype.Component;
-import reactor.core.Disposable;
 import reactor.core.publisher.Mono;
 
 import java.time.LocalDateTime;
 import java.time.ZoneOffset;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Component
@@ -30,14 +27,22 @@ public class EmbedGenerator {
     private final EmbedFormatter formatter;
     private final ComponentGenerator generator;
     private final ParticipantService participantService;
+    private final EventService eventService;
 
     private final static String DELIMITER = ",";
 
-    public EmbedGenerator(GatewayDiscordClient client, EmbedFormatter formatter, ComponentGenerator generator, ParticipantService participantService) {
+    public EmbedGenerator(
+            GatewayDiscordClient client,
+            EmbedFormatter formatter,
+            ComponentGenerator generator,
+            ParticipantService participantService,
+            EventService eventService
+    ) {
         this.client = client;
         this.formatter = formatter;
         this.generator = generator;
         this.participantService = participantService;
+        this.eventService = eventService;
     }
 
     public EmbedCreateSpec generatePreview(EmbedPreviewable embedPreviewable) {
@@ -139,17 +144,18 @@ public class EmbedGenerator {
         List<Participant> participants = embedEvent.getParticipants();
         User user = event.getInteraction().getUser();
         String userId = user.getId().asString();
-        String embedEventId = embedEvent.getEventId();
         int roleIndex = extractRoleIndex(event.getCustomId());
 
-        Participant participant = participantService.getParticipant(userId, participants);
-        if (participant == null) {
+        Optional<Participant> participant = participantService.getParticipant(userId, participants);
+        if (participant.isEmpty()) {
             Integer currentOrder = participants.size() + 1;
-            participant = new Participant(userId, user.getUsername(), currentOrder, roleIndex);
-            participantService.addParticipant(participant, participants);
+            Participant newParticipant = new Participant(userId, user.getUsername(), currentOrder, roleIndex, embedEvent);
+            participantService.addParticipant(newParticipant, participants);
         } else {
-            participantService.updateParticipant(participant, embedEventId, roleIndex);
+            participantService.updateParticipant(participant.get(), roleIndex);
         }
+
+        eventService.saveEvent(embedEvent);
 
         return event.deferEdit()
                 .then(event.editReply(InteractionReplyEditSpec.builder()
@@ -165,7 +171,7 @@ public class EmbedGenerator {
     public void subscribeInteractions(Event event) {
         fieldsMap.forEach((fieldKey, value) -> {
             String customId = event.getEventId() + DELIMITER + fieldKey;
-            Disposable subscription = client.getEventDispatcher().on(ButtonInteractionEvent.class)
+            client.getEventDispatcher().on(ButtonInteractionEvent.class)
                     .filter(interaction -> interaction.getCustomId().equals(customId))
                     .flatMap(interaction -> handleEvent(interaction, event))
                     .subscribe();
