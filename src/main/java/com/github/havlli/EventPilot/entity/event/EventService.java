@@ -24,4 +24,8 @@ public class EventService {
     public void deleteEvent(Event event) {
         eventDAO.deleteEvent(event);
     }
+
+    public List<Event> getExpiredEvents() {
+        return eventDAO.fetchExpiredEvents();
+    }
 }
