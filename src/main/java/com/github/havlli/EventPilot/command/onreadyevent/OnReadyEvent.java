@@ -1,7 +1,6 @@
 package com.github.havlli.EventPilot.command.onreadyevent;
 
 import com.github.havlli.EventPilot.command.SlashCommand;
-import com.github.havlli.EventPilot.entity.guild.GuildService;
 import discord4j.core.event.domain.Event;
 import discord4j.core.event.domain.lifecycle.ReadyEvent;
 import org.springframework.stereotype.Component;
@@ -11,11 +10,11 @@ import reactor.core.publisher.Mono;
 public class OnReadyEvent implements SlashCommand {
 
     private final StartupTask startupTask;
-    private final GuildService guildService;
+    private final ScheduledTask scheduledTask;
 
-    public OnReadyEvent(StartupTask startupTask, GuildService guildService) {
+    public OnReadyEvent(StartupTask startupTask, ScheduledTask scheduledTask) {
         this.startupTask = startupTask;
-        this.guildService = guildService;
+        this.scheduledTask = scheduledTask;
     }
 
     private Class<? extends Event> eventType = ReadyEvent.class;
@@ -37,17 +36,8 @@ public class OnReadyEvent implements SlashCommand {
 
     @Override
     public Mono<?> handle(Event event) {
-
-        return event.getClient()
-                .getGuilds()
-                .flatMap(guild -> {
-
-                    String guildId = guild.getId().asString();
-                    String guildName = guild.getName();
-                    guildService.createGuildIfNotExists(guildId, guildName);
-
-                    return Mono.just(guild);
-                })
-                .then(startupTask.subscribeEventInteractions());
+        return startupTask.handleNewGuilds()
+                .then(startupTask.subscribeEventInteractions())
+                .then(scheduledTask.getMono());
     }
 }
