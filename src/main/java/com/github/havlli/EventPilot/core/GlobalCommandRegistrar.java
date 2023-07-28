@@ -6,6 +6,7 @@ import discord4j.rest.RestClient;
 import discord4j.rest.service.ApplicationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.DependsOn;
@@ -24,6 +25,9 @@ public class GlobalCommandRegistrar implements ApplicationRunner {
     private static final Logger logger = LoggerFactory.getLogger(GlobalCommandRegistrar.class);
     private final RestClient restClient;
 
+    @Value(value = "${discord.commands.folder}")
+    private String parentFolder;
+
     public GlobalCommandRegistrar(RestClient restClient) {
         this.restClient = restClient;
     }
@@ -37,7 +41,7 @@ public class GlobalCommandRegistrar implements ApplicationRunner {
         final long applicationId = restClient.getApplicationId().block();
 
         List<ApplicationCommandRequest> commands = new ArrayList<>();
-        for (Resource resource : matcher.getResources("commands/*.json")) {
+        for (Resource resource : matcher.getResources(parentFolder + "/*.json")) {
             ApplicationCommandRequest request = d4jMapper.getObjectMapper()
                     .readValue(resource.getInputStream(), ApplicationCommandRequest.class);
             commands.add(request);
