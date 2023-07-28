@@ -6,6 +6,8 @@ import discord4j.common.util.Snowflake;
 import discord4j.core.GatewayDiscordClient;
 import discord4j.core.spec.MessageEditSpec;
 import discord4j.rest.http.client.ClientException;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Mono;
 
@@ -14,6 +16,7 @@ import java.util.List;
 @Service
 public class DiscordService {
 
+    private static final Logger logger = LoggerFactory.getLogger(DiscordService.class);
     private final GatewayDiscordClient client;
 
     public DiscordService(GatewayDiscordClient client) {
@@ -33,8 +36,11 @@ public class DiscordService {
             client.getMessageById(channelId, messageId)
                     .flatMap(message -> message.edit(editedMessage))
                     .onErrorResume(ClientException.class, e -> {
-                        // TODO: implement logging for catching 404
-                        System.out.println(e.getMessage());
+
+                        String errorMessage = "Message {%s} was not found in channel {%s}"
+                                .formatted(messageId.asString(), channelId.asString());
+                        logger.error(errorMessage, e);
+
                         return Mono.empty();
                     })
                     .subscribe();

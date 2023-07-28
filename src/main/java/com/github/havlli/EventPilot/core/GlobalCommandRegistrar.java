@@ -4,6 +4,8 @@ import discord4j.common.JacksonResources;
 import discord4j.discordjson.json.ApplicationCommandRequest;
 import discord4j.rest.RestClient;
 import discord4j.rest.service.ApplicationService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.DependsOn;
@@ -19,6 +21,7 @@ import java.util.List;
 @DependsOn("restClient")
 public class GlobalCommandRegistrar implements ApplicationRunner {
 
+    private static final Logger logger = LoggerFactory.getLogger(GlobalCommandRegistrar.class);
     private final RestClient restClient;
 
     public GlobalCommandRegistrar(RestClient restClient) {
@@ -41,8 +44,8 @@ public class GlobalCommandRegistrar implements ApplicationRunner {
         }
 
         applicationService.bulkOverwriteGlobalApplicationCommand(applicationId, commands)
-                .doOnNext(ignore -> System.out.println("Successfully registered Global Commands"))
-                .doOnError(e -> System.out.println("Failed to register global commands"))
+                .doOnNext(ignore -> logger.info("Successfully registered Global Commands"))
+                .doOnError(e -> logger.error("Failed to register global commands", e))
                 .subscribe();
     }
 }
