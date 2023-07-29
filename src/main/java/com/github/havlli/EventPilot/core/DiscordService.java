@@ -1,5 +1,6 @@
 package com.github.havlli.EventPilot.core;
 
+import com.github.havlli.EventPilot.component.SelectMenuComponent;
 import com.github.havlli.EventPilot.component.selectmenu.ExpiredSelectMenu;
 import com.github.havlli.EventPilot.entity.event.Event;
 import discord4j.common.util.Snowflake;
@@ -19,6 +20,7 @@ import java.util.Optional;
 public class DiscordService {
 
     private static final Logger logger = LoggerFactory.getLogger(DiscordService.class);
+    private static final SelectMenuComponent EXPIRED_COMPONENT = new ExpiredSelectMenu();
     private final GatewayDiscordClient client;
 
     public DiscordService(GatewayDiscordClient client) {
@@ -28,7 +30,7 @@ public class DiscordService {
     public void deactivateEvents(List<Event> events) {
 
         MessageEditSpec editedMessage = MessageEditSpec.builder()
-                .addComponent(new ExpiredSelectMenu().getActionRow())
+                .addComponent(EXPIRED_COMPONENT.getActionRow())
                 .build();
 
         events.forEach(event -> {
@@ -55,6 +57,7 @@ public class DiscordService {
     }
 
     private boolean isAlreadyDeactivated(Message message) {
+
         Optional<String> customId = message.getComponents().stream()
                 .findFirst()
                 .flatMap(layoutComponent -> layoutComponent.getChildren().stream()
@@ -66,6 +69,6 @@ public class DiscordService {
 
         if (customId.isEmpty()) return false;
 
-        return customId.get().equals("expired");
+        return customId.get().equals(EXPIRED_COMPONENT.getCustomId());
     }
 }
