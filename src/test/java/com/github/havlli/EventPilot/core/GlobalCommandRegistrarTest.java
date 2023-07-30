@@ -11,6 +11,7 @@ import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.boot.ApplicationArguments;
+import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
@@ -18,6 +19,7 @@ import java.io.IOException;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
 class GlobalCommandRegistrarTest {
@@ -36,7 +38,11 @@ class GlobalCommandRegistrarTest {
     @BeforeEach
     void setUp() {
         autoCloseable = MockitoAnnotations.openMocks(this);
-        underTest = new GlobalCommandRegistrar(mockClient);
+        underTest = new GlobalCommandRegistrar(
+                mockClient,
+                new PathMatchingResourcePatternResolver(),
+                "commands"
+        );
     }
 
     @AfterEach
@@ -62,5 +68,24 @@ class GlobalCommandRegistrarTest {
 
         List<ApplicationCommandRequest> capturedCommands = commandsCaptor.getValue();
         assertThat(capturedCommands.size()).isEqualTo(5);
+    }
+
+    @Test
+    void run_ShouldThrow_WhenFileNotFound() {
+        // Arrange
+        when(mockClient.getApplicationService()).thenReturn(applicationServiceMock);
+        when(mockClient.getApplicationId()).thenReturn(Mono.just(123L));
+
+        underTest = new GlobalCommandRegistrar(
+                mockClient,
+                new PathMatchingResourcePatternResolver(),
+                "impossible-folder"
+        );
+
+        // Assert
+        assertThatThrownBy(() -> underTest.run(applicationArguments))
+                .isInstanceOfAny(IOException.class);
+
+        verifyNoInteractions(applicationServiceMock);
     }
 }

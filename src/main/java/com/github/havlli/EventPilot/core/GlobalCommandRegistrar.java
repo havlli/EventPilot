@@ -24,28 +24,41 @@ public class GlobalCommandRegistrar implements ApplicationRunner {
 
     private static final Logger logger = LoggerFactory.getLogger(GlobalCommandRegistrar.class);
     private final RestClient restClient;
+    private final PathMatchingResourcePatternResolver pathMatcher;
+    private final String parentFolder;
 
-    @Value(value = "${discord.commands.folder}")
-    private String parentFolder;
-
-    public GlobalCommandRegistrar(RestClient restClient) {
+    public GlobalCommandRegistrar(
+            RestClient restClient,
+            PathMatchingResourcePatternResolver pathMatcher,
+            @Value(value = "${discord.commands.folder}") String parentFolder
+    ) {
         this.restClient = restClient;
+        this.pathMatcher = pathMatcher;
+        this.parentFolder = parentFolder;
     }
 
     @Override
-    public void run(ApplicationArguments args) throws IOException {
+    public void run(ApplicationArguments args) throws IOException{
         final JacksonResources d4jMapper = JacksonResources.create();
 
-        PathMatchingResourcePatternResolver matcher = new PathMatchingResourcePatternResolver();
         final ApplicationService applicationService = restClient.getApplicationService();
         final long applicationId = restClient.getApplicationId().block();
 
         List<ApplicationCommandRequest> commands = new ArrayList<>();
-        for (Resource resource : matcher.getResources(parentFolder + "/*.json")) {
-            ApplicationCommandRequest request = d4jMapper.getObjectMapper()
-                    .readValue(resource.getInputStream(), ApplicationCommandRequest.class);
-            commands.add(request);
+
+        String locationPattern = parentFolder + "/*.json";
+
+        try {
+            for (Resource resource : pathMatcher.getResources(locationPattern)) {
+                ApplicationCommandRequest request = d4jMapper.getObjectMapper()
+                        .readValue(resource.getInputStream(), ApplicationCommandRequest.class);
+                commands.add(request);
+            }
+        } catch (IOException e) {
+            logger.error("Error while trying to match locationPattern[%s]".formatted(locationPattern), e);
+            throw e;
         }
+
 
         applicationService.bulkOverwriteGlobalApplicationCommand(applicationId, commands)
                 .doOnNext(ignore -> logger.info("Successfully registered Global Commands"))
