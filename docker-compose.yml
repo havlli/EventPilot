@@ -2,7 +2,7 @@ name: event-pilot
 services:
   database:
     container_name: event-pilot-postgres
-    image: postgres:15
+    image: postgres:15-alpine
     environment:
       POSTGRES_USER: havlli
       POSTGRES_PASSWORD: password
