@@ -1,7 +1,10 @@
 package com.github.havlli.EventPilot.core;
 
+import com.github.havlli.EventPilot.command.EventTypeComparator;
 import com.github.havlli.EventPilot.command.SlashCommand;
-import com.github.havlli.EventPilot.command.createevent.CreateEventCommand;
+import com.github.havlli.EventPilot.command.onreadyevent.OnReadyEvent;
+import com.github.havlli.EventPilot.command.onreadyevent.ScheduledTask;
+import com.github.havlli.EventPilot.command.onreadyevent.StartupTask;
 import com.github.havlli.EventPilot.command.test.TestCommand;
 import discord4j.core.GatewayDiscordClient;
 import discord4j.core.event.domain.interaction.ChatInputInteractionEvent;
@@ -34,7 +37,7 @@ class GlobalCommandListenerTest {
     void setUp() {
         autoCloseable = MockitoAnnotations.openMocks(this);
         slashCommands = new ArrayList<>();
-        underTest = new GlobalCommandListener(slashCommands, client);
+        underTest = new GlobalCommandListener(slashCommands, client, new EventTypeComparator());
     }
 
     @AfterEach
@@ -45,7 +48,7 @@ class GlobalCommandListenerTest {
     @Test
     void constructListeners_WithMultipleCommands() {
         // Arrange
-        slashCommands.add(new CreateEventCommand());
+        slashCommands.add(new TestCommand());
         slashCommands.add(new TestCommand());
 
         // Act
@@ -53,7 +56,27 @@ class GlobalCommandListenerTest {
 
         // Assert
         assertThat(result).isNotNull();
-        verify(client, times(2)).on(eq(ChatInputInteractionEvent.class), any());
+        verify(client, times(2)).on(any(), any());
+    }
+
+    @Test
+    void constructListeners_WithOnReadyEventAsFirstToSubscribe() {
+        // Arrange
+        SlashCommand commandOne = new TestCommand();
+        SlashCommand commandOnReadyEvent = new OnReadyEvent(mock(StartupTask.class), mock(ScheduledTask.class));
+        SlashCommand commandTwo = new TestCommand();
+
+        slashCommands.add(commandOne);
+        slashCommands.add(commandOnReadyEvent);
+        slashCommands.add(commandTwo);
+
+        // Act
+        Flux<?> result = underTest.constructListeners();
+
+        // Assert
+        assertThat(result).isNotEqualTo(Flux.empty());
+        assertThat(slashCommands.get(0)).isEqualTo(commandOnReadyEvent);
+        verify(client, times(3)).on(any(), any());
     }
 
     @Test

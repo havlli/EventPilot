@@ -1,9 +1,11 @@
 package com.github.havlli.EventPilot.command;
 
 import discord4j.core.event.domain.lifecycle.ReadyEvent;
+import org.springframework.stereotype.Component;
 
 import java.util.Comparator;
 
+@Component
 public class EventTypeComparator implements Comparator<SlashCommand> {
     @Override
     public int compare(SlashCommand command1, SlashCommand command2) {
