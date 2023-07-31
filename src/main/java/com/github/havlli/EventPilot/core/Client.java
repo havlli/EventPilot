@@ -11,9 +11,11 @@ import org.springframework.stereotype.Component;
 
 @Component
 public class Client {
+    private final String token;
 
-    @Value("${discord.token}")
-    private String token;
+    public Client(@Value("${discord.token}") String token) {
+        this.token = token;
+    }
 
     @Bean
     public GatewayDiscordClient discordClient() {
