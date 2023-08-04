@@ -11,7 +11,7 @@ CREATE TABLE event
     name         VARCHAR(50) NOT NULL,
     description  TEXT        NOT NULL,
     author       VARCHAR(30) NOT NULL,
-    date_time    TIMESTAMP   NOT NULL,
+    date_time    TIMESTAMP WITH TIME ZONE   NOT NULL,
     dest_channel VARCHAR(30) NOT NULL,
     member_size  VARCHAR(5)  NOT NULL,
     guild_id     VARCHAR(30) NOT NULL,
