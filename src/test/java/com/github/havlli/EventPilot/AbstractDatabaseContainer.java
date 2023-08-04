@@ -1,7 +1,6 @@
 package com.github.havlli.EventPilot;
 
 import org.junit.jupiter.api.BeforeAll;
-import org.junit.jupiter.api.BeforeEach;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -26,11 +25,6 @@ public abstract class AbstractDatabaseContainer {
     @BeforeAll
     static void beforeAll() throws SQLException, IOException {
         setupSchema();
-    }
-
-    @BeforeEach
-    void beforeEach() throws SQLException, IOException {
-        clearAllData();
     }
 
     @Container
