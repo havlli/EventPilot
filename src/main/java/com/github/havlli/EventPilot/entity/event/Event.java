@@ -5,10 +5,7 @@ import com.github.havlli.EventPilot.entity.participant.Participant;
 import com.github.havlli.EventPilot.generator.EmbedPreviewable;
 import jakarta.persistence.*;
 
-import java.time.LocalDate;
-import java.time.LocalDateTime;
-import java.time.LocalTime;
-import java.time.format.DateTimeFormatter;
+import java.time.Instant;
 import java.util.*;
 
 @Entity
@@ -26,7 +23,7 @@ public class Event {
     @Column(name = "author", nullable = false)
     private String author;
     @Column(name = "date_time", nullable = false)
-    private LocalDateTime dateTime;
+    private Instant dateTime;
     @Column(name = "dest_channel", nullable = false)
     private String destinationChannelId;
     @Transient
@@ -45,7 +42,7 @@ public class Event {
             String name,
             String description,
             String author,
-            LocalDateTime dateTime,
+            Instant dateTime,
             String destinationChannelId,
             String instances,
             String memberSize,
@@ -67,7 +64,7 @@ public class Event {
             String name,
             String description,
             String author,
-            LocalDateTime dateTime,
+            Instant dateTime,
             String destinationChannelId,
             String instances,
             String memberSize,
@@ -123,11 +120,11 @@ public class Event {
         this.author = author;
     }
 
-    public LocalDateTime getDateTime() {
+    public Instant getDateTime() {
         return dateTime;
     }
 
-    public void setDateTime(LocalDateTime dateTime) {
+    public void setDateTime(Instant dateTime) {
         this.dateTime = dateTime;
     }
 
@@ -195,7 +192,7 @@ public class Event {
                 ", destinationChannelId='" + destinationChannelId + '\'' +
                 ", instances='" + instances + '\'' +
                 ", memberSize='" + memberSize + '\'' +
-                ", participants=" + participants +
+                ", participantsSize=" + participants.size() +
                 '}';
     }
 
@@ -209,7 +206,7 @@ public class Event {
         private String name;
         private String description;
         private String author;
-        private LocalDateTime dateTime;
+        private Instant dateTime;
         private String destinationChannelId;
         private String instances;
         private String memberSize;
@@ -237,15 +234,8 @@ public class Event {
             return this;
         }
 
-        public Builder withDateTime(String date, String time) {
-            LocalDate localDate = LocalDate.parse(date, DateTimeFormatter.ofPattern("yyyy-MM-dd"));
-            LocalTime localTime = LocalTime.parse(time, DateTimeFormatter.ofPattern("HH:mm"));
-            this.dateTime = LocalDateTime.of(localDate, localTime);
-            return this;
-        }
-
-        public Builder withDateTime(LocalDateTime localDateTime) {
-            this.dateTime = localDateTime;
+        public Builder withDateTime(Instant instant) {
+            this.dateTime = instant;
             return this;
         }
 
