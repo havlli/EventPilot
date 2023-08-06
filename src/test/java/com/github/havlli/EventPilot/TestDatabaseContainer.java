@@ -1,6 +1,8 @@
 package com.github.havlli.EventPilot;
 
 import org.junit.jupiter.api.BeforeAll;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
@@ -18,6 +20,7 @@ import java.sql.Statement;
 @Testcontainers
 public abstract class TestDatabaseContainer {
 
+    private static final Logger LOG = LoggerFactory.getLogger(TestDatabaseContainer.class);
     public static final String SCHEMA_SQL = "src/test/resources/schema.sql";
     public static final String CLEANUP_SQL = "src/test/resources/cleanup.sql";
     public static final String DATA_SQL = "src/test/resources/data.sql";
@@ -25,6 +28,7 @@ public abstract class TestDatabaseContainer {
     @BeforeAll
     static void beforeAll() throws SQLException, IOException {
         setupSchema();
+        logContainerInfo();
     }
 
     @Container
@@ -82,5 +86,12 @@ public abstract class TestDatabaseContainer {
                 postgresSQLContainer.getContainerId(),
                 postgresSQLContainer.getUsername(),
                 postgresSQLContainer.getDatabaseName());
+    }
+
+    protected static void logContainerInfo() {
+        LOG.info("postgresSQLContainer.isCreated() - {}",postgresSQLContainer.isCreated());
+        LOG.info("postgresSQLContainer.isRunning() - {}",postgresSQLContainer.isRunning());
+        LOG.info("postgresSQLContainer.getJdbcUrl() - {}",postgresSQLContainer.getJdbcUrl());
+        LOG.info("postgresSQLContainer.isHostAccessible() - {}",postgresSQLContainer.isHostAccessible());
     }
 }

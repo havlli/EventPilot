@@ -14,6 +14,7 @@ import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabas
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.boot.test.autoconfigure.orm.jpa.TestEntityManager;
 import org.springframework.context.ApplicationContext;
+import org.springframework.test.annotation.DirtiesContext;
 
 import java.sql.SQLException;
 import java.time.Instant;
@@ -27,6 +28,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
+@DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
 class EventRepositoryTest extends TestDatabaseContainer {
 
     private static final Logger LOG = LoggerFactory.getLogger(EventRepositoryTest.class);
@@ -128,13 +130,14 @@ class EventRepositoryTest extends TestDatabaseContainer {
         String collectActual = actual.stream()
                 .map(e -> String.format("\t{ %s - %s }", e.getName(), e.getDateTime()))
                 .collect(Collectors.joining(", \n"));
-        System.out.printf("""
+        String actualPrint = String.format("""
                         instantNow = { %s }
                         actualList = [%n %s %n]
                         """,
                 instantNow,
-                collectActual
-        );
+                collectActual);
+        System.out.println(actualPrint);
+
         assertThat(actual).containsOnly(fetchedExpiredEvent1, fetchedExpiredEvent2);
         assertThat(actual).doesNotContain(fetchedValidEvent);
     }
