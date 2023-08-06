@@ -15,8 +15,7 @@ import discord4j.core.spec.InteractionReplyEditSpec;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
+import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -78,8 +77,8 @@ public class EmbedGenerator {
                 .build();
     }
 
-    private Long getTimestamp(LocalDateTime dateTime) {
-        return dateTime.toInstant(ZoneOffset.UTC).getEpochSecond();
+    private Long getTimestamp(Instant dateTime) {
+        return dateTime.getEpochSecond();
     }
 
     private static final HashMap<Integer, String> fieldsMap = new HashMap<>(Map.of(

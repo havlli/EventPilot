@@ -46,7 +46,8 @@ public class Event {
             String destinationChannelId,
             String instances,
             String memberSize,
-            List<Participant> participants
+            List<Participant> participants,
+            Guild guild
     ) {
         this.eventId = eventId;
         this.name = name;
@@ -57,21 +58,6 @@ public class Event {
         this.instances = instances;
         this.memberSize = memberSize;
         this.participants = participants;
-    }
-
-    public Event(
-            String eventId,
-            String name,
-            String description,
-            String author,
-            Instant dateTime,
-            String destinationChannelId,
-            String instances,
-            String memberSize,
-            List<Participant> participants,
-            Guild guild
-    ) {
-        this(eventId, name, description, author, dateTime, destinationChannelId, instances, memberSize, participants);
         this.guild = guild;
     }
 
@@ -193,6 +179,7 @@ public class Event {
                 ", instances='" + instances + '\'' +
                 ", memberSize='" + memberSize + '\'' +
                 ", participantsSize=" + participants.size() +
+                ", guild_id=" + guild.getId() +
                 '}';
     }
 
