@@ -16,7 +16,7 @@ import java.sql.SQLException;
 import java.sql.Statement;
 
 @Testcontainers
-public abstract class AbstractDatabaseContainer {
+public abstract class TestDatabaseContainer {
 
     public static final String SCHEMA_SQL = "src/test/resources/schema.sql";
     public static final String CLEANUP_SQL = "src/test/resources/cleanup.sql";

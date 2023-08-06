@@ -1,6 +1,6 @@
 package com.github.havlli.EventPilot.entity.event;
 
-import com.github.havlli.EventPilot.AbstractDatabaseContainer;
+import com.github.havlli.EventPilot.TestDatabaseContainer;
 import com.github.havlli.EventPilot.TimeTester;
 import com.github.havlli.EventPilot.entity.guild.Guild;
 import com.github.havlli.EventPilot.entity.guild.GuildRepository;
@@ -27,7 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-class EventRepositoryTest extends AbstractDatabaseContainer {
+class EventRepositoryTest extends TestDatabaseContainer {
 
     private static final Logger LOG = LoggerFactory.getLogger(EventRepositoryTest.class);
     @Autowired
@@ -44,7 +44,6 @@ class EventRepositoryTest extends AbstractDatabaseContainer {
 
     @BeforeEach
     public void setUp() {
-        System.out.println(LOG.getName());
         LOG.info("Number of beans initialized { {} }", applicationContext.getBeanDefinitionCount());
         timeTester = new TimeTester(entityManager.getEntityManager(), postgresSQLContainer);
     }

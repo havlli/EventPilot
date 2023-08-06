@@ -7,7 +7,7 @@ import java.sql.SQLException;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-public class TestDBConnection extends AbstractDatabaseContainer{
+public class TestDBConnection extends TestDatabaseContainer {
 
     @Test
     void canStartPostgresDB() {

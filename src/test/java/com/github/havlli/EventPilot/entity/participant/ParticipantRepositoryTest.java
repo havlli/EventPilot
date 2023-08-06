@@ -1,11 +1,10 @@
 package com.github.havlli.EventPilot.entity.participant;
 
-import com.github.havlli.EventPilot.AbstractDatabaseContainer;
+import com.github.havlli.EventPilot.TestDatabaseContainer;
 import com.github.havlli.EventPilot.entity.event.Event;
 import com.github.havlli.EventPilot.entity.event.EventRepository;
 import com.github.havlli.EventPilot.entity.guild.Guild;
 import com.github.havlli.EventPilot.entity.guild.GuildRepository;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -13,7 +12,7 @@ import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabas
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.ApplicationContext;
 
-import java.time.LocalDateTime;
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -22,7 +21,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
-class ParticipantRepositoryTest extends AbstractDatabaseContainer {
+class ParticipantRepositoryTest extends TestDatabaseContainer {
 
     @Autowired
     private ParticipantRepository underTest;
@@ -37,10 +36,6 @@ class ParticipantRepositoryTest extends AbstractDatabaseContainer {
     @BeforeEach
     void setUp() {
         System.out.printf("Number of beans initialized { %s }%n", applicationContext.getBeanDefinitionCount());
-    }
-
-    @AfterEach
-    void tearDown() {
     }
 
     @Test
@@ -124,7 +119,6 @@ class ParticipantRepositoryTest extends AbstractDatabaseContainer {
         return actual.get();
     }
 
-    // Helper methods
     Event addEvent(Event event, Guild guild) {
         if (!guildRepository.existsById(guild.getId())) {
             addGuild(guild);
@@ -186,7 +180,7 @@ class ParticipantRepositoryTest extends AbstractDatabaseContainer {
             "event",
             "description",
             "123456789",
-            LocalDateTime.of(2023,8,4,19,0),
+            Instant.now(),
             "123456789",
             null,
             "15",
