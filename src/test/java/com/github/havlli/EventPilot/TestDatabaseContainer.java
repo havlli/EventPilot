@@ -1,5 +1,6 @@
 package com.github.havlli.EventPilot;
 
+import com.github.havlli.EventPilot.entity.guild.Guild;
 import org.junit.jupiter.api.BeforeAll;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,10 +13,10 @@ import org.testcontainers.junit.jupiter.Testcontainers;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import java.sql.Connection;
-import java.sql.DriverManager;
-import java.sql.SQLException;
-import java.sql.Statement;
+import java.sql.*;
+import java.util.function.Function;
+
+import static org.assertj.core.api.Assertions.assertThat;
 
 @Testcontainers
 public abstract class TestDatabaseContainer {
@@ -57,7 +58,7 @@ public abstract class TestDatabaseContainer {
         }
     }
 
-    protected void execute(String sqlQuery) throws SQLException {
+    protected ResultSet execute(String sqlQuery) throws SQLException {
         try (Connection connection = DriverManager.getConnection(
                 postgresSQLContainer.getJdbcUrl(),
                 postgresSQLContainer.getUsername(),
@@ -65,8 +66,33 @@ public abstract class TestDatabaseContainer {
              Statement statement = connection.createStatement()
         ) {
             statement.execute(sqlQuery);
+            return statement.getResultSet();
         }
     }
+
+    protected <T> T executeMapObject(String sqlQuery, Function<ResultSet, T> mapper) throws SQLException {
+        try (Connection connection = DriverManager.getConnection(
+                postgresSQLContainer.getJdbcUrl(),
+                postgresSQLContainer.getUsername(),
+                postgresSQLContainer.getPassword());
+             Statement statement = connection.createStatement()
+        ) {
+            statement.execute(sqlQuery);
+            return mapper.apply(statement.getResultSet());
+        }
+    }
+
+    public Function<ResultSet, Guild> mapResultToGuild = result -> {
+        try {
+            result.next();
+            return new Guild(
+                    result.getString("id"),
+                    result.getString("name")
+            );
+        } catch (SQLException e) {
+            throw new RuntimeException(e);
+        }
+    };
 
     private static void setupSchema() throws SQLException, IOException {
         executeSQLFile(SCHEMA_SQL);
@@ -93,5 +119,27 @@ public abstract class TestDatabaseContainer {
         LOG.info("postgresSQLContainer.isRunning() - {}",postgresSQLContainer.isRunning());
         LOG.info("postgresSQLContainer.getJdbcUrl() - {}",postgresSQLContainer.getJdbcUrl());
         LOG.info("postgresSQLContainer.isHostAccessible() - {}",postgresSQLContainer.isHostAccessible());
+    }
+
+    public Guild addGuildWithNativeQuery(Guild guild) throws SQLException {
+        String insertGuildQuery = String.format("""
+                        INSERT INTO guild (id, name) VALUES ('%s', '%s');
+                        """,
+                guild.getId(),
+                guild.getName()
+        );
+
+        execute(insertGuildQuery);
+
+        String selectGuildQuery = String.format("""
+                        SELECT * FROM guild WHERE id = '%s';
+                        """,
+                guild.getId()
+        );
+        Guild actual = executeMapObject(selectGuildQuery, mapResultToGuild);
+
+        assertThat(actual).isEqualTo(guild);
+
+        return guild;
     }
 }

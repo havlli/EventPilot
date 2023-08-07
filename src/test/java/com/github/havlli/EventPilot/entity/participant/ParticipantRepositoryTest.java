@@ -7,12 +7,16 @@ import com.github.havlli.EventPilot.entity.guild.Guild;
 import com.github.havlli.EventPilot.entity.guild.GuildRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.ApplicationContext;
 import org.springframework.test.annotation.DirtiesContext;
 
+import java.io.IOException;
+import java.sql.SQLException;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -25,6 +29,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
 class ParticipantRepositoryTest extends TestDatabaseContainer {
 
+    private static final Logger LOG = LoggerFactory.getLogger(ParticipantRepositoryTest.class);
     @Autowired
     private ParticipantRepository underTest;
     @Autowired
@@ -36,12 +41,86 @@ class ParticipantRepositoryTest extends TestDatabaseContainer {
     private ApplicationContext applicationContext;
 
     @BeforeEach
-    void setUp() {
-        System.out.printf("Number of beans initialized { %s }%n", applicationContext.getBeanDefinitionCount());
+    public void beforeEach() throws SQLException, IOException {
+        LOG.info("Clearing database....");
+        clearAllData();
+        LOG.info("Number of beans initialized {}", applicationContext.getBeanDefinitionCount());
     }
 
     @Test
-    void findAllByEvent_WillReturnList_WhenParticipantsAssignedToEvent() {
+    public void saveParticipant_SavesParticipantToDatabase_WhenParticipantNotExists() throws SQLException {
+        // Arrange
+        Guild validGuild = new Guild("1","guild1");
+        addGuildWithNativeQuery(validGuild);
+
+        Event validEvent = new Event(
+                "123",
+                "event1",
+                "description",
+                "12345",
+                Instant.now(),
+                "123456",
+                null,
+                "15",
+                new ArrayList<>(),
+                validGuild
+        );
+        eventRepository.save(validEvent);
+
+        Participant participant = new Participant("1","user1",1,1, validEvent);
+        Optional<Participant> expected = Optional.of(participant);
+
+        // Act
+        underTest.save(participant);
+
+        // Assert
+        Optional<Participant> actual = underTest.findParticipantByUserId(participant.getUserId());
+        assertThat(actual).isPresent()
+                .usingRecursiveComparison()
+                .isEqualTo(expected);
+    }
+
+    @Test
+    public void saveParticipant_UpdatesParticipant_WhenParticipantAlreadyExists() throws SQLException {
+        // Arrange
+        Guild validGuild = new Guild("1","guild1");
+        addGuildWithNativeQuery(validGuild);
+
+        Event validEvent = new Event(
+                "123",
+                "event1",
+                "description",
+                "12345",
+                Instant.now(),
+                "123456",
+                null,
+                "15",
+                new ArrayList<>(),
+                validGuild
+        );
+        eventRepository.save(validEvent);
+
+        Participant participant = new Participant("1","user1",1,1, validEvent);
+        underTest.save(participant);
+        Participant participantInDatabase = underTest.findParticipantByUserId(participant.getUserId()).get();
+
+        Participant updatedParticipant = new Participant(participantInDatabase.getId(),"2","updated-user1",1,1, validEvent);
+        Optional<Participant> expected = Optional.of(updatedParticipant);
+
+        // Act
+        underTest.save(updatedParticipant);
+
+        // Assert
+        List<Participant> actualList = underTest.findAll();
+        assertThat(actualList).hasSize(1);
+        Optional<Participant> actual = underTest.findParticipantByUserId(participant.getUserId());
+        assertThat(actual).isPresent()
+                .usingRecursiveComparison()
+                .isEqualTo(expected);
+    }
+
+    @Test
+    public void findAllByEvent_WillReturnList_WhenParticipantsAssignedToEvent() {
         // Arrange
         Guild guild = addDummyGuild();
         Event event = addDummyEvent();
@@ -60,7 +139,7 @@ class ParticipantRepositoryTest extends TestDatabaseContainer {
     }
 
     @Test
-    void findAllByEvent_WillReturnEmptyList_WhenNoParticipantsAssignedToEvent() {
+    public void findAllByEvent_WillReturnEmptyList_WhenNoParticipantsAssignedToEvent() {
         // Arrange
         Event event = addDummyEvent();
 
@@ -75,7 +154,7 @@ class ParticipantRepositoryTest extends TestDatabaseContainer {
     }
 
     @Test
-    void findParticipantByUserId_WillReturnParticipant_WhenExists() {
+    public void findParticipantByUserId_WillReturnParticipant_WhenExists() {
         // Arrange
         Participant participant = addDummyParticipant();
         String userId = participant.getUserId();
@@ -85,16 +164,13 @@ class ParticipantRepositoryTest extends TestDatabaseContainer {
 
         // Assert
         assertThat(actual).isPresent()
-                .hasValueSatisfying(p -> {
-            assertThat(p.getUserId()).isEqualTo(participant.getUserId());
-            assertThat(p.getUsername()).isEqualTo(participant.getUsername());
-            assertThat(p.getPosition()).isEqualTo(participant.getPosition());
-            assertThat(p.getRoleIndex()).isEqualTo(participant.getRoleIndex());
-        });
+                .hasValueSatisfying(p -> assertThat(p)
+                        .usingRecursiveComparison()
+                        .isEqualTo(participant));
     }
 
     @Test
-    void findParticipantByUserId_WillReturnEmptyOptional_WhenParticipantNotExists() {
+    public void findParticipantByUserId_WillReturnEmptyOptional_WhenParticipantNotExists() {
         // Arrange
         String userId = "123456";
 
@@ -105,23 +181,19 @@ class ParticipantRepositoryTest extends TestDatabaseContainer {
         assertThat(actual).isEmpty();
     }
 
-    Guild addGuild(Guild guild) {
+    public Guild addGuild(Guild guild) {
         guildRepository.save(guild);
         Optional<Guild> actual = guildRepository.findById(guild.getId());
 
         assertThat(actual)
                 .withFailMessage("Unable to fetch Guild object from guildRepository")
                 .isPresent()
-                .hasValueSatisfying(g -> {
-                    assertThat(g.getId()).isEqualTo(guild.getId());
-                    assertThat(g.getName()).isEqualTo(guild.getName());
-                    assertThat(g.getEvents()).isEqualTo(guild.getEvents());
-                });
+                .hasValueSatisfying(g -> assertThat(g).isEqualTo(guild));
 
         return actual.get();
     }
 
-    Event addEvent(Event event, Guild guild) {
+    public Event addEvent(Event event, Guild guild) {
         if (!guildRepository.existsById(guild.getId())) {
             addGuild(guild);
         }
@@ -145,7 +217,7 @@ class ParticipantRepositoryTest extends TestDatabaseContainer {
         return actual.get();
     }
 
-    Participant addParticipant(Participant participant, Event event, Guild guild) {
+    public Participant addParticipant(Participant participant, Event event, Guild guild) {
         if (!eventRepository.existsById(event.getEventId())) {
             addEvent(event, guild);
         }
@@ -164,15 +236,15 @@ class ParticipantRepositoryTest extends TestDatabaseContainer {
         return actual.get();
     }
 
-    Guild addDummyGuild() {
+    public Guild addDummyGuild() {
         return addGuild(dummyGuild);
     }
 
-    Event addDummyEvent() {
+    public Event addDummyEvent() {
         return addEvent(dummyEvent, dummyGuild);
     }
 
-    Participant addDummyParticipant() {
+    public Participant addDummyParticipant() {
         return addParticipant(dummyParticipant, dummyEvent, dummyGuild);
     }
 
