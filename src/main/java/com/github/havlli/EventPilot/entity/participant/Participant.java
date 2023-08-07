@@ -47,20 +47,11 @@ public class Participant {
                 Integer roleIndex,
                 Event event
         ) {
-                this(userId, username, position, roleIndex);
-                this.event = event;
-        }
-
-        public Participant(
-                String userId,
-                String username,
-                Integer position,
-                Integer roleIndex
-        ) {
                 this.userId = userId;
                 this.username = username;
                 this.position = position;
                 this.roleIndex = roleIndex;
+                this.event = event;
         }
 
         public Long getId() {
