@@ -32,12 +32,12 @@ class GuildRepositoryTest extends TestDatabaseContainer {
 
 
     @BeforeEach
-    void beforeEach() {
+    public void beforeEach() {
         LOG.info("Number of beans initialized { {} }", applicationContext.getBeanDefinitionCount());
     }
 
     @Test
-    void saveGuild_SavesGuild_WhenGuildNotExists() {
+    public void saveGuild_SavesGuild_WhenGuildNotExists() {
         // Arrange
         Guild expected = new Guild("123","guild");
 
@@ -52,7 +52,7 @@ class GuildRepositoryTest extends TestDatabaseContainer {
     }
 
     @Test
-    void saveGuild_UpdatesGuild_WhenGuildAlreadyExists() {
+    public void saveGuild_UpdatesGuild_WhenGuildAlreadyExists() {
         // Arrange
         Guild expected = new Guild("123","guild1");
         underTest.save(expected);
@@ -70,7 +70,7 @@ class GuildRepositoryTest extends TestDatabaseContainer {
     }
 
     @Test
-    void getAllGuilds_ReturnsListOfGuilds_WhenGuildsExists() {
+    public void getAllGuilds_ReturnsListOfGuilds_WhenGuildsExists() {
         // Arrange
         Guild expectedGuild1 = new Guild("123","guild1");
         Guild expectedGuild2 = new Guild("234","guild2");
@@ -87,7 +87,7 @@ class GuildRepositoryTest extends TestDatabaseContainer {
     }
 
     @Test
-    void getAllGuilds_ReturnsEmptyList_WhenNoGuildExists() {
+    public void getAllGuilds_ReturnsEmptyList_WhenNoGuildExists() {
         // Act
         List<Guild> actualGuilds = underTest.findAll();
 
@@ -97,7 +97,7 @@ class GuildRepositoryTest extends TestDatabaseContainer {
     }
 
     @Test
-    void selectGuildById_ReturnsGuildOptional_WhenGuildExists() {
+    public void selectGuildById_ReturnsGuildOptional_WhenGuildExists() {
         // Arrange
         Guild expectedGuild = new Guild("123","guild1");
         underTest.save(expectedGuild);
@@ -112,7 +112,7 @@ class GuildRepositoryTest extends TestDatabaseContainer {
     }
 
     @Test
-    void selectGuildById_ReturnsEmptyOptional_WhenNoGuildExists() {
+    public void selectGuildById_ReturnsEmptyOptional_WhenNoGuildExists() {
         // Arrange
         Guild notExistingGuild = new Guild("123","guild1");
 
@@ -126,7 +126,7 @@ class GuildRepositoryTest extends TestDatabaseContainer {
     }
 
     @Test
-    void existsGuildById_ReturnsTrue_WhenGuildExists() {
+    public void existsGuildById_ReturnsTrue_WhenGuildExists() {
         // Arrange
         Guild existingGuild = new Guild("123","guild1");
         underTest.save(existingGuild);
@@ -139,7 +139,7 @@ class GuildRepositoryTest extends TestDatabaseContainer {
     }
 
     @Test
-    void existsGuildById_ReturnsFalse_WhenGuildExists() {
+    public void existsGuildById_ReturnsFalse_WhenGuildExists() {
         // Arrange
         Guild existingGuild = new Guild("123","guild1");
 

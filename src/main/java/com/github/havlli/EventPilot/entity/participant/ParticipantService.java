@@ -25,7 +25,7 @@ public class ParticipantService {
         participants.add(participant);
     }
 
-    public void updateParticipant(Participant participant, Integer roleIndex) {
+    public void updateRoleIndex(Participant participant, Integer roleIndex) {
         participant.setRoleIndex(roleIndex);
     }
 
