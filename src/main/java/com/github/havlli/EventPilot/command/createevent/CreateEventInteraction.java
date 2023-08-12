@@ -21,7 +21,6 @@ import discord4j.core.object.entity.User;
 import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.object.entity.channel.PrivateChannel;
 import discord4j.core.object.entity.channel.TextChannel;
-import discord4j.core.spec.InteractionReplyEditSpec;
 import discord4j.core.spec.MessageCreateSpec;
 import discord4j.core.spec.MessageEditSpec;
 import org.springframework.stereotype.Component;
@@ -83,29 +82,17 @@ public class CreateEventInteraction {
 
         return promptName()
                 .flatMap(ignored -> promptDescription())
-                .flatMap(ignored -> promptDateTime());
+                .flatMap(ignored -> promptDateTime())
+                .flatMap(ignored -> promptRaidSelect())
+                .flatMap(ignored -> promptMemberSize())
+                .flatMap(ignored -> promptDestinationChannel())
+                .flatMap(ignored -> promptConfirmation())
+                .flatMap(confirmation -> {
+                    System.out.println("Last flatmap " + confirmation.getCustomId());
+                    return Mono.empty();
+                })
+                .then(Mono.empty());
     }
-
-//    private Mono<Message> promptName() {
-//        String prompt = "**Step 1**\nEnter name for your event!";
-//
-//
-//        return privateChannelMono
-//                .flatMap(privateChannel -> privateChannel.createMessage(prompt))
-//                .flatMap(promptedMessage -> {
-//                    messageCollector.collect(promptedMessage);
-//
-//                    return client.getEventDispatcher().on(MessageCreateEvent.class)
-//                            .filter(promptFilter.isMessageAuthor(user))
-//                            .next()
-//                            .flatMap(event -> {
-//                                eventBuilder.withName(event.getMessage().getContent());
-//                                System.out.println(event.getMessage().getContent());
-//
-//                                return Mono.just(event.getMessage());
-//                            });
-//                });
-//    }
 
     private Mono<MessageCreateEvent> promptName() {
         String prompt = "**Step 1**\nEnter name for your event!";
@@ -119,66 +106,49 @@ public class CreateEventInteraction {
                     eventBuilder.withName(event.getMessage().getContent());
                     System.out.println(event.getMessage().getContent());
                 })
-                .build().mono();
+                .build()
+                .mono();
     }
 
-    private Mono<Message> promptDescription() {
+    private Mono<MessageCreateEvent> promptDescription() {
         String prompt = "**Step 2**\nEnter description";
-        return privateChannelMono
-                .flatMap(privateChannel -> privateChannel.createMessage(prompt))
-                .flatMap(promptedMessage -> {
-                    messageCollector.collect(promptedMessage);
 
-                    return client.getEventDispatcher().on(MessageCreateEvent.class)
-                            .filter(promptFilter.isMessageAuthor(user))
-                            .next()
-                            .flatMap(event -> {
-                                eventBuilder.withDescription(event.getMessage().getContent());
-                                System.out.println(event.getMessage().getContent());
-
-                                return Mono.just(event.getMessage());
-                            });
-                });
+        return new TextPromptMono.Builder<>(client, MessageCreateEvent.class)
+                .messageChannel(privateChannelMono)
+                .messageCreateSpec(MessageCreateSpec.builder().content(prompt).build())
+                .withMessageCollector(messageCollector)
+                .eventPredicate(promptFilter.isMessageAuthor(user))
+                .eventProcessor(event -> {
+                    eventBuilder.withDescription(event.getMessage().getContent());
+                    System.out.println(event.getMessage().getContent());
+                })
+                .build()
+                .mono();
     }
 
-    private Mono<Message> promptDateTime() {
+    private Mono<MessageCreateEvent> promptDateTime() {
         String prompt = "**Step 3**\nEnter the date and time in UTC timezone (format: dd.MM.yyyy HH:mm)";
-        Mono<MessageCreateEvent> createEventMono = privateChannelMono
-                .flatMap(privateChannel -> privateChannel.createMessage(prompt))
-                .flatMap(promptedMessage -> {
-                    messageCollector.collect(promptedMessage);
 
-                    return client.getEventDispatcher().on(MessageCreateEvent.class)
-                            .filter(promptFilter.isMessageAuthor(user))
-                            .next()
-                            .flatMap(event -> {
-                                String messageContent = event.getMessage().getContent();
-                                DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
-                                LocalDateTime localDateTime = LocalDateTime.parse(messageContent, formatter);
-                                Instant instant = localDateTime.atZone(ZoneOffset.UTC).toInstant();
-                                eventBuilder.withDateTime(instant);
-                                System.out.println(event.getMessage().getContent());
-                                System.out.println(localDateTime);
-
-                                return Mono.just(event);
-                            })
-                            .onErrorResume(DateTimeParseException.class, e -> privateChannelMono
-                                    .flatMap(privateChannel -> privateChannel.createMessage("Invalid format"))
-                                    .flatMap(message -> {
-                                        messageCollector.collect(message);
-
-                                        return promptDateTime()
-                                                .then(Mono.empty());
-                                    }));
-                });
-
-        return createEventMono
-                .doOnNext(messageCreateEvent -> System.out.println("messageCreateEvent " + messageCreateEvent))
-                .flatMap(ignored -> promptRaidSelect())
-                .doOnNext(message -> System.out.println("message " + message));
+        return new TextPromptMono.Builder<>(client, MessageCreateEvent.class)
+                .messageChannel(privateChannelMono)
+                .messageCreateSpec(MessageCreateSpec.builder().content(prompt).build())
+                .withMessageCollector(messageCollector)
+                .eventPredicate(promptFilter.isMessageAuthor(user))
+                .eventProcessor(event -> {
+                    String messageContent = event.getMessage().getContent();
+                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
+                    LocalDateTime localDateTime = LocalDateTime.parse(messageContent, formatter);
+                    Instant instant = localDateTime.atZone(ZoneOffset.UTC).toInstant();
+                    eventBuilder.withDateTime(instant);
+                    System.out.println(event.getMessage().getContent());
+                    System.out.println(localDateTime);
+                })
+                .onErrorRepeat(DateTimeParseException.class, "Invalid Format")
+                .build()
+                .mono();
     }
 
-    private Mono<Message> promptRaidSelect() {
+    private Mono<SelectMenuInteractionEvent> promptRaidSelect() {
 
         RaidSelectMenu raidSelectMenu = new RaidSelectMenu();
         MessageCreateSpec prompt = MessageCreateSpec.builder()
@@ -186,29 +156,21 @@ public class CreateEventInteraction {
                 .addComponent(raidSelectMenu.getActionRow())
                 .build();
 
-        return privateChannelMono
-                .flatMap(privateChannel -> privateChannel.createMessage(prompt))
-                .flatMap(promptedMessage -> {
-                    messageCollector.collect(promptedMessage);
-
-                    return client.getEventDispatcher().on(SelectMenuInteractionEvent.class)
-                            .filter(promptFilter.selectInteractionEvent(raidSelectMenu, user))
-                            .next()
-                            .flatMap(event -> {
-                                eventBuilder.withInstances(event.getValues());
-                                List<String> result = event.getValues();
-                                System.out.println(result);
-
-                                return event.deferEdit()
-                                        .then(event.editReply(InteractionReplyEditSpec.builder()
-                                                .components(List.of(raidSelectMenu.getDisabledRow()))
-                                                .build()))
-                                        .then(promptMemberSize());
-                            });
-                });
+        return new TextPromptMono.Builder<>(client, SelectMenuInteractionEvent.class)
+                .messageCreateSpec(prompt)
+                .messageChannel(privateChannelMono)
+                .withMessageCollector(messageCollector)
+                .eventPredicate(promptFilter.selectInteractionEvent(raidSelectMenu, user))
+                .eventProcessor(event -> {
+                    eventBuilder.withInstances(event.getValues());
+                    List<String> result = event.getValues();
+                    System.out.println(result);
+                })
+                .build()
+                .mono();
     }
 
-    private Mono<Message> promptMemberSize() {
+    private Mono<SelectMenuInteractionEvent> promptMemberSize() {
         MemberSizeSelectMenu memberSizeSelectMenu = new MemberSizeSelectMenu();
         String defaultSize = "25";
         MessageCreateSpec prompt = MessageCreateSpec.builder()
@@ -216,30 +178,20 @@ public class CreateEventInteraction {
                 .addComponent(memberSizeSelectMenu.getActionRow())
                 .build();
 
-        return privateChannelMono
-                .flatMap(privateChannel -> privateChannel.createMessage(prompt))
-                .flatMap(promptedMessage -> {
-                    messageCollector.collect(promptedMessage);
-
-                    return client.getEventDispatcher().on(SelectMenuInteractionEvent.class)
-                            .filter(promptFilter.selectInteractionEvent(memberSizeSelectMenu, user))
-                            .next()
-                            .flatMap(event -> {
-                                String result = event.getValues().stream().findFirst().orElse(defaultSize);
-                                eventBuilder.withMemberSize(result);
-                                System.out.println(result);
-
-                                return event.deferEdit()
-                                        .then(event.editReply(InteractionReplyEditSpec.builder()
-                                                .contentOrNull(result)
-                                                .componentsOrNull(null)
-                                                .build()))
-                                        .then(promptDestinationChannel());
-                            });
-                });
+        return new TextPromptMono.Builder<>(client, SelectMenuInteractionEvent.class)
+                .messageChannel(privateChannelMono)
+                .messageCreateSpec(prompt)
+                .withMessageCollector(messageCollector)
+                .eventPredicate(promptFilter.selectInteractionEvent(memberSizeSelectMenu, user))
+                .eventProcessor(event -> {
+                    String result = event.getValues().stream().findFirst().orElse(defaultSize);
+                    eventBuilder.withMemberSize(result);
+                })
+                .build()
+                .mono();
     }
 
-    private Mono<Message> promptDestinationChannel() {
+    private Mono<SelectMenuInteractionEvent> promptDestinationChannel() {
         List<TextChannel> textChannels = promptService.fetchGuildTextChannels(initialEvent);
         ChannelSelectMenu channelSelectMenu = new ChannelSelectMenu(textChannels);
         MessageCreateSpec prompt = MessageCreateSpec.builder()
@@ -248,34 +200,22 @@ public class CreateEventInteraction {
                 .build();
         Snowflake originChannelId = initialEvent.getInteraction().getChannelId();
 
-        return privateChannelMono
-                .flatMap(privateChannel -> privateChannel.createMessage(prompt))
-                .flatMap(promptedMessage -> {
-                    messageCollector.collect(promptedMessage);
-
-                    return client.getEventDispatcher().on(SelectMenuInteractionEvent.class)
-                            .filter(promptFilter.selectInteractionEvent(channelSelectMenu, user))
-                            .next()
-                            .flatMap(event -> {
-                                String result = event.getValues().stream()
-                                        .findFirst()
-                                        .orElse(originChannelId.asString());
-
-                                eventBuilder.withDestinationChannel(result);
-                                System.out.println(result);
-                                System.out.println(originChannelId.asString());
-
-                                return event.deferEdit()
-                                        .then(event.editReply(InteractionReplyEditSpec.builder()
-                                                .contentOrNull(result)
-                                                .componentsOrNull(null)
-                                                .build()))
-                                        .then(promptConfirmation());
-                            });
-                });
+        return new TextPromptMono.Builder<>(client, SelectMenuInteractionEvent.class)
+                .messageChannel(privateChannelMono)
+                .messageCreateSpec(prompt)
+                .withMessageCollector(messageCollector)
+                .eventPredicate(promptFilter.selectInteractionEvent(channelSelectMenu, user))
+                .eventProcessor(event -> {
+                    String result = event.getValues().stream()
+                            .findFirst()
+                            .orElse(originChannelId.asString());
+                    eventBuilder.withDestinationChannel(result);
+                })
+                .build()
+                .mono();
     }
 
-    private Mono<Message> promptConfirmation() {
+    private Mono<ButtonInteractionEvent> promptConfirmation() {
         ButtonRow buttonRow = ButtonRow.builder()
                 .addButton("confirm", "Confirm", ButtonRow.Builder.buttonType.PRIMARY)
                 .addButton("cancel", "Cancel", ButtonRow.Builder.buttonType.DANGER)
@@ -286,42 +226,14 @@ public class CreateEventInteraction {
                 .addComponent(buttonRow.getActionRow())
                 .build();
 
-
-        return privateChannelMono
-                .flatMap(privateChannel -> privateChannel.createMessage(prompt))
-                .flatMap(promptedMessage -> {
-                    messageCollector.collect(promptedMessage);
-
-                    return client.getEventDispatcher().on(ButtonInteractionEvent.class)
-                            .filter(promptFilter.buttonInteractionEvent(buttonRow, user))
-                            .next()
-                            .flatMap(event -> {
-                                if (event.getCustomId().equals("confirm")) {
-
-                                    return event.deferReply()
-                                            .then(finalizePrompt())
-                                            .then(messageCollector.cleanup())
-                                            .then(event.getInteractionResponse().deleteInitialResponse())
-                                            .then(Mono.empty());
-
-                                } else if (event.getCustomId().equals("cancel")) {
-
-                                    return event.deferReply()
-                                            .then(messageCollector.cleanup())
-                                            .then(event.getInteractionResponse().deleteInitialResponse())
-                                            .then(Mono.empty());
-
-                                } else if (event.getCustomId().equals("repeat")) {
-
-                                    return event.deferReply()
-                                            .then(messageCollector.cleanup())
-                                            .then(event.getInteractionResponse().deleteInitialResponse())
-                                            .then(Mono.empty());
-                                }
-
-                                return Mono.empty();
-                            });
-                });
+        return new TextPromptMono.Builder<>(client, ButtonInteractionEvent.class)
+                .messageChannel(privateChannelMono)
+                .messageCreateSpec(prompt)
+                .withMessageCollector(messageCollector)
+                .eventPredicate(promptFilter.buttonInteractionEvent(buttonRow,user))
+                .eventProcessor(event -> {})
+                .build()
+                .mono();
     }
 
     private Mono<Message> finalizePrompt() {
