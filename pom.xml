@@ -70,6 +70,13 @@
 			<version>1.18.3</version>
 			<scope>test</scope>
 		</dependency>
+		<!--	Reactor Test	-->
+		<dependency>
+			<groupId>io.projectreactor</groupId>
+			<artifactId>reactor-test</artifactId>
+			<version>3.5.8</version>
+			<scope>test</scope>
+		</dependency>
 		<!-- 	Discord4J - https://github.com/Discord4J/Discord4J	 	-->
 		<dependency>
 			<groupId>com.discord4j</groupId>
