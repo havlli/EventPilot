@@ -27,9 +27,6 @@ import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
 import java.time.Instant;
-import java.time.LocalDateTime;
-import java.time.ZoneOffset;
-import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
 import java.util.List;
 
@@ -43,6 +40,7 @@ public class CreateEventInteraction {
     private final EmbedGenerator embedGenerator;
     private final EventService eventService;
     private final GuildService guildService;
+    private final TimeService timeService;
     private ChatInputInteractionEvent initialEvent;
     private User user;
     private Mono<PrivateChannel> privateChannelMono;
@@ -57,7 +55,9 @@ public class CreateEventInteraction {
             PromptService promptService,
             EmbedGenerator embedGenerator,
             EventService eventService,
-            GuildService guildService) {
+            GuildService guildService,
+            TimeService timeService
+    ) {
         this.client = client;
         this.messageCollector = messageCollector;
         this.promptFormatter = promptFormatter;
@@ -66,19 +66,22 @@ public class CreateEventInteraction {
         this.embedGenerator = embedGenerator;
         this.eventService = eventService;
         this.guildService = guildService;
+        this.timeService = timeService;
+    }
+
+    private void initializeEventBuilder() {
+        Snowflake guildId = promptService.fetchGuildId(initialEvent);
+        Guild guild = guildService.getGuildById(guildId.asString());
+        this.eventBuilder = Event.builder();
+        eventBuilder.withAuthor(user.getUsername());
+        eventBuilder.withGuild(guild);
     }
 
     public Mono<Message> start(ChatInputInteractionEvent event) {
         this.initialEvent = event;
         this.user = initialEvent.getInteraction().getUser();
         this.privateChannelMono = user.getPrivateChannel();
-
-        Snowflake guildId = promptService.fetchGuildId(initialEvent);
-        Guild guild = guildService.getGuildById(guildId.asString());
-
-        this.eventBuilder = Event.builder();
-        eventBuilder.withAuthor(user.getUsername());
-        eventBuilder.withGuild(guild);
+        initializeEventBuilder();
 
         return promptName()
                 .flatMap(ignored -> promptDescription())
@@ -95,11 +98,13 @@ public class CreateEventInteraction {
     }
 
     private Mono<MessageCreateEvent> promptName() {
-        String prompt = "**Step 1**\nEnter name for your event!";
+        MessageCreateSpec messageCreateSpec = MessageCreateSpec.builder()
+                .content("**Step 1**\nEnter name for your event!")
+                .build();
 
         return new TextPromptMono.Builder<>(client, MessageCreateEvent.class)
                 .messageChannel(privateChannelMono)
-                .messageCreateSpec(MessageCreateSpec.builder().content(prompt).build())
+                .messageCreateSpec(messageCreateSpec)
                 .withMessageCollector(messageCollector)
                 .eventPredicate(promptFilter.isMessageAuthor(user))
                 .eventProcessor(event -> {
@@ -111,11 +116,13 @@ public class CreateEventInteraction {
     }
 
     private Mono<MessageCreateEvent> promptDescription() {
-        String prompt = "**Step 2**\nEnter description";
+        MessageCreateSpec messageCreateSpec = MessageCreateSpec.builder()
+                .content("**Step 2**\nEnter description")
+                .build();
 
         return new TextPromptMono.Builder<>(client, MessageCreateEvent.class)
                 .messageChannel(privateChannelMono)
-                .messageCreateSpec(MessageCreateSpec.builder().content(prompt).build())
+                .messageCreateSpec(messageCreateSpec)
                 .withMessageCollector(messageCollector)
                 .eventPredicate(promptFilter.isMessageAuthor(user))
                 .eventProcessor(event -> {
@@ -127,21 +134,19 @@ public class CreateEventInteraction {
     }
 
     private Mono<MessageCreateEvent> promptDateTime() {
-        String prompt = "**Step 3**\nEnter the date and time in UTC timezone (format: dd.MM.yyyy HH:mm)";
+        MessageCreateSpec messageCreateSpec = MessageCreateSpec.builder()
+                .content("**Step 3**\nEnter the date and time in UTC timezone (format: dd.MM.yyyy HH:mm)")
+                .build();
 
         return new TextPromptMono.Builder<>(client, MessageCreateEvent.class)
                 .messageChannel(privateChannelMono)
-                .messageCreateSpec(MessageCreateSpec.builder().content(prompt).build())
+                .messageCreateSpec(messageCreateSpec)
                 .withMessageCollector(messageCollector)
                 .eventPredicate(promptFilter.isMessageAuthor(user))
                 .eventProcessor(event -> {
                     String messageContent = event.getMessage().getContent();
-                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("dd.MM.yyyy HH:mm");
-                    LocalDateTime localDateTime = LocalDateTime.parse(messageContent, formatter);
-                    Instant instant = localDateTime.atZone(ZoneOffset.UTC).toInstant();
+                    Instant instant = timeService.parseUtcInstant(messageContent, "dd.MM.yyyy HH:mm");
                     eventBuilder.withDateTime(instant);
-                    System.out.println(event.getMessage().getContent());
-                    System.out.println(localDateTime);
                 })
                 .onErrorRepeat(DateTimeParseException.class, "Invalid Format")
                 .build()
@@ -163,8 +168,6 @@ public class CreateEventInteraction {
                 .eventPredicate(promptFilter.selectInteractionEvent(raidSelectMenu, user))
                 .eventProcessor(event -> {
                     eventBuilder.withInstances(event.getValues());
-                    List<String> result = event.getValues();
-                    System.out.println(result);
                 })
                 .build()
                 .mono();
