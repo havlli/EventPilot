@@ -32,6 +32,7 @@ public class TextPromptMono<T extends Event> {
     private final Predicate<T> eventPredicate;
     private final String onErrorMessage;
     private final Class<? extends Throwable> errorClass;
+    private final PromptType promptType;
 
     public TextPromptMono(
             TextPromptMono.Builder<T> builder
@@ -45,6 +46,7 @@ public class TextPromptMono<T extends Event> {
         this.eventPredicate = builder.eventPredicate;
         this.onErrorMessage = builder.onErrorMessage;
         this.errorClass = builder.errorClass;
+        this.promptType = builder.promptType;
     }
 
     public Mono<T> mono() {
@@ -67,17 +69,38 @@ public class TextPromptMono<T extends Event> {
                     return responseMono;
                 });
     }
+
     private Mono<T> constructResponse() {
         return client.getEventDispatcher().on(eventClass)
                 .filter(eventPredicate)
                 .next()
-                .flatMap(event -> {
-                    eventProcessor.accept(event);
-                    return interactionResponseMono().apply(event);
-                });
+                .flatMap(interactionResponseMono());
     }
 
     private Function<T, Mono<T>> interactionResponseMono() {
+        return event -> {
+            eventProcessor.accept(event);
+
+            switch (promptType) {
+                case DEFAULT -> {
+                    return defaultInteractionResponse().apply(event);
+                }
+                case DELETE_ON_RESPONSE -> {
+                    return onDeleteInteractionResponse().apply(event);
+                }
+                case DEFERRABLE_EDIT -> {
+                    return deferrableEditInteractionResponse().apply(event);
+                }
+                case DEFERRABLE_REPLY -> {
+                    return deferrableReplyInteractionResponse().apply(event);
+                }
+            }
+
+            throw new IllegalStateException("%s not supported operation".formatted(eventClass));
+        };
+    }
+
+    private Function<T, Mono<T>> defaultInteractionResponse() {
         return event -> {
             if (event instanceof SelectMenuInteractionEvent selectMenuEvent) {
                 ExpiredSelectMenu expiredMenu = new ExpiredSelectMenu();
@@ -88,13 +111,67 @@ public class TextPromptMono<T extends Event> {
                         .then(Mono.just(event));
             } else if (event instanceof ButtonInteractionEvent buttonEvent) {
                 return buttonEvent.deferEdit()
-                        .then(buttonEvent.getInteractionResponse().deleteInitialResponse())
+                        .then(buttonEvent.editReply(InteractionReplyEditSpec.builder()
+                                .components(List.of())
+                                .build()))
                         .then(Mono.just(event));
             } else if (event instanceof MessageCreateEvent) {
                 return Mono.just(event);
             }
-            throw new IllegalStateException("%s not supported operation".formatted(eventClass));
+
+            throw new IllegalStateException("%s not supported operation for %s".formatted(eventClass, promptType));
         };
+    }
+
+    private Function<T, Mono<T>> onDeleteInteractionResponse() {
+        return event -> {
+            if (event instanceof SelectMenuInteractionEvent selectMenuEvent) {
+                return selectMenuEvent.deferEdit()
+                        .then(selectMenuEvent.getInteractionResponse().deleteInitialResponse())
+                        .then(Mono.just(event));
+            } else if (event instanceof ButtonInteractionEvent buttonEvent) {
+                return buttonEvent.deferEdit()
+                        .then(buttonEvent.getInteractionResponse().deleteInitialResponse())
+                        .then(Mono.just(event));
+            }
+
+            throw new IllegalStateException("%s not supported operation for %s".formatted(eventClass, promptType));
+        };
+    }
+
+    private Function<T, Mono<T>> deferrableEditInteractionResponse() {
+        return event -> {
+            if (event instanceof SelectMenuInteractionEvent selectMenuEvent) {
+                return selectMenuEvent.deferEdit()
+                        .then(Mono.just(event));
+            } else if (event instanceof ButtonInteractionEvent buttonEvent) {
+                return buttonEvent.deferEdit()
+                        .then(Mono.just(event));
+            }
+
+            throw new IllegalStateException("%s not supported operation for %s".formatted(eventClass, promptType));
+        };
+    }
+
+    private Function<T, Mono<T>> deferrableReplyInteractionResponse() {
+        return event -> {
+            if (event instanceof SelectMenuInteractionEvent selectMenuEvent) {
+                return selectMenuEvent.deferReply()
+                        .then(Mono.just(event));
+            } else if (event instanceof ButtonInteractionEvent buttonEvent) {
+                return buttonEvent.deferReply()
+                        .then(Mono.just(event));
+            }
+
+            throw new IllegalStateException("%s not supported operation for %s".formatted(eventClass, promptType));
+        };
+    }
+
+    public enum PromptType {
+        DEFAULT,
+        DELETE_ON_RESPONSE,
+        DEFERRABLE_EDIT,
+        DEFERRABLE_REPLY
     }
 
     public static class Builder<T extends Event> {
@@ -111,6 +188,8 @@ public class TextPromptMono<T extends Event> {
         private Consumer<T> eventProcessor;
         @NotNull
         private Predicate<T> eventPredicate;
+        @NotNull
+        private PromptType promptType;
         private String onErrorMessage;
         private Class<? extends Throwable> errorClass;
 
@@ -139,6 +218,11 @@ public class TextPromptMono<T extends Event> {
             return this;
         }
 
+        public Builder<T> withPromptType(PromptType promptType) {
+            this.promptType = promptType;
+            return this;
+        }
+
         public Builder<T> eventPredicate(Predicate<T> eventPredicate) {
             this.eventPredicate = eventPredicate;
             return this;
@@ -157,6 +241,7 @@ public class TextPromptMono<T extends Event> {
             Objects.requireNonNull(client, "client is required");
             Objects.requireNonNull(eventProcessor, "eventProcessor is required");
             Objects.requireNonNull(eventPredicate, "eventPredicate is required");
+            Objects.requireNonNull(promptType, "eventPredicate is required");
             return new TextPromptMono<>(this);
         }
     }
