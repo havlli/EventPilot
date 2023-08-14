@@ -25,6 +25,7 @@ import discord4j.core.spec.MessageCreateSpec;
 import discord4j.core.spec.MessageEditSpec;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
+import reactor.core.publisher.SignalType;
 
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
@@ -89,10 +90,30 @@ public class CreateEventInteraction {
                 .flatMap(ignored -> promptRaidSelect())
                 .flatMap(ignored -> promptMemberSize())
                 .flatMap(ignored -> promptDestinationChannel())
-                .flatMap(ignored -> promptConfirmation())
+                .flatMap(ignored -> promptConfirmationAndDeferReply())
                 .flatMap(confirmation -> {
-                    System.out.println("Last flatmap " + confirmation.getCustomId());
-                    return Mono.empty();
+                    String customId = confirmation.getCustomId();
+                    switch (customId) {
+                        case "confirm" -> {
+                            return finalizeProcess()
+                                    .flatMap(message -> confirmation.getInteractionResponse().deleteInitialResponse()
+                                            .then(Mono.just(message)));
+                        }
+                        case "repeat" -> {
+                            return start(event);
+                        }
+                        default -> {
+                            return Mono.just(confirmation);
+                        }
+                    }
+                })
+                .flatMap(ignored -> messageCollector.cleanup().then())
+                .doFinally(signalType -> {
+                    if (signalType == SignalType.ON_COMPLETE) {
+                        System.out.println("Sequence completed successfully");
+                    } else if (signalType == SignalType.ON_ERROR) {
+                        System.out.println("Sequence completed with an error");
+                    }
                 })
                 .then(Mono.empty());
     }
@@ -103,6 +124,7 @@ public class CreateEventInteraction {
                 .build();
 
         return new TextPromptMono.Builder<>(client, MessageCreateEvent.class)
+                .withPromptType(TextPromptMono.PromptType.DEFAULT)
                 .messageChannel(privateChannelMono)
                 .messageCreateSpec(messageCreateSpec)
                 .withMessageCollector(messageCollector)
@@ -121,6 +143,7 @@ public class CreateEventInteraction {
                 .build();
 
         return new TextPromptMono.Builder<>(client, MessageCreateEvent.class)
+                .withPromptType(TextPromptMono.PromptType.DEFAULT)
                 .messageChannel(privateChannelMono)
                 .messageCreateSpec(messageCreateSpec)
                 .withMessageCollector(messageCollector)
@@ -139,6 +162,7 @@ public class CreateEventInteraction {
                 .build();
 
         return new TextPromptMono.Builder<>(client, MessageCreateEvent.class)
+                .withPromptType(TextPromptMono.PromptType.DEFAULT)
                 .messageChannel(privateChannelMono)
                 .messageCreateSpec(messageCreateSpec)
                 .withMessageCollector(messageCollector)
@@ -162,13 +186,12 @@ public class CreateEventInteraction {
                 .build();
 
         return new TextPromptMono.Builder<>(client, SelectMenuInteractionEvent.class)
+                .withPromptType(TextPromptMono.PromptType.DEFAULT)
                 .messageCreateSpec(prompt)
                 .messageChannel(privateChannelMono)
                 .withMessageCollector(messageCollector)
                 .eventPredicate(promptFilter.selectInteractionEvent(raidSelectMenu, user))
-                .eventProcessor(event -> {
-                    eventBuilder.withInstances(event.getValues());
-                })
+                .eventProcessor(event -> eventBuilder.withInstances(event.getValues()))
                 .build()
                 .mono();
     }
@@ -182,6 +205,7 @@ public class CreateEventInteraction {
                 .build();
 
         return new TextPromptMono.Builder<>(client, SelectMenuInteractionEvent.class)
+                .withPromptType(TextPromptMono.PromptType.DEFAULT)
                 .messageChannel(privateChannelMono)
                 .messageCreateSpec(prompt)
                 .withMessageCollector(messageCollector)
@@ -204,6 +228,7 @@ public class CreateEventInteraction {
         Snowflake originChannelId = initialEvent.getInteraction().getChannelId();
 
         return new TextPromptMono.Builder<>(client, SelectMenuInteractionEvent.class)
+                .withPromptType(TextPromptMono.PromptType.DEFAULT)
                 .messageChannel(privateChannelMono)
                 .messageCreateSpec(prompt)
                 .withMessageCollector(messageCollector)
@@ -218,7 +243,7 @@ public class CreateEventInteraction {
                 .mono();
     }
 
-    private Mono<ButtonInteractionEvent> promptConfirmation() {
+    private Mono<ButtonInteractionEvent> promptConfirmationAndDeferReply() {
         ButtonRow buttonRow = ButtonRow.builder()
                 .addButton("confirm", "Confirm", ButtonRow.Builder.buttonType.PRIMARY)
                 .addButton("cancel", "Cancel", ButtonRow.Builder.buttonType.DANGER)
@@ -230,16 +255,18 @@ public class CreateEventInteraction {
                 .build();
 
         return new TextPromptMono.Builder<>(client, ButtonInteractionEvent.class)
+                .withPromptType(TextPromptMono.PromptType.DEFERRABLE_REPLY)
                 .messageChannel(privateChannelMono)
                 .messageCreateSpec(prompt)
                 .withMessageCollector(messageCollector)
-                .eventPredicate(promptFilter.buttonInteractionEvent(buttonRow,user))
-                .eventProcessor(event -> {})
+                .eventPredicate(promptFilter.buttonInteractionEvent(buttonRow, user))
+                .eventProcessor(event -> {
+                })
                 .build()
                 .mono();
     }
 
-    private Mono<Message> finalizePrompt() {
+    private Mono<Message> finalizeProcess() {
         Snowflake destinationChannel = Snowflake.of(eventBuilder.getDestinationChannelId());
         return initialEvent.getInteraction()
                 .getGuild()
@@ -251,8 +278,6 @@ public class CreateEventInteraction {
                             eventBuilder.withEventId(messageId.asString());
 
                             Event event = eventBuilder.build();
-
-                            System.out.println(event);
 
                             String messageUrl = promptFormatter.messageUrl(guild.getId(), destinationChannel, messageId);
                             Mono<Message> finalMessage = privateChannelMono
