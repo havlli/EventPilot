@@ -1,11 +1,7 @@
 package com.github.havlli.EventPilot.component;
 
-import discord4j.core.object.component.ActionRow;
-
 import java.util.List;
 
-public interface ButtonRowComponent {
+public interface ButtonRowComponent extends ActionRowComponent {
     List<String> getCustomIds();
-    ActionRow getActionRow();
-    ActionRow getDisabledRow();
 }

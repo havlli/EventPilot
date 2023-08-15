@@ -1,9 +1,5 @@
 package com.github.havlli.EventPilot.component;
 
-import discord4j.core.object.component.ActionRow;
-
-public interface SelectMenuComponent {
+public interface SelectMenuComponent extends ActionRowComponent {
     String getCustomId();
-    ActionRow getActionRow();
-    ActionRow getDisabledRow();
 }
