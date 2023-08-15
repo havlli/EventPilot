@@ -151,7 +151,7 @@ public class EmbedGenerator {
             Participant newParticipant = new Participant(userId, user.getUsername(), currentOrder, roleIndex, embedEvent);
             participantService.addParticipant(newParticipant, participants);
         } else {
-            participantService.updateParticipant(participant.get(), roleIndex);
+            participantService.updateRoleIndex(participant.get(), roleIndex);
         }
 
         eventService.saveEvent(embedEvent);

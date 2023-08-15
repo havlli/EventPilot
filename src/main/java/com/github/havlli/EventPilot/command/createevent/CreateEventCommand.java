@@ -12,6 +12,7 @@ import reactor.core.publisher.Mono;
 @Component
 public class CreateEventCommand implements SlashCommand {
 
+    private static final String EVENT_NAME = "create-event";
     private final CreateEventInteraction createEventInteraction;
     private Class<? extends Event> eventType = ChatInputInteractionEvent.class;
 
@@ -21,7 +22,7 @@ public class CreateEventCommand implements SlashCommand {
 
     @Override
     public String getName() {
-        return "create-event";
+        return EVENT_NAME;
     }
 
     @Override

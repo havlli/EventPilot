@@ -3,11 +3,13 @@ package com.github.havlli.EventPilot.component.selectmenu;
 import com.github.havlli.EventPilot.component.SelectMenuComponent;
 import discord4j.core.object.component.ActionRow;
 import discord4j.core.object.component.SelectMenu;
+import org.springframework.stereotype.Component;
 
+@Component
 public class ExpiredSelectMenu implements SelectMenuComponent {
 
     private static final String CUSTOM_ID = "expired";
-    private static final String PLACEHOLDER = "This event already expired!";
+    private static final String PLACEHOLDER = "Event expired!";
 
     @Override
     public String getCustomId() {
