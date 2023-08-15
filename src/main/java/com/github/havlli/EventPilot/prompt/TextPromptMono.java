@@ -1,9 +1,10 @@
 package com.github.havlli.EventPilot.prompt;
 
-import com.github.havlli.EventPilot.component.selectmenu.ExpiredSelectMenu;
+import com.github.havlli.EventPilot.component.ActionRowComponent;
 import discord4j.core.GatewayDiscordClient;
 import discord4j.core.event.domain.Event;
 import discord4j.core.event.domain.interaction.ButtonInteractionEvent;
+import discord4j.core.event.domain.interaction.ComponentInteractionEvent;
 import discord4j.core.event.domain.interaction.SelectMenuInteractionEvent;
 import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.core.object.entity.channel.MessageChannel;
@@ -26,6 +27,7 @@ public class TextPromptMono<T extends Event> {
     private final Mono<? extends MessageChannel> messageChannel;
     private final MessageCollector messageCollector;
     private final MessageCreateSpec messageCreateSpec;
+    private final ActionRowComponent actionRowComponent;
     private final GatewayDiscordClient client;
     private final Class<T> eventClass;
     private final Consumer<T> eventProcessor;
@@ -47,6 +49,7 @@ public class TextPromptMono<T extends Event> {
         this.onErrorMessage = builder.onErrorMessage;
         this.errorClass = builder.errorClass;
         this.promptType = builder.promptType;
+        this.actionRowComponent = builder.actionRowComponent;
     }
 
     public Mono<T> mono() {
@@ -103,10 +106,9 @@ public class TextPromptMono<T extends Event> {
     private Function<T, Mono<T>> defaultInteractionResponse() {
         return event -> {
             if (event instanceof SelectMenuInteractionEvent selectMenuEvent) {
-                ExpiredSelectMenu expiredMenu = new ExpiredSelectMenu();
                 return selectMenuEvent.deferEdit()
                         .then(selectMenuEvent.editReply(InteractionReplyEditSpec.builder()
-                                .components(List.of(expiredMenu.getDisabledRow()))
+                                .components(List.of(actionRowComponent.getDisabledRow()))
                                 .build()))
                         .then(Mono.just(event));
             } else if (event instanceof ButtonInteractionEvent buttonEvent) {
@@ -180,6 +182,7 @@ public class TextPromptMono<T extends Event> {
         private MessageCollector messageCollector;
         @NotNull
         private MessageCreateSpec messageCreateSpec;
+        private ActionRowComponent actionRowComponent;
         @NotNull
         private final GatewayDiscordClient client;
         @NotNull
@@ -205,6 +208,11 @@ public class TextPromptMono<T extends Event> {
 
         public Builder<T> messageCreateSpec(MessageCreateSpec messageCreateSpec) {
             this.messageCreateSpec = messageCreateSpec;
+            return this;
+        }
+
+        public Builder<T> actionRowComponent(ActionRowComponent actionRowComponent) {
+            this.actionRowComponent = actionRowComponent;
             return this;
         }
 
@@ -242,6 +250,12 @@ public class TextPromptMono<T extends Event> {
             Objects.requireNonNull(eventProcessor, "eventProcessor is required");
             Objects.requireNonNull(eventPredicate, "eventPredicate is required");
             Objects.requireNonNull(promptType, "eventPredicate is required");
+
+            List<Class<? extends ComponentInteractionEvent>> checkedClasses = List.of(SelectMenuInteractionEvent.class);
+            if (promptType.equals(PromptType.DEFAULT) && checkedClasses.contains(eventClass)) {
+                Objects.requireNonNull(actionRowComponent, "actionRowComponent is required");
+            }
+
             return new TextPromptMono<>(this);
         }
     }
