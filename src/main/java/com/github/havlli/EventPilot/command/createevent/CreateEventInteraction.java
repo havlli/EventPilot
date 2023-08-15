@@ -20,7 +20,6 @@ import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.User;
 import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.object.entity.channel.PrivateChannel;
-import discord4j.core.object.entity.channel.TextChannel;
 import discord4j.core.spec.MessageCreateSpec;
 import discord4j.core.spec.MessageEditSpec;
 import org.springframework.stereotype.Component;
@@ -29,7 +28,6 @@ import reactor.core.publisher.SignalType;
 
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
-import java.util.List;
 
 @Component
 public class CreateEventInteraction {
@@ -96,18 +94,20 @@ public class CreateEventInteraction {
                     switch (customId) {
                         case "confirm" -> {
                             return finalizeProcess()
-                                    .flatMap(message -> confirmation.getInteractionResponse().deleteInitialResponse()
-                                            .then(Mono.just(message)));
+                                    .flatMapMany(ignored -> messageCollector.cleanup())
+                                    .then(confirmation.getInteractionResponse().deleteInitialResponse());
                         }
                         case "repeat" -> {
-                            return start(event);
+                            return  messageCollector.cleanup()
+                                    .then(confirmation.getInteractionResponse().deleteInitialResponse())
+                                    .then(start(initialEvent));
                         }
                         default -> {
-                            return Mono.just(confirmation);
+                            return messageCollector.cleanup()
+                                    .then(confirmation.getInteractionResponse().deleteInitialResponse());
                         }
                     }
                 })
-                .flatMap(ignored -> messageCollector.cleanup().then())
                 .doFinally(signalType -> {
                     if (signalType == SignalType.ON_COMPLETE) {
                         System.out.println("Sequence completed successfully");
@@ -188,6 +188,7 @@ public class CreateEventInteraction {
         return new TextPromptMono.Builder<>(client, SelectMenuInteractionEvent.class)
                 .withPromptType(TextPromptMono.PromptType.DEFAULT)
                 .messageCreateSpec(prompt)
+                .actionRowComponent(raidSelectMenu)
                 .messageChannel(privateChannelMono)
                 .withMessageCollector(messageCollector)
                 .eventPredicate(promptFilter.selectInteractionEvent(raidSelectMenu, user))
@@ -208,6 +209,7 @@ public class CreateEventInteraction {
                 .withPromptType(TextPromptMono.PromptType.DEFAULT)
                 .messageChannel(privateChannelMono)
                 .messageCreateSpec(prompt)
+                .actionRowComponent(memberSizeSelectMenu)
                 .withMessageCollector(messageCollector)
                 .eventPredicate(promptFilter.selectInteractionEvent(memberSizeSelectMenu, user))
                 .eventProcessor(event -> {
@@ -219,28 +221,33 @@ public class CreateEventInteraction {
     }
 
     private Mono<SelectMenuInteractionEvent> promptDestinationChannel() {
-        List<TextChannel> textChannels = promptService.fetchGuildTextChannels(initialEvent);
-        ChannelSelectMenu channelSelectMenu = new ChannelSelectMenu(textChannels);
-        MessageCreateSpec prompt = MessageCreateSpec.builder()
-                .content("**Step 6**\nChoose in which channel post this raid signup")
-                .addComponent(channelSelectMenu.getActionRow())
-                .build();
         Snowflake originChannelId = initialEvent.getInteraction().getChannelId();
 
-        return new TextPromptMono.Builder<>(client, SelectMenuInteractionEvent.class)
-                .withPromptType(TextPromptMono.PromptType.DEFAULT)
-                .messageChannel(privateChannelMono)
-                .messageCreateSpec(prompt)
-                .withMessageCollector(messageCollector)
-                .eventPredicate(promptFilter.selectInteractionEvent(channelSelectMenu, user))
-                .eventProcessor(event -> {
-                    String result = event.getValues().stream()
-                            .findFirst()
-                            .orElse(originChannelId.asString());
-                    eventBuilder.withDestinationChannel(result);
-                })
-                .build()
-                .mono();
+        return promptService.fetchGuildTextChannels(initialEvent)
+                .collectList()
+                .flatMap(list -> {
+                    ChannelSelectMenu channelSelectMenu = new ChannelSelectMenu(list);
+                    MessageCreateSpec prompt = MessageCreateSpec.builder()
+                            .content("**Step 6**\nChoose in which channel post this raid signup")
+                            .addComponent(channelSelectMenu.getActionRow())
+                            .build();
+
+                    return new TextPromptMono.Builder<>(client, SelectMenuInteractionEvent.class)
+                            .withPromptType(TextPromptMono.PromptType.DEFAULT)
+                            .messageChannel(privateChannelMono)
+                            .messageCreateSpec(prompt)
+                            .actionRowComponent(channelSelectMenu)
+                            .withMessageCollector(messageCollector)
+                            .eventPredicate(promptFilter.selectInteractionEvent(channelSelectMenu, user))
+                            .eventProcessor(event -> {
+                                String result = event.getValues().stream()
+                                        .findFirst()
+                                        .orElse(originChannelId.asString());
+                                eventBuilder.withDestinationChannel(result);
+                            })
+                            .build()
+                            .mono();
+                });
     }
 
     private Mono<ButtonInteractionEvent> promptConfirmationAndDeferReply() {
