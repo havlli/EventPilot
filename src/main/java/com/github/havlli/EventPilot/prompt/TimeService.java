@@ -1,5 +1,6 @@
 package com.github.havlli.EventPilot.prompt;
 
+import com.github.havlli.EventPilot.exception.InvalidDateTimeException;
 import org.springframework.stereotype.Service;
 
 import java.time.Instant;
@@ -14,5 +15,14 @@ public class TimeService {
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern(formatPattern);
         LocalDateTime localDateTime = LocalDateTime.parse(dateTime, formatter);
         return localDateTime.atZone(ZoneOffset.UTC).toInstant();
+    }
+
+    public boolean isValidFutureTime(Instant instant) {
+        Instant instantNow = Instant.now();
+        if (!instantNow.isBefore(instant)) {
+            throw new InvalidDateTimeException("Processed instant {%s} is before systems Instant.now() {%s}"
+                    .formatted(instant, instantNow));
+        }
+        return true;
     }
 }

@@ -8,6 +8,7 @@ import com.github.havlli.EventPilot.entity.event.Event;
 import com.github.havlli.EventPilot.entity.event.EventService;
 import com.github.havlli.EventPilot.entity.guild.Guild;
 import com.github.havlli.EventPilot.entity.guild.GuildService;
+import com.github.havlli.EventPilot.exception.InvalidDateTimeException;
 import com.github.havlli.EventPilot.generator.EmbedGenerator;
 import com.github.havlli.EventPilot.prompt.*;
 import discord4j.common.util.Snowflake;
@@ -170,11 +171,20 @@ public class CreateEventInteraction {
                 .eventProcessor(event -> {
                     String messageContent = event.getMessage().getContent();
                     Instant instant = timeService.parseUtcInstant(messageContent, "dd.MM.yyyy HH:mm");
+                    timeService.isValidFutureTime(instant);
                     eventBuilder.withDateTime(instant);
                 })
                 .onErrorRepeat(DateTimeParseException.class, "Invalid Format")
                 .build()
-                .mono();
+                .mono()
+                .onErrorResume(InvalidDateTimeException.class, e -> privateChannelMono
+                        .flatMap(channel -> channel.createMessage("Date and time of the event has to be in future!"))
+                            .flatMap(message -> {
+                                System.out.println(InvalidDateTimeException.class.getCanonicalName() + " triggered");
+                                messageCollector.collect(message);
+                                return promptDateTime();
+                            })
+                );
     }
 
     private Mono<SelectMenuInteractionEvent> promptRaidSelect() {
