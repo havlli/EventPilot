@@ -19,7 +19,7 @@ public class SimplePermissionChecker {
         this.permission = permission;
     }
 
-    public Mono<Message> followup(Mono<Message> followupMono) {
+    public Mono<Message> followupWith(Mono<Message> followupMono) {
         Optional<Member> optionalMember = interactionEvent.getInteraction().getMember();
         if (optionalMember.isEmpty()) {
             return interactionEvent.createFollowup("You are not valid Member to use this command")

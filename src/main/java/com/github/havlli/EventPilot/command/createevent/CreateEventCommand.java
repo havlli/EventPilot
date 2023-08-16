@@ -46,7 +46,7 @@ public class CreateEventCommand implements SlashCommand {
 
         return interactionEvent.deferReply()
                 .withEphemeral(true)
-                .then(permissionChecker.followup(followupMessage(interactionEvent)));
+                .then(permissionChecker.followupWith(followupMessage(interactionEvent)));
     }
 
     private Mono<Message> followupMessage(ChatInputInteractionEvent event) {

@@ -1,6 +1,5 @@
-package com.github.havlli.EventPilot.command.clearexpired;
+package com.github.havlli.EventPilot.command;
 
-import com.github.havlli.EventPilot.command.SlashCommand;
 import com.github.havlli.EventPilot.component.SelectMenuComponent;
 import com.github.havlli.EventPilot.core.SimplePermissionChecker;
 import discord4j.common.util.Snowflake;
@@ -55,7 +54,7 @@ public class ClearExpiredCommand implements SlashCommand {
 
         return interactionEvent.deferReply()
                 .withEphemeral(true)
-                .then(permissionChecker.followup(deferredResponse(interactionEvent)));
+                .then(permissionChecker.followupWith(deferredResponse(interactionEvent)));
     }
 
     private Mono<Message> deferredResponse(ChatInputInteractionEvent event) {
