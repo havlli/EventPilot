@@ -19,6 +19,11 @@ public class DeleteEventCommand implements SlashCommand {
     private static final String EVENT_NAME = "delete-event";
     private static final String OPTION_MESSAGE_ID = "message-id";
     private Class<? extends Event> eventType = ChatInputInteractionEvent.class;
+    private final SimplePermissionChecker permissionChecker;
+
+    public DeleteEventCommand(SimplePermissionChecker permissionChecker) {
+        this.permissionChecker = permissionChecker;
+    }
 
     @Override
     public String getName() {
@@ -39,11 +44,13 @@ public class DeleteEventCommand implements SlashCommand {
     public Mono<?> handle(Event event) {
         ChatInputInteractionEvent interactionEvent = (ChatInputInteractionEvent) event;
         if (interactionEvent.getCommandName().equals(EVENT_NAME)) {
-            SimplePermissionChecker permissionChecker = new SimplePermissionChecker(interactionEvent, Permission.MANAGE_CHANNELS);
-
             return interactionEvent.deferReply()
                     .withEphemeral(true)
-                    .then(permissionChecker.followupWith(deleteEventInteraction(interactionEvent)));
+                    .then(permissionChecker.followupWith(
+                            interactionEvent,
+                            Permission.MANAGE_CHANNELS,
+                            deleteEventInteraction(interactionEvent)
+                    ));
         }
         return Mono.empty();
     }

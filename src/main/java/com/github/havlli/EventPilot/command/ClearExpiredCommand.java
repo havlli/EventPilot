@@ -20,9 +20,11 @@ public class ClearExpiredCommand implements SlashCommand {
     private static final String EVENT_NAME = "clear-expired";
     private Class<? extends Event> eventType = ChatInputInteractionEvent.class;
 
+    private final SimplePermissionChecker permissionChecker;
     private final SelectMenuComponent expiredSelectMenu;
 
-    public ClearExpiredCommand(SelectMenuComponent expiredSelectMenu) {
+    public ClearExpiredCommand(SimplePermissionChecker permissionChecker, SelectMenuComponent expiredSelectMenu) {
+        this.permissionChecker = permissionChecker;
         this.expiredSelectMenu = expiredSelectMenu;
     }
 
@@ -49,12 +51,13 @@ public class ClearExpiredCommand implements SlashCommand {
             return Mono.empty();
         }
 
-        SimplePermissionChecker permissionChecker =
-                new SimplePermissionChecker(interactionEvent, Permission.MANAGE_CHANNELS);
-
         return interactionEvent.deferReply()
                 .withEphemeral(true)
-                .then(permissionChecker.followupWith(deferredResponse(interactionEvent)));
+                .then(permissionChecker.followupWith(
+                        interactionEvent,
+                        Permission.MANAGE_CHANNELS,
+                        deferredResponse(interactionEvent)
+                ));
     }
 
     private Mono<Message> deferredResponse(ChatInputInteractionEvent event) {

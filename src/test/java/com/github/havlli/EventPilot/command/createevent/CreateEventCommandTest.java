@@ -1,11 +1,16 @@
 package com.github.havlli.EventPilot.command.createevent;
 
+import com.github.havlli.EventPilot.core.SimplePermissionChecker;
 import discord4j.core.event.domain.interaction.ChatInputInteractionEvent;
-import discord4j.core.spec.InteractionApplicationCommandCallbackReplyMono;
+import discord4j.core.spec.InteractionCallbackSpecDeferReplyMono;
+import discord4j.core.spec.InteractionFollowupCreateMono;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
 
 import static org.mockito.Mockito.*;
 
@@ -13,34 +18,52 @@ class CreateEventCommandTest {
 
     private AutoCloseable autoCloseable;
     private CreateEventCommand underTest;
+    @Mock
+    private CreateEventInteraction eventInteraction;
+    @Mock
+    private SimplePermissionChecker simplePermissionChecker;
 
     @BeforeEach
-    void setUp() {
+    public void setUp() {
         autoCloseable = MockitoAnnotations.openMocks(this);
-        underTest = new CreateEventCommand();
+        underTest = new CreateEventCommand(eventInteraction, simplePermissionChecker);
     }
 
     @AfterEach
-    void tearDown() throws Exception {
+    public void tearDown() throws Exception {
         autoCloseable.close();
     }
 
     @Test
-    void handle_ShouldReplyWithCreateEventMessage() {
+    public void handle_ReplyWithCreateEventMessage() {
         // Arrange
-        ChatInputInteractionEvent event = mock(ChatInputInteractionEvent.class);
-        InteractionApplicationCommandCallbackReplyMono replyMock = mock(InteractionApplicationCommandCallbackReplyMono.class);
-        when(event.reply()).thenReturn(replyMock);
-        InteractionApplicationCommandCallbackReplyMono replyMockEphemeral = mock(InteractionApplicationCommandCallbackReplyMono.class);
-        when(replyMock.withEphemeral(true)).thenReturn(replyMockEphemeral);
-        when(replyMockEphemeral.withContent(anyString())).thenReturn(mock(InteractionApplicationCommandCallbackReplyMono.class));
+        ChatInputInteractionEvent interactionEvent = mock(ChatInputInteractionEvent.class);
+        when(interactionEvent.getCommandName()).thenReturn(underTest.getName());
+
+        InteractionCallbackSpecDeferReplyMono replyMock = mock(InteractionCallbackSpecDeferReplyMono.class);
+        when(interactionEvent.deferReply()).thenReturn(replyMock);
+        InteractionCallbackSpecDeferReplyMono replyEphemeralMock = mock(InteractionCallbackSpecDeferReplyMono.class);
+        when(replyMock.withEphemeral(true)).thenReturn(replyEphemeralMock);
+        when(replyEphemeralMock.then(any())).thenReturn(Mono.empty());
+
+        InteractionFollowupCreateMono followupMock = mock(InteractionFollowupCreateMono.class);
+        when(interactionEvent.createFollowup(anyString())).thenReturn(followupMock);
+        InteractionFollowupCreateMono followupEphemeralMock = mock(InteractionFollowupCreateMono.class);
+        when(followupMock.withEphemeral(true)).thenReturn(followupEphemeralMock);
 
         // Act
-        underTest.handle(event);
+        StepVerifier.create(underTest.handle(interactionEvent))
+                .verifyComplete();
+    }
+
+    @Test
+    public void handle_ReturnsEmptyMono_WhenCommandNameIsNotEqual() {
+        // Arrange
+        ChatInputInteractionEvent event = mock(ChatInputInteractionEvent.class);
+        when(event.getCommandName()).thenReturn("not-create-event");
 
         // Assert
-        verify(event, times(1)).reply();
-        verify(event.reply(), times(1)).withEphemeral(true);
-        verify(event.reply().withEphemeral(true), times(1)).withContent("Create Event!");
+        StepVerifier.create(underTest.handle(event))
+                .verifyComplete();
     }
 }

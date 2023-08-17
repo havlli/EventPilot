@@ -14,10 +14,12 @@ public class CreateEventCommand implements SlashCommand {
 
     private static final String EVENT_NAME = "create-event";
     private final CreateEventInteraction createEventInteraction;
+    private final SimplePermissionChecker permissionChecker;
     private Class<? extends Event> eventType = ChatInputInteractionEvent.class;
 
-    public CreateEventCommand(CreateEventInteraction createEventInteraction) {
+    public CreateEventCommand(CreateEventInteraction createEventInteraction, SimplePermissionChecker permissionChecker) {
         this.createEventInteraction = createEventInteraction;
+        this.permissionChecker = permissionChecker;
     }
 
     @Override
@@ -42,11 +44,13 @@ public class CreateEventCommand implements SlashCommand {
             return Mono.empty();
         }
 
-        SimplePermissionChecker permissionChecker = new SimplePermissionChecker(interactionEvent, Permission.MANAGE_CHANNELS);
-
         return interactionEvent.deferReply()
                 .withEphemeral(true)
-                .then(permissionChecker.followupWith(followupMessage(interactionEvent)));
+                .then(permissionChecker.followupWith(
+                        interactionEvent,
+                        Permission.MANAGE_CHANNELS,
+                        followupMessage(interactionEvent)
+                ));
     }
 
     private Mono<Message> followupMessage(ChatInputInteractionEvent event) {
