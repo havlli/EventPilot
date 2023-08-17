@@ -4,22 +4,15 @@ import discord4j.core.event.domain.interaction.ChatInputInteractionEvent;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.Message;
 import discord4j.rest.util.Permission;
+import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
 import java.util.Optional;
 
+@Component
 public class SimplePermissionChecker {
 
-    private final ChatInputInteractionEvent interactionEvent;
-
-    private final Permission permission;
-
-    public SimplePermissionChecker(ChatInputInteractionEvent interactionEvent, Permission permission) {
-        this.interactionEvent = interactionEvent;
-        this.permission = permission;
-    }
-
-    public Mono<Message> followupWith(Mono<Message> followupMono) {
+    public Mono<Message> followupWith(ChatInputInteractionEvent interactionEvent, Permission permission, Mono<Message> followupMono) {
         Optional<Member> optionalMember = interactionEvent.getInteraction().getMember();
         if (optionalMember.isEmpty()) {
             return interactionEvent.createFollowup("You are not valid Member to use this command")
