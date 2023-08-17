@@ -49,4 +49,8 @@ public class MessageCollector {
             return Mono.empty();
         });
     }
+
+    public List<Message> getMessageList() {
+        return messageList;
+    }
 }
