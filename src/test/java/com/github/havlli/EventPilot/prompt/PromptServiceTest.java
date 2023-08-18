@@ -11,11 +11,11 @@ import discord4j.core.object.entity.channel.VoiceChannel;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
 
 import java.util.List;
 import java.util.Optional;
@@ -27,23 +27,23 @@ import static org.mockito.Mockito.when;
 class PromptServiceTest {
 
     private AutoCloseable autoCloseable;
-    @InjectMocks
     private PromptService underTest;
     @Mock
     private GatewayDiscordClient mockClient;
     
     @BeforeEach
-    void setUp() {
+    public void setUp() {
         autoCloseable = MockitoAnnotations.openMocks(this);
+        underTest = new PromptService(mockClient);
     }
 
     @AfterEach
-    void tearDown() throws Exception {
+    public void tearDown() throws Exception {
         autoCloseable.close();
     }
 
     @Test
-    void fetchGuildTextChannels_WillFilterTextChannels_WhenMultipleTypesArePresent() {
+    public void fetchGuildTextChannels_ReturnsFilteredFluxOfTextChannels_WhenMultipleTypesArePresent() {
         // Arrange
         TextChannel textChannel1 = mock(TextChannel.class);
         TextChannel textChannel2 = mock(TextChannel.class);
@@ -60,15 +60,19 @@ class PromptServiceTest {
         when(mockClient.getGuildChannels(guildId)).thenReturn(Flux.fromIterable(channels));
 
         // Act
-        List<TextChannel> resultChannels = underTest.fetchGuildTextChannels(event);
+        Flux<TextChannel> resultFlux = underTest.fetchGuildTextChannels(event);
 
         // Assert
-        assertThat(resultChannels.size()).isEqualTo(2);
-        assertThat(resultChannels).contains(textChannel1, textChannel2);
+        StepVerifier.create(resultFlux)
+                .expectNext(textChannel1)
+                .expectNext(textChannel2)
+                .verifyComplete();
+        List<TextChannel> actualList = resultFlux.collectList().block();
+        assertThat(actualList).hasSize(2);
     }
 
     @Test
-    void fetchGuildTextChannels_WillReturnEmptyList_WhenNoTextChannelsArePresent() {
+    public void fetchGuildTextChannels_ReturnsEmptyFlux_WhenNoTextChannelsArePresent() {
         // Arrange
         VoiceChannel voiceChannel1 = mock(VoiceChannel.class);
         VoiceChannel voiceChannel2 = mock(VoiceChannel.class);
@@ -84,14 +88,17 @@ class PromptServiceTest {
         when(mockClient.getGuildChannels(guildId)).thenReturn(Flux.fromIterable(channels));
 
         // Act
-        List<TextChannel> resultChannels = underTest.fetchGuildTextChannels(event);
+        Flux<TextChannel> resultFlux = underTest.fetchGuildTextChannels(event);
 
         // Assert
-        assertThat(resultChannels.size()).isEqualTo(0);
+        StepVerifier.create(resultFlux)
+                .verifyComplete();
+        List<TextChannel> actualList = resultFlux.collectList().block();
+        assertThat(actualList).isEmpty();
     }
 
     @Test
-    void fetchGuildId_WillReturnCorrectSnowflake_WhenGuildIsPresent() {
+    public void fetchGuildId_ReturnsCorrectSnowflake_WhenGuildIsPresent() {
         // Arrange
         Snowflake guildId = Snowflake.of("123456789");
         InteractionCreateEvent event = mock(InteractionCreateEvent.class);
@@ -107,7 +114,7 @@ class PromptServiceTest {
     }
 
     @Test
-    void fetchGuildId_WillReturnSnowflakeZero_WhenGuildIsNotPresent() {
+    public void fetchGuildId_ReturnsSnowflakeZero_WhenGuildIsNotPresent() {
         // Arrange
         InteractionCreateEvent event = mock(InteractionCreateEvent.class);
         Interaction interaction = mock(Interaction.class);
