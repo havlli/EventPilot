@@ -4,7 +4,6 @@ import discord4j.core.event.domain.interaction.ChatInputInteractionEvent;
 import discord4j.core.object.command.Interaction;
 import discord4j.core.object.entity.Member;
 import discord4j.core.object.entity.Message;
-import discord4j.core.spec.InteractionFollowupCreateMono;
 import discord4j.rest.util.Permission;
 import discord4j.rest.util.PermissionSet;
 import org.junit.jupiter.api.AfterEach;
@@ -13,6 +12,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
 
 import java.util.Optional;
 
@@ -29,46 +29,50 @@ class SimplePermissionCheckerTest {
     @Mock
     private Interaction interaction;
     @Mock
-    private Message followupMessage;
+    private MessageCreator messageCreator;
+    @Mock
+    private Message messageMock;
     private SimplePermissionChecker underTest;
 
     @BeforeEach
-    void setUp() {
+    public void setUp() {
         autoCloseable = MockitoAnnotations.openMocks(this);
+        underTest = new SimplePermissionChecker(messageCreator);
     }
 
     @AfterEach
-    void tearDown() throws Exception {
+    public void tearDown() throws Exception {
         autoCloseable.close();
     }
 
     @Test
-    void followup_WillReturnNotValidMemberMessage_WhenMemberIsEmpty() {
+    public void followup_ReturnsNotValidMemberMessage_WhenMemberIsEmpty() {
         // Arrange
         Interaction interaction = mock(Interaction.class);
         when(interactionEvent.getInteraction()).thenReturn(interaction);
         when(interaction.getMember()).thenReturn(Optional.empty());
-        InteractionFollowupCreateMono interactionFollowupCreateMono = InteractionFollowupCreateMono.of(interactionEvent);
-        when(interactionEvent.createFollowup(anyString()))
-                .thenReturn(interactionFollowupCreateMono);
 
-        String message = "You are not valid Member to use this command";
-        Mono<Message> messageMono = Mono.empty();
-
-        Mono<Message> expected = interactionFollowupCreateMono.withEphemeral(true);
+        Mono<Message> expected = Mono.just(messageMock);
+        when(messageCreator.notValidMember(interactionEvent)).thenReturn(expected);
 
         // Act
-        underTest = new SimplePermissionChecker(interactionEvent, Permission.MANAGE_CHANNELS);
-        Mono<Message> result = underTest.followup(messageMono);
+        Mono<Message> actual = underTest.followupWith(
+                interactionEvent,
+                Permission.MANAGE_CHANNELS,
+                Mono.empty()
+        );
 
         // Assert
-        verify(interactionEvent, times(1))
-                .createFollowup(message);
-        assertThat(result).isEqualTo(expected);
+        StepVerifier.create(actual)
+                .expectNext(messageMock)
+                .verifyComplete();
+        verify(messageCreator, times(1))
+                .notValidMember(interactionEvent);
+        assertThat(actual).isEqualTo(expected);
     }
 
     @Test
-    void followup_WillReturnFollowup_WhenMemberHasPermission() {
+    public void followup_ReturnsFollowup_WhenMemberHasPermission() {
         // Arrange
         Permission currentPermission = Permission.MANAGE_CHANNELS;
         PermissionSet permissionSet = PermissionSet.of(currentPermission);
@@ -76,36 +80,49 @@ class SimplePermissionCheckerTest {
         when(interaction.getMember()).thenReturn(Optional.of(member));
         when(member.getBasePermissions()).thenReturn(Mono.just(permissionSet));
 
-        Message message = mock(Message.class);
-        Mono<Message> expectedMono = Mono.just(message);
+        Message expectedMessage = mock(Message.class);
+        Mono<Message> expectedMono = Mono.just(expectedMessage);
 
         // Act
-        underTest = new SimplePermissionChecker(interactionEvent, currentPermission);
-        Mono<Message> actualMono = underTest.followup(expectedMono);
+        Mono<Message> actualMono = underTest.followupWith(
+                interactionEvent,
+                currentPermission,
+                expectedMono
+        );
 
         // Assert
+        StepVerifier.create(actualMono)
+                .expectNext(expectedMessage)
+                .verifyComplete();
         assertThat(actualMono.block())
                 .isEqualTo(expectedMono.block());
     }
 
     @Test
-    void followup_WillReturnNotValidPermissionsMessageMono_WhenMemberHasNoPermission() {
+    public void followup_ReturnsPermissionsNotValid_WhenMemberHasNoValidPermission() {
         // Arrange
+        Permission currentPermission = Permission.CONNECT;
+        PermissionSet permissionSet = PermissionSet.of(currentPermission);
         when(interactionEvent.getInteraction()).thenReturn(interaction);
         when(interaction.getMember()).thenReturn(Optional.of(member));
-        PermissionSet permissionSet = PermissionSet.of();
         when(member.getBasePermissions()).thenReturn(Mono.just(permissionSet));
 
-        String message = "You do not have permission to use this command.";
-
-        InteractionFollowupCreateMono interactionFollowupCreateMono = InteractionFollowupCreateMono.of(interactionEvent);
-        when(interactionEvent.createFollowup(message)).thenReturn(interactionFollowupCreateMono);
+        Message expectedMessage = mock(Message.class);
+        Mono<Message> expectedMono = Mono.just(expectedMessage);
+        when(messageCreator.permissionsNotValid(interactionEvent)).thenReturn(expectedMono);
 
         // Act
-        underTest = new SimplePermissionChecker(interactionEvent, Permission.MANAGE_CHANNELS);
-        underTest.followup(Mono.empty());
+        Mono<Message> actualMono = underTest.followupWith(
+                interactionEvent,
+                Permission.MANAGE_CHANNELS,
+                Mono.empty()
+        );
 
         // Assert
-        verify(interactionEvent, times(1)).createFollowup(message);
+        StepVerifier.create(actualMono)
+                .expectNext(expectedMessage)
+                .verifyComplete();
+        assertThat(actualMono.block())
+                .isEqualTo(expectedMono.block());
     }
 }

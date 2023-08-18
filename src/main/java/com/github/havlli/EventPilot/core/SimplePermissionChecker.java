@@ -12,22 +12,23 @@ import java.util.Optional;
 @Component
 public class SimplePermissionChecker {
 
+    private final MessageCreator messageCreator;
+
+    public SimplePermissionChecker(MessageCreator messageCreator) {
+        this.messageCreator = messageCreator;
+    }
+
     public Mono<Message> followupWith(ChatInputInteractionEvent interactionEvent, Permission permission, Mono<Message> followupMono) {
         Optional<Member> optionalMember = interactionEvent.getInteraction().getMember();
         if (optionalMember.isEmpty()) {
-            return interactionEvent.createFollowup("You are not valid Member to use this command")
-                    .withEphemeral(true);
+            return messageCreator.notValidMember(interactionEvent);
         }
 
         return optionalMember.get()
                 .getBasePermissions()
                 .flatMap(permissions -> {
-                    if (!permissions.contains(permission)) {
-                        return interactionEvent.createFollowup("You do not have permission to use this command.")
-                                .withEphemeral(true);
-                    }
-
-                    return followupMono;
+                    if (permissions.contains(permission)) return followupMono;
+                    else return messageCreator.permissionsNotValid(interactionEvent);
                 });
     }
 }
