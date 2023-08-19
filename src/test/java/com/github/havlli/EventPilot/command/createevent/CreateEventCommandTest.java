@@ -12,6 +12,7 @@ import org.mockito.MockitoAnnotations;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
 class CreateEventCommandTest {
@@ -64,6 +65,11 @@ class CreateEventCommandTest {
 
         // Assert
         StepVerifier.create(underTest.handle(event))
-                .verifyComplete();
+                .expectComplete()
+                .verify();
+
+        var expected = Mono.empty().block();
+        var actual = underTest.handle(event).block();
+        assertThat(actual).isEqualTo(expected);
     }
 }
