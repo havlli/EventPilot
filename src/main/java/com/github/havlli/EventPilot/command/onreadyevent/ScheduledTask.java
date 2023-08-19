@@ -1,7 +1,6 @@
 package com.github.havlli.EventPilot.command.onreadyevent;
 
 import com.github.havlli.EventPilot.core.DiscordService;
-import com.github.havlli.EventPilot.entity.event.Event;
 import com.github.havlli.EventPilot.entity.event.EventService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,7 +12,6 @@ import reactor.core.scheduler.Scheduler;
 import reactor.core.scheduler.Schedulers;
 
 import java.time.Duration;
-import java.util.List;
 
 @Component
 public class ScheduledTask {
@@ -45,11 +43,13 @@ public class ScheduledTask {
     }
 
     private Mono<Void> handleExpiredEvents() {
-        // TODO: Decide what to do with expired events in database
-        //  - delete immediately or retain for some amount of time
-        List<Event> expiredEvents = eventService.getExpiredEvents();
-        discordService.deactivateEvents(expiredEvents);
-
-        return Mono.empty();
+        return Mono.defer(() -> Mono.just(eventService.getExpiredEvents())
+                .flatMap(events -> {
+                    // TODO: Decide what to do with expired events in database
+                    //  - delete immediately or retain for some amount of time
+                    discordService.deactivateEvents(events);
+                    return Mono.empty();
+                })
+        );
     }
 }

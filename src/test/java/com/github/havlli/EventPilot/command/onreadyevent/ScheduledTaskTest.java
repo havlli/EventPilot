@@ -9,7 +9,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import reactor.test.StepVerifier;
-import reactor.test.scheduler.VirtualTimeScheduler;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -39,22 +38,21 @@ class ScheduledTaskTest {
     }
 
     @Test
-    public void getFlux_ReturnsSchedulerFlux() {
+    public void getFlux_InvokesServicesTwiceIn15Seconds_WhenIntervalIs5Seconds() {
         // Arrange
         List<Event> expiredEvents = new ArrayList<>();
         when(eventServiceMock.getExpiredEvents()).thenReturn(expiredEvents);
         doNothing().when(discordServiceMock).deactivateEvents(expiredEvents);
 
         // Assert
-        VirtualTimeScheduler virtualTimeScheduler = VirtualTimeScheduler.create();
         StepVerifier.create(underTest.getFlux())
                 .expectSubscription()
-                .then(() -> virtualTimeScheduler.advanceTimeBy(Duration.ofSeconds(5)))
+                .thenAwait(Duration.ofSeconds(15))
                 .thenCancel()
                 .verify();
 
-        verify(eventServiceMock, times(1)).getExpiredEvents();
-        verify(discordServiceMock, times(1)).deactivateEvents(expiredEvents);
+        verify(eventServiceMock, times(2)).getExpiredEvents();
+        verify(discordServiceMock, times(2)).deactivateEvents(expiredEvents);
     }
 
 }
