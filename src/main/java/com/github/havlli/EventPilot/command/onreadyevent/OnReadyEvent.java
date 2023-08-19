@@ -38,6 +38,6 @@ public class OnReadyEvent implements SlashCommand {
     public Mono<?> handle(Event event) {
         return startupTask.handleNewGuilds()
                 .then(startupTask.subscribeEventInteractions())
-                .then(scheduledTask.getMono());
+                .then(scheduledTask.getFlux().then());
     }
 }

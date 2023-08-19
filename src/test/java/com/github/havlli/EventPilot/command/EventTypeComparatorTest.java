@@ -6,6 +6,7 @@ import com.github.havlli.EventPilot.command.onreadyevent.OnReadyEvent;
 import com.github.havlli.EventPilot.command.onreadyevent.ScheduledTask;
 import com.github.havlli.EventPilot.command.onreadyevent.StartupTask;
 import com.github.havlli.EventPilot.command.test.TestCommand;
+import com.github.havlli.EventPilot.core.SimplePermissionChecker;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -79,7 +80,7 @@ class EventTypeComparatorTest {
     void compareWhenTwoDifferentEvents() {
         // Arrange
         SlashCommand command1 = new TestCommand();
-        SlashCommand command2 = new CreateEventCommand(mock(CreateEventInteraction.class));
+        SlashCommand command2 = new CreateEventCommand(mock(CreateEventInteraction.class), mock(SimplePermissionChecker.class));
 
         // Act
         int result = underTest.compare(command1, command2);
