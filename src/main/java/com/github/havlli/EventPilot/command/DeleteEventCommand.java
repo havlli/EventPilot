@@ -43,16 +43,17 @@ public class DeleteEventCommand implements SlashCommand {
     @Override
     public Mono<?> handle(Event event) {
         ChatInputInteractionEvent interactionEvent = (ChatInputInteractionEvent) event;
-        if (interactionEvent.getCommandName().equals(EVENT_NAME)) {
-            return interactionEvent.deferReply()
-                    .withEphemeral(true)
-                    .then(permissionChecker.followupWith(
-                            interactionEvent,
-                            Permission.MANAGE_CHANNELS,
-                            deleteEventInteraction(interactionEvent)
-                    ));
+        if (!interactionEvent.getCommandName().equals(EVENT_NAME)) {
+            return Mono.empty();
         }
-        return Mono.empty();
+
+        return interactionEvent.deferReply()
+                .withEphemeral(true)
+                .then(permissionChecker.followupWith(
+                        interactionEvent,
+                        Permission.MANAGE_CHANNELS,
+                        deleteEventInteraction(interactionEvent)
+                ));
     }
 
     private Mono<Message> deleteEventInteraction(ChatInputInteractionEvent event) {
