@@ -20,7 +20,7 @@ public class TimeService {
     public boolean isValidFutureTime(Instant instant) {
         Instant instantNow = Instant.now();
         if (!instantNow.isBefore(instant)) {
-            throw new InvalidDateTimeException("Processed instant {%s} is before systems Instant.now() {%s}"
+            throw new InvalidDateTimeException("Processed instant {%s} is before System Instant.now() {%s}"
                     .formatted(instant, instantNow));
         }
         return true;
