@@ -84,22 +84,12 @@ public class TextPromptMono<T extends Event> {
         return event -> {
             eventProcessor.accept(event);
 
-            switch (promptType) {
-                case DEFAULT -> {
-                    return defaultInteractionResponse().apply(event);
-                }
-                case DELETE_ON_RESPONSE -> {
-                    return onDeleteInteractionResponse().apply(event);
-                }
-                case DEFERRABLE_EDIT -> {
-                    return deferrableEditInteractionResponse().apply(event);
-                }
-                case DEFERRABLE_REPLY -> {
-                    return deferrableReplyInteractionResponse().apply(event);
-                }
-            }
-
-            throw new IllegalStateException("%s not supported operation".formatted(eventClass));
+            return switch (promptType) {
+                case DEFAULT -> defaultInteractionResponse().apply(event);
+                case DELETE_ON_RESPONSE -> onDeleteInteractionResponse().apply(event);
+                case DEFERRABLE_EDIT -> deferrableEditInteractionResponse().apply(event);
+                case DEFERRABLE_REPLY -> deferrableReplyInteractionResponse().apply(event);
+            };
         };
     }
 
@@ -243,20 +233,25 @@ public class TextPromptMono<T extends Event> {
         }
 
         public TextPromptMono<T> build() {
+            requiredFieldsCheck();
+            return new TextPromptMono<>(this);
+        }
+
+        private void requiredFieldsCheck() {
             Objects.requireNonNull(messageChannel, "messageChannel is required");
             Objects.requireNonNull(messageCreateSpec, "messageCreateSpec is required");
-            Objects.requireNonNull(eventClass, "eventClass is required");
-            Objects.requireNonNull(client, "client is required");
             Objects.requireNonNull(eventProcessor, "eventProcessor is required");
             Objects.requireNonNull(eventPredicate, "eventPredicate is required");
-            Objects.requireNonNull(promptType, "eventPredicate is required");
+            Objects.requireNonNull(promptType, "promptType is required");
 
             List<Class<? extends ComponentInteractionEvent>> checkedClasses = List.of(SelectMenuInteractionEvent.class);
             if (promptType.equals(PromptType.DEFAULT) && checkedClasses.contains(eventClass)) {
                 Objects.requireNonNull(actionRowComponent, "actionRowComponent is required");
             }
 
-            return new TextPromptMono<>(this);
+            if (!promptType.equals(PromptType.DEFAULT) && eventClass.equals(MessageCreateEvent.class)) {
+                throw new IllegalStateException("%s not supported operation for %s".formatted(promptType, eventClass));
+            }
         }
     }
 }
