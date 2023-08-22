@@ -85,15 +85,15 @@ public class TextPromptMono<T extends Event> {
             eventProcessor.accept(event);
 
             return switch (promptType) {
-                case DEFAULT -> defaultInteractionResponse().apply(event);
-                case DELETE_ON_RESPONSE -> onDeleteInteractionResponse().apply(event);
-                case DEFERRABLE_EDIT -> deferrableEditInteractionResponse().apply(event);
-                case DEFERRABLE_REPLY -> deferrableReplyInteractionResponse().apply(event);
+                case DEFAULT -> defaultResponse().apply(event);
+                case DELETE_ON_RESPONSE -> onDeleteResponse().apply(event);
+                case DEFERRABLE_EDIT -> deferrableEditResponse().apply(event);
+                case DEFERRABLE_REPLY -> deferrableReplyResponse().apply(event);
             };
         };
     }
 
-    private Function<T, Mono<T>> defaultInteractionResponse() {
+    private Function<T, Mono<T>> defaultResponse() {
         return event -> {
             if (event instanceof SelectMenuInteractionEvent selectMenuEvent) {
                 return selectMenuEvent.deferEdit()
@@ -115,7 +115,7 @@ public class TextPromptMono<T extends Event> {
         };
     }
 
-    private Function<T, Mono<T>> onDeleteInteractionResponse() {
+    private Function<T, Mono<T>> onDeleteResponse() {
         return event -> {
             if (event instanceof SelectMenuInteractionEvent selectMenuEvent) {
                 return selectMenuEvent.deferEdit()
@@ -131,7 +131,7 @@ public class TextPromptMono<T extends Event> {
         };
     }
 
-    private Function<T, Mono<T>> deferrableEditInteractionResponse() {
+    private Function<T, Mono<T>> deferrableEditResponse() {
         return event -> {
             if (event instanceof SelectMenuInteractionEvent selectMenuEvent) {
                 return selectMenuEvent.deferEdit()
@@ -145,7 +145,7 @@ public class TextPromptMono<T extends Event> {
         };
     }
 
-    private Function<T, Mono<T>> deferrableReplyInteractionResponse() {
+    private Function<T, Mono<T>> deferrableReplyResponse() {
         return event -> {
             if (event instanceof SelectMenuInteractionEvent selectMenuEvent) {
                 return selectMenuEvent.deferReply()
