@@ -9,6 +9,7 @@ import discord4j.core.event.domain.interaction.SelectMenuInteractionEvent;
 import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.channel.MessageChannel;
+import discord4j.core.spec.MessageCreateMono;
 import discord4j.core.spec.MessageCreateSpec;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -19,10 +20,11 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
+import java.time.format.DateTimeParseException;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 class TextPromptMonoTest {
 
@@ -54,9 +56,10 @@ class TextPromptMonoTest {
     }
 
     @Test
-    void mono_ReturnsMessageCreateEvent() {
+    void mono_ReturnsMessageCreateEvent_WhenEventClassIsMessageCreateEventAndPromptTypeDefault() {
         // Arrange
         Class<MessageCreateEvent> eventClass = MessageCreateEvent.class;
+        PromptType promptType = PromptType.DEFAULT;
 
         Message messageMock = mock(Message.class);
         Mono<Message> messageMockMono = Mono.just(messageMock);
@@ -69,15 +72,15 @@ class TextPromptMonoTest {
         Flux<MessageCreateEvent> messageCreateEventFlux = Flux.just(messageCreateEventMock);
         when(eventDispatcherMock.on(eventClass)).thenReturn(messageCreateEventFlux);
 
-
         TextPromptMono<MessageCreateEvent> textPromptMono = new TextPromptMono.Builder<>(clientMock, eventClass)
-                .withPromptType(PromptType.DEFAULT)
+                .withPromptType(promptType)
                 .messageChannel(messageChannelMono)
                 .messageCreateSpec(messageCreateSpec)
                 .withMessageCollector(messageCollectorMock)
                 .eventPredicate(event -> true)
                 .eventProcessor(event -> System.out.println("event processing..."))
                 .build();
+
         // Act
         Mono<MessageCreateEvent> actual = textPromptMono.mono();
 
@@ -85,6 +88,52 @@ class TextPromptMonoTest {
         StepVerifier.create(actual)
                 .expectNext(messageCreateEventMock)
                 .verifyComplete();
+        verify(messageCollectorMock, times(1)).collect(messageMock);
+    }
+
+    @Test
+    void mono_ReturnsMessageCreateEvent_WithOnErrorRepeat_WhenEventClassIsMessageCreateEventAndPromptTypeDefault() {
+        // Arrange
+        Class<MessageCreateEvent> eventClass = MessageCreateEvent.class;
+        PromptType promptType = PromptType.DEFAULT;
+
+        Class<? extends Throwable> dateTimeParseExceptionClass = DateTimeParseException.class;
+        String errorMessage = "runtimeException thrown!";
+        MessageCreateMono errorMessageMockMono = mock(MessageCreateMono.class);
+        when(messageChannelMock.createMessage(errorMessage)).thenReturn(errorMessageMockMono);
+
+        Message messageMock = mock(Message.class);
+        Mono<Message> messageMockMono = Mono.just(messageMock);
+        when(messageChannelMock.createMessage(messageCreateSpec)).thenReturn(messageMockMono);
+
+        EventDispatcher eventDispatcherMock = mock(EventDispatcher.class);
+        when(clientMock.getEventDispatcher()).thenReturn(eventDispatcherMock);
+
+        MessageCreateEvent messageCreateEventMock = mock(MessageCreateEvent.class);
+        Flux<MessageCreateEvent> messageCreateEventFlux = spy(Flux.just(messageCreateEventMock));
+        when(eventDispatcherMock.on(eventClass)).thenReturn(messageCreateEventFlux);
+
+        TextPromptMono<MessageCreateEvent> textPromptMono = new TextPromptMono.Builder<>(clientMock, eventClass)
+                .withPromptType(promptType)
+                .messageChannel(messageChannelMono)
+                .messageCreateSpec(messageCreateSpec)
+                .withMessageCollector(messageCollectorMock)
+                .onErrorRepeat(dateTimeParseExceptionClass, errorMessage)
+                .eventPredicate(event -> true)
+                .eventProcessor(event -> {
+                    Mono.error(new DateTimeParseException("test","error", 1)).block();
+                    System.out.println(1);
+                })
+                .build();
+
+        // Act
+        Mono<MessageCreateEvent> actual = textPromptMono.mono();
+
+        // Assert
+        StepVerifier.create(actual.log())
+                .expectNext(messageCreateEventMock)
+                .verifyComplete();
+        verify(messageCollectorMock, times(2)).collect(messageMock);
     }
 
     @Test
