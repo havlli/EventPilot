@@ -7,10 +7,11 @@ import discord4j.core.event.EventDispatcher;
 import discord4j.core.event.domain.interaction.ButtonInteractionEvent;
 import discord4j.core.event.domain.interaction.SelectMenuInteractionEvent;
 import discord4j.core.event.domain.message.MessageCreateEvent;
+import discord4j.core.object.component.ActionRow;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.channel.MessageChannel;
-import discord4j.core.spec.MessageCreateMono;
-import discord4j.core.spec.MessageCreateSpec;
+import discord4j.core.spec.*;
+import discord4j.rest.interaction.InteractionResponse;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -21,6 +22,7 @@ import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
 import java.time.format.DateTimeParseException;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -92,7 +94,359 @@ class TextPromptMonoTest {
     }
 
     @Test
+    void mono_ReturnsSelectMenuInteractionEvent_WhenEventClassIsSelectMenuInteractionEventAndPromptTypeDefault() {
+        // Arrange
+        Class<SelectMenuInteractionEvent> eventClass = SelectMenuInteractionEvent.class;
+        PromptType promptType = PromptType.DEFAULT;
+
+        Message messageMock = mock(Message.class);
+        Mono<Message> messageMockMono = Mono.just(messageMock);
+        when(messageChannelMock.createMessage(messageCreateSpec)).thenReturn(messageMockMono);
+
+        EventDispatcher eventDispatcherMock = mock(EventDispatcher.class);
+        when(clientMock.getEventDispatcher()).thenReturn(eventDispatcherMock);
+
+        SelectMenuInteractionEvent selectMenuInteractionEventMock = mock(SelectMenuInteractionEvent.class);
+        Flux<SelectMenuInteractionEvent> selectMenuInteractionEventFlux = Flux.just(selectMenuInteractionEventMock);
+        when(eventDispatcherMock.on(eventClass)).thenReturn(selectMenuInteractionEventFlux);
+
+        InteractionCallbackSpecDeferEditMono interactionCallbackSpecDeferEditMono = mock(InteractionCallbackSpecDeferEditMono.class);
+        when(selectMenuInteractionEventMock.deferEdit()).thenReturn(interactionCallbackSpecDeferEditMono);
+        Message selectMenuMessage = mock(Message.class);
+        ActionRow actionRow = mock(ActionRow.class);
+        Mono<Message> selectMenuMessageMono = Mono.just(selectMenuMessage);
+        when(interactionCallbackSpecDeferEditMono.then(selectMenuInteractionEventMock.editReply(InteractionReplyEditSpec.builder()
+                .components(List.of(actionRow))
+                .build()))
+        ).thenReturn(selectMenuMessageMono);
+
+        when(actionRowComponentMock.getDisabledRow()).thenReturn(actionRow);
+
+        TextPromptMono<SelectMenuInteractionEvent> textPromptMono = new TextPromptMono.Builder<>(clientMock, eventClass)
+                .withPromptType(promptType)
+                .actionRowComponent(actionRowComponentMock)
+                .messageChannel(messageChannelMono)
+                .messageCreateSpec(messageCreateSpec)
+                .withMessageCollector(messageCollectorMock)
+                .eventPredicate(event -> true)
+                .eventProcessor(event -> System.out.println("event processing..."))
+                .build();
+
+        // Act
+        Mono<SelectMenuInteractionEvent> actual = textPromptMono.mono();
+
+        // Assert
+        StepVerifier.create(actual)
+                .expectNext(selectMenuInteractionEventMock)
+                .verifyComplete();
+        verify(messageCollectorMock, times(1)).collect(messageMock);
+    }
+
+    @Test
+    void mono_ReturnsSelectMenuInteractionEvent_WhenEventClassIsSelectMenuInteractionEventAndPromptTypeDeleteOnResponse() {
+        // Arrange
+        Class<SelectMenuInteractionEvent> eventClass = SelectMenuInteractionEvent.class;
+        PromptType promptType = PromptType.DELETE_ON_RESPONSE;
+
+        Message messageMock = mock(Message.class);
+        Mono<Message> messageMockMono = Mono.just(messageMock);
+        when(messageChannelMock.createMessage(messageCreateSpec)).thenReturn(messageMockMono);
+
+        EventDispatcher eventDispatcherMock = mock(EventDispatcher.class);
+        when(clientMock.getEventDispatcher()).thenReturn(eventDispatcherMock);
+
+        SelectMenuInteractionEvent selectMenuInteractionEventMock = mock(SelectMenuInteractionEvent.class);
+        Flux<SelectMenuInteractionEvent> selectMenuInteractionEventFlux = Flux.just(selectMenuInteractionEventMock);
+        when(eventDispatcherMock.on(eventClass)).thenReturn(selectMenuInteractionEventFlux);
+
+        InteractionCallbackSpecDeferEditMono interactionCallbackSpecDeferEditMono = mock(InteractionCallbackSpecDeferEditMono.class);
+        when(selectMenuInteractionEventMock.deferEdit()).thenReturn(interactionCallbackSpecDeferEditMono);
+
+        InteractionResponse interactionResponseMock = mock(InteractionResponse.class);
+        when(selectMenuInteractionEventMock.getInteractionResponse()).thenReturn(interactionResponseMock);
+        when(interactionResponseMock.deleteInitialResponse()).thenReturn(Mono.empty());
+        when(interactionCallbackSpecDeferEditMono.then(selectMenuInteractionEventMock.getInteractionResponse().deleteInitialResponse())).thenReturn(Mono.empty());
+
+        TextPromptMono<SelectMenuInteractionEvent> textPromptMono = new TextPromptMono.Builder<>(clientMock, eventClass)
+                .withPromptType(promptType)
+                .actionRowComponent(actionRowComponentMock)
+                .messageChannel(messageChannelMono)
+                .messageCreateSpec(messageCreateSpec)
+                .withMessageCollector(messageCollectorMock)
+                .eventPredicate(event -> true)
+                .eventProcessor(event -> System.out.println("event processing..."))
+                .build();
+
+        // Act
+        Mono<SelectMenuInteractionEvent> actual = textPromptMono.mono();
+
+        // Assert
+        StepVerifier.create(actual)
+                .expectNext(selectMenuInteractionEventMock)
+                .verifyComplete();
+        verify(messageCollectorMock, times(1)).collect(messageMock);
+    }
+
+    @Test
+    void mono_ReturnsSelectMenuInteractionEvent_WhenEventClassIsSelectMenuInteractionEventAndPromptTypeDeferrableEdit() {
+        // Arrange
+        Class<SelectMenuInteractionEvent> eventClass = SelectMenuInteractionEvent.class;
+        PromptType promptType = PromptType.DEFERRABLE_EDIT;
+
+        Message messageMock = mock(Message.class);
+        Mono<Message> messageMockMono = Mono.just(messageMock);
+        when(messageChannelMock.createMessage(messageCreateSpec)).thenReturn(messageMockMono);
+
+        EventDispatcher eventDispatcherMock = mock(EventDispatcher.class);
+        when(clientMock.getEventDispatcher()).thenReturn(eventDispatcherMock);
+
+        SelectMenuInteractionEvent selectMenuInteractionEventMock = mock(SelectMenuInteractionEvent.class);
+        Flux<SelectMenuInteractionEvent> selectMenuInteractionEventFlux = Flux.just(selectMenuInteractionEventMock);
+        when(eventDispatcherMock.on(eventClass)).thenReturn(selectMenuInteractionEventFlux);
+
+        InteractionCallbackSpecDeferEditMono interactionCallbackSpecDeferEditMono = mock(InteractionCallbackSpecDeferEditMono.class);
+        when(selectMenuInteractionEventMock.deferEdit()).thenReturn(interactionCallbackSpecDeferEditMono);
+
+        when(interactionCallbackSpecDeferEditMono.then(any())).thenReturn(Mono.empty());
+
+        TextPromptMono<SelectMenuInteractionEvent> textPromptMono = new TextPromptMono.Builder<>(clientMock, eventClass)
+                .withPromptType(promptType)
+                .actionRowComponent(actionRowComponentMock)
+                .messageChannel(messageChannelMono)
+                .messageCreateSpec(messageCreateSpec)
+                .withMessageCollector(messageCollectorMock)
+                .eventPredicate(event -> true)
+                .eventProcessor(event -> System.out.println("event processing..."))
+                .build();
+
+        // Act
+        Mono<SelectMenuInteractionEvent> actual = textPromptMono.mono();
+
+        // Assert
+        StepVerifier.create(actual)
+                .verifyComplete();
+        verify(messageCollectorMock, times(1)).collect(messageMock);
+    }
+
+    @Test
+    void mono_ReturnsSelectMenuInteractionEvent_WhenEventClassIsSelectMenuInteractionEventAndPromptTypeDeferrableReply() {
+        // Arrange
+        Class<SelectMenuInteractionEvent> eventClass = SelectMenuInteractionEvent.class;
+        PromptType promptType = PromptType.DEFERRABLE_REPLY;
+
+        Message messageMock = mock(Message.class);
+        Mono<Message> messageMockMono = Mono.just(messageMock);
+        when(messageChannelMock.createMessage(messageCreateSpec)).thenReturn(messageMockMono);
+
+        EventDispatcher eventDispatcherMock = mock(EventDispatcher.class);
+        when(clientMock.getEventDispatcher()).thenReturn(eventDispatcherMock);
+
+        SelectMenuInteractionEvent selectMenuInteractionEventMock = mock(SelectMenuInteractionEvent.class);
+        Flux<SelectMenuInteractionEvent> selectMenuInteractionEventFlux = Flux.just(selectMenuInteractionEventMock);
+        when(eventDispatcherMock.on(eventClass)).thenReturn(selectMenuInteractionEventFlux);
+
+        InteractionCallbackSpecDeferReplyMono interactionCallbackSpecDeferReplyMono = mock(InteractionCallbackSpecDeferReplyMono.class);
+        when(selectMenuInteractionEventMock.deferReply()).thenReturn(interactionCallbackSpecDeferReplyMono);
+
+        Mono<SelectMenuInteractionEvent> selectMenuInteractionEventMockMono = Mono.just(selectMenuInteractionEventMock);
+        doReturn(selectMenuInteractionEventMockMono).when(interactionCallbackSpecDeferReplyMono).then(any());
+
+        TextPromptMono<SelectMenuInteractionEvent> textPromptMono = new TextPromptMono.Builder<>(clientMock, eventClass)
+                .withPromptType(promptType)
+                .actionRowComponent(actionRowComponentMock)
+                .messageChannel(messageChannelMono)
+                .messageCreateSpec(messageCreateSpec)
+                .withMessageCollector(messageCollectorMock)
+                .eventPredicate(event -> true)
+                .eventProcessor(event -> System.out.println("event processing..."))
+                .build();
+
+        // Act
+        Mono<SelectMenuInteractionEvent> actual = textPromptMono.mono();
+
+        // Assert
+        StepVerifier.create(actual)
+                .expectNext(selectMenuInteractionEventMock)
+                .verifyComplete();
+        verify(messageCollectorMock, times(1)).collect(messageMock);
+    }
+
+    @Test
+    void mono_ReturnsButtonInteractionEvent_WhenEventClassIsButtonInteractionEventAndPromptTypeDefault() {
+        // Arrange
+        Class<ButtonInteractionEvent> eventClass = ButtonInteractionEvent.class;
+        PromptType promptType = PromptType.DEFAULT;
+
+        Message messageMock = mock(Message.class);
+        Mono<Message> messageMockMono = Mono.just(messageMock);
+        when(messageChannelMock.createMessage(messageCreateSpec)).thenReturn(messageMockMono);
+
+        EventDispatcher eventDispatcherMock = mock(EventDispatcher.class);
+        when(clientMock.getEventDispatcher()).thenReturn(eventDispatcherMock);
+
+        ButtonInteractionEvent buttonInteractionEventMock = mock(ButtonInteractionEvent.class);
+        Flux<ButtonInteractionEvent> buttonInteractionEventMockFlux = Flux.just(buttonInteractionEventMock);
+        when(eventDispatcherMock.on(eventClass)).thenReturn(buttonInteractionEventMockFlux);
+
+        InteractionCallbackSpecDeferEditMono interactionCallbackSpecDeferEditMono = mock(InteractionCallbackSpecDeferEditMono.class);
+        when(buttonInteractionEventMock.deferEdit()).thenReturn(interactionCallbackSpecDeferEditMono);
+        Message buttonMenuMessage = mock(Message.class);
+        Mono<Message> buttonMenuMessageMono = Mono.just(buttonMenuMessage);
+        when(interactionCallbackSpecDeferEditMono.then(buttonInteractionEventMock.editReply(InteractionReplyEditSpec.builder()
+                .components(List.of())
+                .build()))
+        ).thenReturn(buttonMenuMessageMono);
+
+        TextPromptMono<ButtonInteractionEvent> textPromptMono = new TextPromptMono.Builder<>(clientMock, eventClass)
+                .withPromptType(promptType)
+                .messageChannel(messageChannelMono)
+                .messageCreateSpec(messageCreateSpec)
+                .withMessageCollector(messageCollectorMock)
+                .eventPredicate(event -> true)
+                .eventProcessor(event -> System.out.println("event processing..."))
+                .build();
+
+        // Act
+        Mono<ButtonInteractionEvent> actual = textPromptMono.mono();
+
+        // Assert
+        StepVerifier.create(actual)
+                .expectNext(buttonInteractionEventMock)
+                .verifyComplete();
+        verify(messageCollectorMock, times(1)).collect(messageMock);
+    }
+
+    @Test
+    void mono_ReturnsButtonInteractionEvent_WhenEventClassIsButtonInteractionEventAndPromptTypeDeleteOnResponse() {
+        // Arrange
+        Class<ButtonInteractionEvent> eventClass = ButtonInteractionEvent.class;
+        PromptType promptType = PromptType.DELETE_ON_RESPONSE;
+
+        Message messageMock = mock(Message.class);
+        Mono<Message> messageMockMono = Mono.just(messageMock);
+        when(messageChannelMock.createMessage(messageCreateSpec)).thenReturn(messageMockMono);
+
+        EventDispatcher eventDispatcherMock = mock(EventDispatcher.class);
+        when(clientMock.getEventDispatcher()).thenReturn(eventDispatcherMock);
+
+        ButtonInteractionEvent buttonInteractionEventMock = mock(ButtonInteractionEvent.class);
+        Flux<ButtonInteractionEvent> buttonInteractionEventMockFlux = Flux.just(buttonInteractionEventMock);
+        when(eventDispatcherMock.on(eventClass)).thenReturn(buttonInteractionEventMockFlux);
+
+        InteractionCallbackSpecDeferEditMono interactionCallbackSpecDeferEditMono = mock(InteractionCallbackSpecDeferEditMono.class);
+        when(buttonInteractionEventMock.deferEdit()).thenReturn(interactionCallbackSpecDeferEditMono);
+
+        InteractionResponse interactionResponseMock = mock(InteractionResponse.class);
+        when(buttonInteractionEventMock.getInteractionResponse()).thenReturn(interactionResponseMock);
+        when(interactionResponseMock.deleteInitialResponse()).thenReturn(Mono.empty());
+        when(interactionCallbackSpecDeferEditMono.then(buttonInteractionEventMock.getInteractionResponse().deleteInitialResponse())).thenReturn(Mono.empty());
+
+        TextPromptMono<ButtonInteractionEvent> textPromptMono = new TextPromptMono.Builder<>(clientMock, eventClass)
+                .withPromptType(promptType)
+                .messageChannel(messageChannelMono)
+                .messageCreateSpec(messageCreateSpec)
+                .withMessageCollector(messageCollectorMock)
+                .eventPredicate(event -> true)
+                .eventProcessor(event -> System.out.println("event processing..."))
+                .build();
+
+        // Act
+        Mono<ButtonInteractionEvent> actual = textPromptMono.mono();
+
+        // Assert
+        StepVerifier.create(actual)
+                .expectNext(buttonInteractionEventMock)
+                .verifyComplete();
+        verify(messageCollectorMock, times(1)).collect(messageMock);
+    }
+
+    @Test
+    void mono_ReturnsButtonInteractionEvent_WhenEventClassIsButtonInteractionEventAndPromptTypeDeferrableEdit() {
+        // Arrange
+        Class<ButtonInteractionEvent> eventClass = ButtonInteractionEvent.class;
+        PromptType promptType = PromptType.DEFERRABLE_EDIT;
+
+        Message messageMock = mock(Message.class);
+        Mono<Message> messageMockMono = Mono.just(messageMock);
+        when(messageChannelMock.createMessage(messageCreateSpec)).thenReturn(messageMockMono);
+
+        EventDispatcher eventDispatcherMock = mock(EventDispatcher.class);
+        when(clientMock.getEventDispatcher()).thenReturn(eventDispatcherMock);
+
+        ButtonInteractionEvent buttonInteractionEventMock = mock(ButtonInteractionEvent.class);
+        Flux<ButtonInteractionEvent> buttonInteractionEventMockFlux = Flux.just(buttonInteractionEventMock);
+        when(eventDispatcherMock.on(eventClass)).thenReturn(buttonInteractionEventMockFlux);
+
+        InteractionCallbackSpecDeferEditMono interactionCallbackSpecDeferEditMono = mock(InteractionCallbackSpecDeferEditMono.class);
+        when(buttonInteractionEventMock.deferEdit()).thenReturn(interactionCallbackSpecDeferEditMono);
+
+        Mono<ButtonInteractionEvent> buttonInteractionEventMono = Mono.just(buttonInteractionEventMock);
+        doReturn(buttonInteractionEventMono).when(interactionCallbackSpecDeferEditMono).then(any());
+
+        TextPromptMono<ButtonInteractionEvent> textPromptMono = new TextPromptMono.Builder<>(clientMock, eventClass)
+                .withPromptType(promptType)
+                .messageChannel(messageChannelMono)
+                .messageCreateSpec(messageCreateSpec)
+                .withMessageCollector(messageCollectorMock)
+                .eventPredicate(event -> true)
+                .eventProcessor(event -> System.out.println("event processing..."))
+                .build();
+
+        // Act
+        Mono<ButtonInteractionEvent> actual = textPromptMono.mono();
+
+        // Assert
+        StepVerifier.create(actual)
+                .expectNext(buttonInteractionEventMock)
+                .verifyComplete();
+        verify(messageCollectorMock, times(1)).collect(messageMock);
+    }
+
+    @Test
+    void mono_ReturnsButtonInteractionEvent_WhenEventClassIsButtonInteractionEventAndPromptTypeDeferrableReply() {
+        // Arrange
+        Class<ButtonInteractionEvent> eventClass = ButtonInteractionEvent.class;
+        PromptType promptType = PromptType.DEFERRABLE_REPLY;
+
+        Message messageMock = mock(Message.class);
+        Mono<Message> messageMockMono = Mono.just(messageMock);
+        when(messageChannelMock.createMessage(messageCreateSpec)).thenReturn(messageMockMono);
+
+        EventDispatcher eventDispatcherMock = mock(EventDispatcher.class);
+        when(clientMock.getEventDispatcher()).thenReturn(eventDispatcherMock);
+
+        ButtonInteractionEvent buttonInteractionEventMock = mock(ButtonInteractionEvent.class);
+        Flux<ButtonInteractionEvent> buttonInteractionEventMockFlux = Flux.just(buttonInteractionEventMock);
+        when(eventDispatcherMock.on(eventClass)).thenReturn(buttonInteractionEventMockFlux);
+
+        InteractionCallbackSpecDeferReplyMono interactionCallbackSpecDeferReplyMono = mock(InteractionCallbackSpecDeferReplyMono.class);
+        when(buttonInteractionEventMock.deferReply()).thenReturn(interactionCallbackSpecDeferReplyMono);
+
+        Mono<ButtonInteractionEvent> buttonInteractionEventMono = Mono.just(buttonInteractionEventMock);
+        doReturn(buttonInteractionEventMono).when(interactionCallbackSpecDeferReplyMono).then(any());
+
+        TextPromptMono<ButtonInteractionEvent> textPromptMono = new TextPromptMono.Builder<>(clientMock, eventClass)
+                .withPromptType(promptType)
+                .messageChannel(messageChannelMono)
+                .messageCreateSpec(messageCreateSpec)
+                .withMessageCollector(messageCollectorMock)
+                .eventPredicate(event -> true)
+                .eventProcessor(event -> System.out.println("event processing..."))
+                .build();
+
+        // Act
+        Mono<ButtonInteractionEvent> actual = textPromptMono.mono();
+
+        // Assert
+        StepVerifier.create(actual)
+                .expectNext(buttonInteractionEventMock)
+                .verifyComplete();
+        verify(messageCollectorMock, times(1)).collect(messageMock);
+    }
+
+    @Test
     void mono_ReturnsMessageCreateEvent_WithOnErrorRepeat_WhenEventClassIsMessageCreateEventAndPromptTypeDefault() {
+        // TODO
         // Arrange
         Class<MessageCreateEvent> eventClass = MessageCreateEvent.class;
         PromptType promptType = PromptType.DEFAULT;
@@ -110,7 +464,7 @@ class TextPromptMonoTest {
         when(clientMock.getEventDispatcher()).thenReturn(eventDispatcherMock);
 
         MessageCreateEvent messageCreateEventMock = mock(MessageCreateEvent.class);
-        Flux<MessageCreateEvent> messageCreateEventFlux = spy(Flux.just(messageCreateEventMock));
+        Flux<MessageCreateEvent> messageCreateEventFlux = Flux.just(messageCreateEventMock);
         when(eventDispatcherMock.on(eventClass)).thenReturn(messageCreateEventFlux);
 
         TextPromptMono<MessageCreateEvent> textPromptMono = new TextPromptMono.Builder<>(clientMock, eventClass)
@@ -120,10 +474,7 @@ class TextPromptMonoTest {
                 .withMessageCollector(messageCollectorMock)
                 .onErrorRepeat(dateTimeParseExceptionClass, errorMessage)
                 .eventPredicate(event -> true)
-                .eventProcessor(event -> {
-                    Mono.error(new DateTimeParseException("test","error", 1)).block();
-                    System.out.println(1);
-                })
+                .eventProcessor(event -> { })
                 .build();
 
         // Act

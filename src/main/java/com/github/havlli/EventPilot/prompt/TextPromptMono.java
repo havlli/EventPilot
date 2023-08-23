@@ -86,7 +86,7 @@ public class TextPromptMono<T extends Event> {
 
             return switch (promptType) {
                 case DEFAULT -> defaultResponse().apply(event);
-                case DELETE_ON_RESPONSE -> onDeleteResponse().apply(event);
+                case DELETE_ON_RESPONSE -> deleteOnResponse().apply(event);
                 case DEFERRABLE_EDIT -> deferrableEditResponse().apply(event);
                 case DEFERRABLE_REPLY -> deferrableReplyResponse().apply(event);
             };
@@ -115,7 +115,7 @@ public class TextPromptMono<T extends Event> {
         };
     }
 
-    private Function<T, Mono<T>> onDeleteResponse() {
+    private Function<T, Mono<T>> deleteOnResponse() {
         return event -> {
             if (event instanceof SelectMenuInteractionEvent selectMenuEvent) {
                 return selectMenuEvent.deferEdit()
