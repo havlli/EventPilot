@@ -39,7 +39,7 @@ public class ButtonRow implements ButtonRowComponent {
     }
 
     public static class Builder {
-        public enum buttonType {
+        public enum ButtonType {
             PRIMARY,
             SECONDARY,
             DANGER
@@ -53,7 +53,7 @@ public class ButtonRow implements ButtonRowComponent {
             this.customIds = new ArrayList<>();
         }
 
-        public Builder addButton(String customId, String label, buttonType type) {
+        public Builder addButton(String customId, String label, ButtonType type) {
 
             switch (type) {
                 case PRIMARY -> {
@@ -74,6 +74,7 @@ public class ButtonRow implements ButtonRowComponent {
         }
 
         public ButtonRow build() {
+            if (buttons.isEmpty()) throw new IllegalStateException("To construct ButtonRow you need to define at least one button!");
             return new ButtonRow(this);
         }
 
