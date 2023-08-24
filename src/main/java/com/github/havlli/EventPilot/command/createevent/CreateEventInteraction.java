@@ -262,9 +262,9 @@ public class CreateEventInteraction {
 
     private Mono<ButtonInteractionEvent> promptConfirmationAndDeferReply() {
         ButtonRow buttonRow = ButtonRow.builder()
-                .addButton("confirm", "Confirm", ButtonRow.Builder.buttonType.PRIMARY)
-                .addButton("cancel", "Cancel", ButtonRow.Builder.buttonType.DANGER)
-                .addButton("repeat", "Start Again!", ButtonRow.Builder.buttonType.SECONDARY)
+                .addButton("confirm", "Confirm", ButtonRow.Builder.ButtonType.PRIMARY)
+                .addButton("cancel", "Cancel", ButtonRow.Builder.ButtonType.DANGER)
+                .addButton("repeat", "Start Again!", ButtonRow.Builder.ButtonType.SECONDARY)
                 .build();
         MessageCreateSpec prompt = MessageCreateSpec.builder()
                 .addEmbed(embedGenerator.generatePreview(eventBuilder))
