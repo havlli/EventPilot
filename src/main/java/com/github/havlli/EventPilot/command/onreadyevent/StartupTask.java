@@ -23,7 +23,12 @@ public class StartupTask {
     private final EmbedGenerator embedGenerator;
     private final GatewayDiscordClient client;
 
-    public StartupTask(EventService eventService, GuildService guildService, EmbedGenerator embedGenerator, GatewayDiscordClient client) {
+    public StartupTask(
+            EventService eventService,
+            GuildService guildService,
+            EmbedGenerator embedGenerator,
+            GatewayDiscordClient client
+    ) {
         this.eventService = eventService;
         this.guildService = guildService;
         this.embedGenerator = embedGenerator;
@@ -34,6 +39,7 @@ public class StartupTask {
         List<Event> events = eventService.getAllEvents();
         events.forEach(embedGenerator::subscribeInteractions);
         logger.info("%d event interactions subscribed".formatted(events.size()));
+
         return Mono.empty();
     }
 
