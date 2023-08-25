@@ -25,7 +25,7 @@ public class ComponentGenerator {
                 .stream()
                 .filter(entry -> entry.getKey() > 0)
                 .map(entry -> {
-                    String customId = id + delimiter + entry.getKey();
+                    String customId = constructCustomId(id, delimiter, entry.getKey());
                     return Button.primary(customId, entry.getValue());
                 })
                 .collect(Collectors.toList());
@@ -36,9 +36,13 @@ public class ComponentGenerator {
                 .stream()
                 .filter(entry -> entry.getKey() <= 0)
                 .map(entry -> {
-                    String customId = id + delimiter + entry.getKey();
+                    String customId = constructCustomId(id, delimiter, entry.getKey());
                     return Button.secondary(customId, entry.getValue());
                 })
                 .collect(Collectors.toList());
+    }
+
+    private String constructCustomId(String id, String delimiter, Integer fieldKey) {
+        return id + delimiter + fieldKey;
     }
 }
