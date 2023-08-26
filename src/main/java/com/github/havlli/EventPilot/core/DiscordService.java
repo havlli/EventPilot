@@ -11,10 +11,10 @@ import discord4j.rest.http.client.ClientException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class DiscordService {
@@ -27,48 +27,45 @@ public class DiscordService {
         this.client = client;
     }
 
-    public void deactivateEvents(List<Event> events) {
+    public Mono<Message> deactivateEvent(Event event) {
+        Snowflake messageId = Snowflake.of(event.getEventId());
+        Snowflake channelId = Snowflake.of(event.getDestinationChannelId());
 
+        return client.getMessageById(channelId, messageId)
+                .flatMap(message -> {
+                    if (isAlreadyDeactivated(message)) return Mono.empty();
+                    else return deactivateEventMessage(message);
+                })
+                .onErrorResume(ClientException.class, e -> {
+                    String errorMessage = "Message {%s} was not found in channel {%s}"
+                            .formatted(messageId.asString(), channelId.asString());
+                    logger.error(errorMessage, e);
+                    return Mono.empty();
+                });
+    }
+
+    public Flux<Message> deactivateEvents(List<Event> events) {
+        return Flux.fromIterable(events)
+                .flatMap(this::deactivateEvent);
+    }
+
+    private Mono<Message> deactivateEventMessage(Message message) {
         MessageEditSpec editedMessage = MessageEditSpec.builder()
                 .addComponent(EXPIRED_COMPONENT.getActionRow())
                 .build();
 
-        events.forEach(event -> {
-            Snowflake messageId = Snowflake.of(event.getEventId());
-            Snowflake channelId = Snowflake.of(event.getDestinationChannelId());
-
-            client.getMessageById(channelId, messageId)
-                    .flatMap(message -> {
-
-                        if (!isAlreadyDeactivated(message)) return message.edit(editedMessage);
-
-                        return Mono.empty();
-                    })
-                    .onErrorResume(ClientException.class, e -> {
-
-                        String errorMessage = "Message {%s} was not found in channel {%s}"
-                                .formatted(messageId.asString(), channelId.asString());
-                        logger.error(errorMessage, e);
-
-                        return Mono.empty();
-                    })
-                    .subscribe();
-        });
+        return message.edit(editedMessage);
     }
 
     private boolean isAlreadyDeactivated(Message message) {
-
-        Optional<String> customId = message.getComponents().stream()
+        return message.getComponents().stream()
                 .findFirst()
                 .flatMap(layoutComponent -> layoutComponent.getChildren().stream()
                         .findFirst())
-                .flatMap(messageComponent -> messageComponent
-                        .getData()
+                .flatMap(messageComponent -> messageComponent.getData()
                         .customId()
-                        .toOptional());
-
-        if (customId.isEmpty()) return false;
-
-        return customId.get().equals(EXPIRED_COMPONENT.getCustomId());
+                        .toOptional())
+                .filter(id -> id.equals(EXPIRED_COMPONENT.getCustomId()))
+                .isPresent();
     }
 }
