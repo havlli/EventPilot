@@ -9,6 +9,7 @@ import discord4j.core.object.entity.Message;
 import discord4j.core.spec.MessageEditSpec;
 import discord4j.discordjson.json.ComponentData;
 import discord4j.discordjson.possible.Possible;
+import discord4j.rest.http.client.ClientException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -21,8 +22,7 @@ import reactor.test.StepVerifier;
 import java.util.List;
 
 import static org.mockito.ArgumentMatchers.any;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 class DiscordServiceTest {
 
@@ -197,6 +197,39 @@ class DiscordServiceTest {
         StepVerifier.create(actual)
                 .expectSubscription()
                 .expectNext(messageOneMock)
+                .verifyComplete();
+    }
+
+    @Test
+    void deactivateEvents_HandlesErrorGracefully_WhenMessageNotFound() {
+        // Arrange
+        Event eventOneMock = mock(Event.class);
+        String eventOneId = "12345";
+        when(eventOneMock.getEventId()).thenReturn(eventOneId);
+        String eventOneChannel = "123456789";
+        when(eventOneMock.getDestinationChannelId()).thenReturn(eventOneChannel);
+
+        Message messageOneMock = mock(Message.class);
+        LayoutComponent layoutComponentMock = mock(LayoutComponent.class);
+        when(messageOneMock.getComponents()).thenReturn(List.of(layoutComponentMock));
+        MessageComponent messageComponentMock = mock(MessageComponent.class);
+        when(layoutComponentMock.getChildren()).thenReturn(List.of(messageComponentMock));
+        ComponentData componentDataMock = mock(ComponentData.class);
+        when(messageComponentMock.getData()).thenReturn(componentDataMock);
+        when(componentDataMock.customId()).thenReturn(Possible.of("not-expired"));
+
+        when(messageOneMock.edit(any(MessageEditSpec.class))).thenThrow(ClientException.class);
+
+        when(clientMock.getMessageById(Snowflake.of(eventOneChannel), Snowflake.of(eventOneId)))
+                .thenReturn(Mono.just(messageOneMock));
+
+        // Act
+        DiscordService discordService = spy(new DiscordService(clientMock));
+        Flux<Message> actual = discordService.deactivateEvents(List.of(eventOneMock));
+
+        // Assert
+        StepVerifier.create(actual)
+                .expectSubscription()
                 .verifyComplete();
     }
 }
