@@ -36,7 +36,6 @@ public class GlobalCommandListener {
     public Flux<?> constructListeners() {
         Flux<?> commandFlux = Flux.empty();
 
-        // Sorting to make sure that OnReadyEvent is the first one to get merged to Flux hence first one to get subscribed
         commands.sort(typeComparator);
 
         for (SlashCommand command : commands) {

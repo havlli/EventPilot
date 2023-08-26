@@ -44,12 +44,8 @@ public class ScheduledTask {
 
     private Mono<Void> handleExpiredEvents() {
         return Mono.defer(() -> Mono.just(eventService.getExpiredEvents())
-                .flatMap(events -> {
-                    // TODO: Decide what to do with expired events in database
-                    //  - delete immediately or retain for some amount of time
-                    discordService.deactivateEvents(events);
-                    return Mono.empty();
-                })
+                .flatMapMany(discordService::deactivateEvents)
+                .then()
         );
     }
 }

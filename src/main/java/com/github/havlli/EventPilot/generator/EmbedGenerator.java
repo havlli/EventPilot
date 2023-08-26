@@ -15,7 +15,6 @@ import discord4j.core.spec.InteractionReplyEditSpec;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
-import java.time.Instant;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -62,9 +61,8 @@ public class EmbedGenerator {
         String empty = "";
         String leaderWithEmbedId = formatter.leaderWithId(event.getAuthor(), event.getEventId());
         String raidSize = formatter.raidSize(event.getParticipants().size(), Integer.parseInt(event.getMemberSize()));
-        long timestamp = getTimestamp(event.getDateTime());
-        String date = formatter.date(timestamp);
-        String time = formatter.time(timestamp);
+        String date = formatter.date(event.getDateTime());
+        String time = formatter.time(event.getDateTime());
 
         return EmbedCreateSpec.builder()
                 .addField(empty, leaderWithEmbedId, false)
@@ -75,10 +73,6 @@ public class EmbedGenerator {
                 .addField(empty, raidSize, true)
                 .addAllFields(getPopulatedFields(event))
                 .build();
-    }
-
-    private Long getTimestamp(Instant dateTime) {
-        return dateTime.getEpochSecond();
     }
 
     private static final HashMap<Integer, String> fieldsMap = new HashMap<>(Map.of(
