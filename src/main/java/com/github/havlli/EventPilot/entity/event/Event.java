@@ -1,5 +1,6 @@
 package com.github.havlli.EventPilot.entity.event;
 
+import com.github.havlli.EventPilot.entity.embedtype.EmbedType;
 import com.github.havlli.EventPilot.entity.guild.Guild;
 import com.github.havlli.EventPilot.entity.participant.Participant;
 import com.github.havlli.EventPilot.generator.EmbedPreviewable;
@@ -35,6 +36,9 @@ public class Event {
     @ManyToOne
     @JoinColumn(name = "guild_id")
     private Guild guild;
+    @ManyToOne
+    @JoinColumn(name = "embed_type")
+    private EmbedType embedType;
     public Event() { }
 
     public Event(
@@ -47,7 +51,8 @@ public class Event {
             String instances,
             String memberSize,
             List<Participant> participants,
-            Guild guild
+            Guild guild,
+            EmbedType embedType
     ) {
         this.eventId = eventId;
         this.name = name;
@@ -59,6 +64,7 @@ public class Event {
         this.memberSize = memberSize;
         this.participants = participants;
         this.guild = guild;
+        this.embedType = embedType;
     }
 
     public Event(Event.Builder builder) {
@@ -71,6 +77,7 @@ public class Event {
         this.instances = builder.instances;
         this.memberSize = builder.memberSize;
         this.guild = builder.guild;
+        this.embedType = builder.embedType;
         this.participants = new ArrayList<>();
     }
 
@@ -154,17 +161,25 @@ public class Event {
         this.guild = guild;
     }
 
+    public EmbedType getEmbedType() {
+        return embedType;
+    }
+
+    public void setEmbedType(EmbedType embedType) {
+        this.embedType = embedType;
+    }
+
     @Override
     public boolean equals(Object o) {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Event event = (Event) o;
-        return Objects.equals(eventId, event.eventId) && Objects.equals(name, event.name) && Objects.equals(description, event.description) && Objects.equals(author, event.author) && Objects.equals(dateTime, event.dateTime) && Objects.equals(destinationChannelId, event.destinationChannelId) && Objects.equals(instances, event.instances) && Objects.equals(memberSize, event.memberSize) && Objects.equals(participants, event.participants) && Objects.equals(guild, event.guild);
+        return Objects.equals(eventId, event.eventId) && Objects.equals(name, event.name) && Objects.equals(description, event.description) && Objects.equals(author, event.author) && Objects.equals(dateTime, event.dateTime) && Objects.equals(destinationChannelId, event.destinationChannelId) && Objects.equals(instances, event.instances) && Objects.equals(memberSize, event.memberSize) && Objects.equals(participants, event.participants) && Objects.equals(guild, event.guild) && Objects.equals(embedType, event.embedType);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(eventId, name, description, author, dateTime, destinationChannelId, instances, memberSize, participants, guild);
+        return Objects.hash(eventId, name, description, author, dateTime, destinationChannelId, instances, memberSize, participants, guild, embedType);
     }
 
     @Override
@@ -178,8 +193,9 @@ public class Event {
                 ", destinationChannelId='" + destinationChannelId + '\'' +
                 ", instances='" + instances + '\'' +
                 ", memberSize='" + memberSize + '\'' +
-                ", participantsSize=" + participants.size() +
-                ", guild_id=" + guild.getId() +
+                ", participants=" + participants.size() +
+                ", guild=" + guild.getId() +
+                ", embedType=" + embedType.getName() +
                 '}';
     }
 
@@ -198,6 +214,7 @@ public class Event {
         private String instances;
         private String memberSize;
         private Guild guild;
+        private EmbedType embedType;
 
         private Builder() { }
 
@@ -243,6 +260,11 @@ public class Event {
 
         public Builder withGuild(Guild guild) {
             this.guild = guild;
+            return this;
+        }
+
+        public Builder withEmbedType(EmbedType embedType) {
+            this.embedType = embedType;
             return this;
         }
 
