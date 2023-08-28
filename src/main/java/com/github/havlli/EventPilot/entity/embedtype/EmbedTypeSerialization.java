@@ -1,6 +1,7 @@
 package com.github.havlli.EventPilot.entity.embedtype;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import org.springframework.stereotype.Service;
 
@@ -35,6 +36,6 @@ public class EmbedTypeSerialization {
     }
 
     public HashMap<Integer, String> deserializeMap(String json) throws JsonProcessingException {
-        return objectMapper.readValue(json, HashMap.class);
+        return objectMapper.readValue(json, new TypeReference<HashMap<Integer, String>>() {});
     }
 }

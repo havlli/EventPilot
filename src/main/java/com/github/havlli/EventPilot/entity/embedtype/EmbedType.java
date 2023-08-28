@@ -16,7 +16,7 @@ public class EmbedType {
     private String name;
     @Column(name = "structure")
     private String structure;
-    @OneToMany(mappedBy = "embed_type", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "embedType", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Event> events;
 
     public EmbedType(Integer id, String name, String structure, List<Event> events) {

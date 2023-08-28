@@ -14,11 +14,13 @@ class EmbedTypeServiceTest {
     private EmbedTypeService underTest;
     @Mock
     private EmbedTypeDAO embedTypeDAO;
+    @Mock
+    private EmbedTypeSerialization serializationMock;
 
     @BeforeEach
     void setUp() {
         autoCloseable = MockitoAnnotations.openMocks(this);
-        underTest = new EmbedTypeService(embedTypeDAO);
+        underTest = new EmbedTypeService(embedTypeDAO, serializationMock);
     }
 
     @AfterEach

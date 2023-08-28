@@ -1,11 +1,11 @@
 package com.github.havlli.EventPilot.entity.embedtype;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import com.github.havlli.EventPilot.exception.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
 import java.util.List;
-import java.util.Optional;
 
 @Service
 public class EmbedTypeService {
@@ -26,8 +26,9 @@ public class EmbedTypeService {
         embedTypeDAO.saveEmbedType(embedType);
     }
 
-    public Optional<EmbedType> getEmbedTypeById(Integer id) {
-        return embedTypeDAO.getEmbedTypeById(id);
+    public EmbedType getEmbedTypeById(Integer id) {
+        return embedTypeDAO.getEmbedTypeById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("EmbedType with id {%s} was not found!".formatted(id)));
     }
 
     public HashMap<Integer, String> getDeserializedMap(EmbedType embedType) throws JsonProcessingException {
