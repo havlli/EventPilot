@@ -34,7 +34,7 @@ public class EmbedTypeSerialization {
         return objectMapper.writeValueAsString(map);
     }
 
-    public Map<Integer, String> deserializeMap(String json) throws JsonProcessingException {
+    public HashMap<Integer, String> deserializeMap(String json) throws JsonProcessingException {
         return objectMapper.readValue(json, HashMap.class);
     }
 }
