@@ -1,8 +1,11 @@
 package com.github.havlli.EventPilot.generator;
 
+import com.github.havlli.EventPilot.entity.participant.Participant;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
+import java.util.List;
+import java.util.stream.Collectors;
 
 @Component
 public class EmbedFormatter {
@@ -45,5 +48,20 @@ public class EmbedFormatter {
 
     public String relativeTime(Long timestamp) {
         return String.format("<t:%d:R>", timestamp);
+    }
+
+    public String createConcatField(String fieldName, List<Participant> matchingUsers, boolean isOneLineField) {
+        String lineSeparator = isOneLineField ? ", " : "\n";
+        String lineBreak = isOneLineField ? " " : "\n";
+        String concatUsers = matchingUsers.stream()
+                .map(participant -> String.format("`%d`%s", participant.getPosition(), participant.getUsername()))
+                .collect(Collectors.joining(lineSeparator));
+
+        return String.format("%s (%d):%s%s",
+                fieldName,
+                matchingUsers.size(),
+                lineBreak,
+                concatUsers
+        );
     }
 }
