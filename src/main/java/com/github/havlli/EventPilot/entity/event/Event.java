@@ -284,13 +284,18 @@ public class Event {
         @Override
         public HashMap<String, String> previewFields() {
             return new HashMap<>(Map.of(
-                    "name", name,
-                    "description", description,
-                    "date and time", dateTime.toString(),
-                    "instances", instances,
-                    "member size", memberSize,
-                    "destination channel", destinationChannelId
+                    "name", emptyIfNull(name),
+                    "description", emptyIfNull(description),
+                    "date and time", emptyIfNull(dateTime),
+                    "instances", emptyIfNull(instances),
+                    "member size", emptyIfNull(memberSize),
+                    "destination channel", emptyIfNull(destinationChannelId)
             ));
+        }
+
+        private String emptyIfNull(Object object) {
+            if (object == null) return "";
+            else return object.toString();
         }
     }
 }
