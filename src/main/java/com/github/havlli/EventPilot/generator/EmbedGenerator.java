@@ -1,5 +1,8 @@
 package com.github.havlli.EventPilot.generator;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.github.havlli.EventPilot.entity.embedtype.EmbedType;
+import com.github.havlli.EventPilot.entity.embedtype.EmbedTypeService;
 import com.github.havlli.EventPilot.entity.event.Event;
 import com.github.havlli.EventPilot.entity.event.EventService;
 import com.github.havlli.EventPilot.entity.participant.Participant;
@@ -12,20 +15,26 @@ import discord4j.core.object.entity.User;
 import discord4j.core.spec.EmbedCreateFields;
 import discord4j.core.spec.EmbedCreateSpec;
 import discord4j.core.spec.InteractionReplyEditSpec;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
 import java.util.*;
+import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.stream.Collectors;
 
 @Component
 public class EmbedGenerator {
 
+    private static final Logger LOG = LoggerFactory.getLogger(EmbedGenerator.class);
     private final GatewayDiscordClient client;
     private final EmbedFormatter formatter;
     private final ComponentGenerator generator;
     private final ParticipantService participantService;
     private final EventService eventService;
+    private final EmbedTypeService embedTypeService;
 
     private final static String DELIMITER = ",";
 
@@ -34,22 +43,24 @@ public class EmbedGenerator {
             EmbedFormatter formatter,
             ComponentGenerator generator,
             ParticipantService participantService,
-            EventService eventService
+            EventService eventService,
+            EmbedTypeService embedTypeService
     ) {
         this.client = client;
         this.formatter = formatter;
         this.generator = generator;
         this.participantService = participantService;
         this.eventService = eventService;
+        this.embedTypeService = embedTypeService;
     }
 
     public EmbedCreateSpec generatePreview(EmbedPreviewable embedPreviewable) {
         List<EmbedCreateFields.Field> fields = new ArrayList<>();
         embedPreviewable.previewFields().forEach((key, value) -> {
-            String name = key.substring(0,1).toUpperCase().concat(key.substring(1));
-
-            if (value != null)
+            if (!value.isBlank()) {
+                String name = key.substring(0,1).toUpperCase().concat(key.substring(1));
                 fields.add(EmbedCreateFields.Field.of(name, value, false));
+            }
         });
 
         return EmbedCreateSpec.builder()
@@ -92,41 +103,54 @@ public class EmbedGenerator {
                 .collect(Collectors.toList());
     }
 
-    private String buildFieldConcat(String fieldName, List<Participant> matchingUsers, boolean isOneLineField) {
-        int count = matchingUsers.size();
-        String lineSeparator = isOneLineField ? ", " : "\n";
+    private Predicate<Integer> isOneLineField() {
+        return integer -> integer < 0;
+    }
 
-        return String.format("%s (%d):%s%s",
-                fieldName,
-                count,
-                isOneLineField ? " " : "\n",
-                matchingUsers.stream()
-                        .map(participant -> String.format("`%d`%s", participant.getPosition(), participant.getUsername()))
-                        .collect(Collectors.joining(lineSeparator))
-        );
+    private Predicate<Map.Entry<Integer, String>> optimizedFilter(List<Participant> participants) {
+        return entry -> {
+            for (Participant participant : participants) {
+                if (participant.getRoleIndex().equals(entry.getKey())) return true;
+            }
+            return false;
+        };
+    }
+
+    private Function<Map.Entry<Integer, String>, EmbedCreateFields.Field> mapEntryToField(List<Participant> participants) {
+        return entry -> {
+            int index = entry.getKey();
+            String name = entry.getValue();
+            boolean isOneLineField = isOneLineField().test(index);
+            List<Participant> matchingUsers = getMatchingUsers(index, participants);
+            String fieldConcat = formatter.createConcatField(name, matchingUsers, isOneLineField);
+
+            return createEmbedField(fieldConcat, isOneLineField);
+        };
     }
 
     public List<EmbedCreateFields.Field> getPopulatedFields(Event event) {
-        List<EmbedCreateFields.Field> populatedFields = new ArrayList<>();
+        EmbedType embedType = event.getEmbedType();
+        List<Participant> eventParticipants = event.getParticipants();
 
-        for (Map.Entry<Integer, String> entry : fieldsMap.entrySet()) {
-            int fieldIndex = entry.getKey();
-            String fieldName = entry.getValue();
-
-            List<Participant> matchingUsers = getMatchingUsers(fieldIndex, event.getParticipants());
-            if (!matchingUsers.isEmpty()) {
-                boolean isOneLineField = fieldIndex < 0;
-                String fieldConcat = buildFieldConcat(fieldName, matchingUsers, isOneLineField);
-
-                if (isOneLineField) {
-                    populatedFields.add(EmbedCreateFields.Field.of("", fieldConcat, false));
-                } else {
-                    populatedFields.add(EmbedCreateFields.Field.of(fieldConcat, "", true));
-                }
-            }
+        try {
+            HashMap<Integer, String> deserializedMap = embedTypeService.getDeserializedMap(embedType);
+            return deserializedMap.entrySet()
+                    .stream()
+                    .filter(entry -> optimizedFilter(eventParticipants).test(entry))
+                    .map(mapEntryToField(eventParticipants))
+                    .collect(Collectors.toList());
+        } catch (JsonProcessingException e) {
+            LOG.error("Serialization error - {}", e.getMessage());
         }
 
-        return populatedFields;
+        return new ArrayList<>();
+    }
+
+    private EmbedCreateFields.Field createEmbedField(String content, boolean isOneLineField) {
+        if (isOneLineField)
+            return EmbedCreateFields.Field.of("", content, false);
+        else
+            return EmbedCreateFields.Field.of(content, "", true);
     }
 
     public List<LayoutComponent> generateComponents(String id) {
