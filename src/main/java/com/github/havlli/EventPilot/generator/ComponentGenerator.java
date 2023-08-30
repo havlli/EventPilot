@@ -1,23 +1,40 @@
 package com.github.havlli.EventPilot.generator;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.github.havlli.EventPilot.entity.embedtype.EmbedTypeSerialization;
+import com.github.havlli.EventPilot.entity.event.Event;
 import discord4j.core.object.component.ActionRow;
 import discord4j.core.object.component.Button;
 import discord4j.core.object.component.LayoutComponent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
+import java.util.*;
 import java.util.stream.Collectors;
 
 @Component
 public class ComponentGenerator {
 
-    public List<LayoutComponent> eventButtons(String delimiter, String id, Map<Integer, String> roles) {
-        return Arrays.asList(
-                ActionRow.of(generateRoleButtons(delimiter, id, roles)),
-                ActionRow.of(generateDefaultButtons(delimiter, id, roles))
-        );
+    private static final Logger LOG = LoggerFactory.getLogger(ComponentGenerator.class);
+    private final EmbedTypeSerialization serialization;
+
+    public ComponentGenerator(EmbedTypeSerialization serialization) {
+        this.serialization = serialization;
+    }
+
+    public List<LayoutComponent> eventButtons(String delimiter, Event event) {
+        try {
+            HashMap<Integer, String> roles = serialization.deserializeMap(event.getEmbedType().getStructure());
+            return Arrays.asList(
+                    ActionRow.of(generateRoleButtons(delimiter, event.getEventId(), roles)),
+                    ActionRow.of(generateDefaultButtons(delimiter, event.getEventId(), roles))
+            );
+        } catch (JsonProcessingException e) {
+            LOG.error("Serialization error - {}", e.getMessage());
+        }
+
+        return new ArrayList<>();
     }
 
     private List<Button> generateRoleButtons(String delimiter, String id, Map<Integer, String> roles) {
