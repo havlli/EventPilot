@@ -1,19 +1,33 @@
 package com.github.havlli.EventPilot.generator;
 
+import com.github.havlli.EventPilot.entity.event.Event;
+import com.github.havlli.EventPilot.entity.participant.Participant;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.MockitoAnnotations;
 
 import java.time.Instant;
+import java.util.Arrays;
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 
 class EmbedFormatterTest {
 
     private EmbedFormatter underTest;
+    private AutoCloseable autoCloseable;
 
     @BeforeEach
     void setUp() {
+        autoCloseable = MockitoAnnotations.openMocks(this);
         underTest = new EmbedFormatter();
+    }
+
+    @AfterEach
+    void tearDown() throws Exception {
+        autoCloseable.close();
     }
 
     @Test
@@ -104,5 +118,89 @@ class EmbedFormatterTest {
 
         // Assert
         assertThat(actual).isEqualTo(expected);
+    }
+
+    @Test
+    void createConcatField_ReturnsOneLinerConcatenatedString_WhenOneOrMoreMatchingUsers() {
+        // Arrange
+        Event eventMock = mock(Event.class);
+        Participant participantOne = new Participant(1L,"123","userOne",1,1, eventMock);
+        Participant participantTwo = new Participant(2L,"234","userTwo",2,1, eventMock);
+        Participant participantThree = new Participant(3L,"345","userThree",3,1, eventMock);
+        Participant participantFour = new Participant(4L,"456","userFour",4,1, eventMock);
+        List<Participant> matchingUsers = List.of(participantOne, participantTwo, participantThree, participantFour);
+        String fieldName = "testName";
+        boolean isOneLineField = true;
+
+        // Act
+        String actual = underTest.createConcatField(fieldName, matchingUsers, isOneLineField);
+
+        // Assert
+        long numberOfBreaks = Arrays.stream(actual.split("")).filter(character -> character.equals("\n"))
+                .count();
+        List<String> expectedParticipants = matchingUsers.stream().map(Participant::getUsername).toList();
+
+        assertThat(numberOfBreaks).isEqualTo(0L);
+        assertThat(actual).contains(expectedParticipants);
+    }
+
+    @Test
+    void createConcatField_ReturnsMultiLinerConcatenatedString_WhenOneOrMoreMatchingUsers() {
+        // Arrange
+        Event eventMock = mock(Event.class);
+        Participant participantOne = new Participant(1L,"123","userOne",1,1, eventMock);
+        Participant participantTwo = new Participant(2L,"234","userTwo",2,1, eventMock);
+        Participant participantThree = new Participant(3L,"345","userThree",3,1, eventMock);
+        Participant participantFour = new Participant(4L,"456","userFour",4,1, eventMock);
+        List<Participant> matchingUsers = List.of(participantOne, participantTwo, participantThree, participantFour);
+        String fieldName = "testName";
+        boolean isOneLineField = false;
+
+        // Act
+        String actual = underTest.createConcatField(fieldName, matchingUsers, isOneLineField);
+
+        // Assert
+        long numberOfBreaks = Arrays.stream(actual.split("")).filter(character -> character.equals("\n"))
+                .count();
+        List<String> expectedParticipants = matchingUsers.stream().map(Participant::getUsername).toList();
+
+        assertThat(numberOfBreaks).isEqualTo(4L);
+        assertThat(actual).contains(expectedParticipants);
+    }
+
+    @Test
+    void createConcatField_ReturnsOnlyOneLinerRoleNameString_WhenNoMatchingUsers() {
+        // Arrange
+        List<Participant> matchingUsers = List.of();
+        String fieldName = "testName";
+        boolean isOneLineField = true;
+
+        // Act
+        String actual = underTest.createConcatField(fieldName, matchingUsers, isOneLineField);
+
+        // Assert
+        long numberOfBreaks = Arrays.stream(actual.split("")).filter(character -> character.equals("\n"))
+                .count();
+
+        assertThat(numberOfBreaks).isEqualTo(0L);
+        assertThat(actual).containsOnlyOnce(fieldName + " (0): ");
+    }
+
+    @Test
+    void createConcatField_ReturnsMultiLinerRoleNameString_WhenNoMatchingUsers() {
+        // Arrange
+        List<Participant> matchingUsers = List.of();
+        String fieldName = "testName";
+        boolean isOneLineField = false;
+
+        // Act
+        String actual = underTest.createConcatField(fieldName, matchingUsers, isOneLineField);
+
+        // Assert
+        long numberOfBreaks = Arrays.stream(actual.split("")).filter(character -> character.equals("\n"))
+                .count();
+
+        assertThat(numberOfBreaks).isEqualTo(1L);
+        assertThat(actual).contains(fieldName + " (0):");
     }
 }

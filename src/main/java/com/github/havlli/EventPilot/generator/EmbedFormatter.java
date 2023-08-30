@@ -11,7 +11,11 @@ import java.util.stream.Collectors;
 public class EmbedFormatter {
 
     public String raidSize(int current, int maximum) {
-        return String.format("%s/%s", current, maximum);
+        return String.format("%d/%d", current, maximum);
+    }
+
+    public String raidSize(int current, String maximum) {
+        return String.format("%d/%s", current, maximum);
     }
 
     public String leaderWithId(String leader, String id) {
