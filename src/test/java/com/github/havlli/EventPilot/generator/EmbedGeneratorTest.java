@@ -111,7 +111,7 @@ class EmbedGeneratorTest {
         when(embedFormatterMock.createConcatField(anyString(),anyList(),anyBoolean())).thenReturn("concatField");
 
         // Act
-        List<EmbedCreateFields.Field> actualFields = underTest.getPopulatedFields(eventMock);
+        List<EmbedCreateFields.Field> actualFields = underTest.constructPopulatedFields(eventMock);
 
         // Assert
         assertThat(actualFields).hasSize(4);
@@ -141,7 +141,7 @@ class EmbedGeneratorTest {
         when(embedFormatterMock.createConcatField(anyString(),anyList(),anyBoolean())).thenReturn("concatField");
 
         // Act
-        List<EmbedCreateFields.Field> actualFields = underTest.getPopulatedFields(eventMock);
+        List<EmbedCreateFields.Field> actualFields = underTest.constructPopulatedFields(eventMock);
 
         // Assert
         assertThat(actualFields).hasSize(0);
@@ -156,7 +156,7 @@ class EmbedGeneratorTest {
         when(embedTypeServiceMock.getDeserializedMap(embedTypeMock)).thenThrow(JsonProcessingException.class);
 
        // Act
-        List<EmbedCreateFields.Field> actualFields = underTest.getPopulatedFields(eventMock);
+        List<EmbedCreateFields.Field> actualFields = underTest.constructPopulatedFields(eventMock);
 
         // Assert
         assertThat(actualFields).hasSize(0);
@@ -297,12 +297,12 @@ class EmbedGeneratorTest {
     @Test
     void generateComponents_CallsComponentGenerator() {
         // Arrange
-        String id = "id";
+        Event eventMock = mock(Event.class);
 
         // Act
-        underTest.generateComponents(id);
+        underTest.generateComponents(eventMock);
 
         // Assert
-        verify(componentGeneratorMock, only()).eventButtons(any(), any(), any());
+        verify(componentGeneratorMock, only()).eventButtons(any(), eq(eventMock));
     }
 }

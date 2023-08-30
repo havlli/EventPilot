@@ -13,7 +13,6 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -71,20 +70,9 @@ public class EmbedGenerator {
                 .addField(empty, date, true)
                 .addField(empty, time, true)
                 .addField(empty, raidSize, true)
-                .addAllFields(getPopulatedFields(event))
+                .addAllFields(constructPopulatedFields(event))
                 .build();
     }
-
-    private static final HashMap<Integer, String> fieldsMap = new HashMap<>(Map.of(
-            -1, "Absence",
-            -2, "Late",
-            -3, "Tentative",
-            1, "Tank",
-            2, "Melee",
-            3, "Ranged",
-            4, "Healer",
-            5, "Support"
-    ));
 
     private List<Participant> getMatchingUsers(int roleIndex, List<Participant> participants) {
         return participants.stream()
@@ -117,7 +105,7 @@ public class EmbedGenerator {
         };
     }
 
-    public List<EmbedCreateFields.Field> getPopulatedFields(Event event) {
+    public List<EmbedCreateFields.Field> constructPopulatedFields(Event event) {
         EmbedType embedType = event.getEmbedType();
         List<Participant> eventParticipants = event.getParticipants();
 
@@ -142,8 +130,8 @@ public class EmbedGenerator {
             return EmbedCreateFields.Field.of(content, "", true);
     }
 
-    public List<LayoutComponent> generateComponents(String id) {
-        return generator.eventButtons(DELIMITER, id, fieldsMap);
+    public List<LayoutComponent> generateComponents(Event event) {
+        return generator.eventButtons(DELIMITER, event);
     }
 
     public void subscribeInteractions(Event event) {
