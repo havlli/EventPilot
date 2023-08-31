@@ -28,4 +28,9 @@ public class EmbedTypeJPADataAccessService implements EmbedTypeDAO {
     public void saveEmbedType(EmbedType embedType) {
         embedTypeRepository.save(embedType);
     }
+
+    @Override
+    public boolean existsEmbedTypeById(Integer id) {
+        return embedTypeRepository.existsById(id);
+    }
 }

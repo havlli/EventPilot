@@ -7,4 +7,5 @@ public interface EmbedTypeDAO {
     List<EmbedType> getAllEmbedTypes();
     Optional<EmbedType> getEmbedTypeById(Integer id);
     void saveEmbedType(EmbedType embedType);
+    boolean existsEmbedTypeById(Integer id);
 }

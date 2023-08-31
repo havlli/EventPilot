@@ -34,4 +34,8 @@ public class EmbedTypeService {
     public HashMap<Integer, String> getDeserializedMap(EmbedType embedType) throws JsonProcessingException {
         return serialization.deserializeMap(embedType.getStructure());
     }
+
+    public boolean existsEmbedEventById(Integer id) {
+        return embedTypeDAO.existsEmbedTypeById(id);
+    }
 }
