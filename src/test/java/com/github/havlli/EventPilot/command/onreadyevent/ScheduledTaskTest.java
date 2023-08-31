@@ -8,6 +8,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import reactor.core.publisher.Flux;
 import reactor.test.StepVerifier;
 
 import java.time.Duration;
@@ -42,7 +43,7 @@ class ScheduledTaskTest {
         // Arrange
         List<Event> expiredEvents = new ArrayList<>();
         when(eventServiceMock.getExpiredEvents()).thenReturn(expiredEvents);
-        doNothing().when(discordServiceMock).deactivateEvents(expiredEvents);
+        when(discordServiceMock.deactivateEvents(expiredEvents)).thenReturn(Flux.empty());
 
         // Assert
         StepVerifier.create(underTest.getFlux())

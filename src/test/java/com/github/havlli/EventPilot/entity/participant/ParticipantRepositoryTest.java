@@ -1,6 +1,8 @@
 package com.github.havlli.EventPilot.entity.participant;
 
 import com.github.havlli.EventPilot.TestDatabaseContainer;
+import com.github.havlli.EventPilot.entity.embedtype.EmbedType;
+import com.github.havlli.EventPilot.entity.embedtype.EmbedTypeRepository;
 import com.github.havlli.EventPilot.entity.event.Event;
 import com.github.havlli.EventPilot.entity.event.EventRepository;
 import com.github.havlli.EventPilot.entity.guild.Guild;
@@ -36,6 +38,8 @@ class ParticipantRepositoryTest extends TestDatabaseContainer {
     private EventRepository eventRepository;
     @Autowired
     private GuildRepository guildRepository;
+    @Autowired
+    private EmbedTypeRepository embedTypeRepository;
 
     @Autowired
     private ApplicationContext applicationContext;
@@ -50,8 +54,9 @@ class ParticipantRepositoryTest extends TestDatabaseContainer {
     @Test
     public void saveParticipant_SavesParticipantToDatabase_WhenParticipantNotExists() throws SQLException {
         // Arrange
-        Guild validGuild = new Guild("1","guild1");
+        Guild validGuild = new Guild("1", "guild1");
         addGuildWithNativeQuery(validGuild);
+        EmbedType embedType = addDummyEmbedType();
 
         Event validEvent = new Event(
                 "123",
@@ -63,11 +68,11 @@ class ParticipantRepositoryTest extends TestDatabaseContainer {
                 null,
                 "15",
                 new ArrayList<>(),
-                validGuild
-        );
+                validGuild,
+                embedType);
         eventRepository.save(validEvent);
 
-        Participant participant = new Participant("1","user1",1,1, validEvent);
+        Participant participant = new Participant("1", "user1", 1, 1, validEvent);
         Optional<Participant> expected = Optional.of(participant);
 
         // Act
@@ -83,8 +88,9 @@ class ParticipantRepositoryTest extends TestDatabaseContainer {
     @Test
     public void saveParticipant_UpdatesParticipant_WhenParticipantAlreadyExists() throws SQLException {
         // Arrange
-        Guild validGuild = new Guild("1","guild1");
+        Guild validGuild = new Guild("1", "guild1");
         addGuildWithNativeQuery(validGuild);
+        EmbedType embedType = addDummyEmbedType();
 
         Event validEvent = new Event(
                 "123",
@@ -96,15 +102,15 @@ class ParticipantRepositoryTest extends TestDatabaseContainer {
                 null,
                 "15",
                 new ArrayList<>(),
-                validGuild
-        );
+                validGuild,
+                embedType);
         eventRepository.save(validEvent);
 
-        Participant participant = new Participant("1","user1",1,1, validEvent);
+        Participant participant = new Participant("1", "user1", 1, 1, validEvent);
         underTest.save(participant);
         Participant participantInDatabase = underTest.findParticipantByUserId(participant.getUserId()).get();
 
-        Participant updatedParticipant = new Participant(participantInDatabase.getId(),"2","updated-user1",1,1, validEvent);
+        Participant updatedParticipant = new Participant(participantInDatabase.getId(), "2", "updated-user1", 1, 1, validEvent);
         Optional<Participant> expected = Optional.of(updatedParticipant);
 
         // Act
@@ -124,9 +130,10 @@ class ParticipantRepositoryTest extends TestDatabaseContainer {
         // Arrange
         Guild guild = addDummyGuild();
         Event event = addDummyEvent();
+        EmbedType embedType = addDummyEmbedType();
         Participant participant1 = addDummyParticipant();
         Participant participant2 = new Participant("2", "user2", 1, 2, event);
-        participant2 = addParticipant(participant2, event, guild);
+        participant2 = addParticipant(participant2, event, guild, embedType);
 
         int expectedSize = 2;
 
@@ -193,9 +200,12 @@ class ParticipantRepositoryTest extends TestDatabaseContainer {
         return actual.get();
     }
 
-    public Event addEvent(Event event, Guild guild) {
+    public Event addEvent(Event event, Guild guild, EmbedType embedType) {
         if (!guildRepository.existsById(guild.getId())) {
             addGuild(guild);
+        }
+        if (!embedTypeRepository.existsById(embedType.getId())) {
+            addEmbedType(embedType);
         }
         eventRepository.save(event);
         Optional<Event> actual = eventRepository.findById(event.getEventId());
@@ -217,9 +227,9 @@ class ParticipantRepositoryTest extends TestDatabaseContainer {
         return actual.get();
     }
 
-    public Participant addParticipant(Participant participant, Event event, Guild guild) {
+    public Participant addParticipant(Participant participant, Event event, Guild guild, EmbedType embedType) {
         if (!eventRepository.existsById(event.getEventId())) {
-            addEvent(event, guild);
+            addEvent(event, guild, embedType);
         }
         underTest.save(participant);
         Optional<Participant> actual = underTest.findParticipantByUserId(participant.getUserId());
@@ -236,19 +246,44 @@ class ParticipantRepositoryTest extends TestDatabaseContainer {
         return actual.get();
     }
 
+    public EmbedType addEmbedType(EmbedType embedType) {
+        embedTypeRepository.save(embedType);
+        Optional<EmbedType> actual = embedTypeRepository.findById(embedType.getId());
+
+        assertThat(actual).hasValueSatisfying(e -> {
+            assertThat(e.getId()).isEqualTo(embedType.getId());
+            assertThat(e.getName()).isEqualTo(embedType.getName());
+            assertThat(e.getStructure()).isEqualTo(embedType.getStructure());
+            assertThat(e.getEvents()).usingRecursiveComparison().isEqualTo(embedType.getEvents());
+        });
+
+        return actual.get();
+    }
+
     public Guild addDummyGuild() {
         return addGuild(dummyGuild);
     }
 
+    public EmbedType addDummyEmbedType() {
+        return addEmbedType(dummyEmbedType);
+    }
+
     public Event addDummyEvent() {
-        return addEvent(dummyEvent, dummyGuild);
+        return addEvent(dummyEvent, dummyGuild, dummyEmbedType);
     }
 
     public Participant addDummyParticipant() {
-        return addParticipant(dummyParticipant, dummyEvent, dummyGuild);
+        return addParticipant(dummyParticipant, dummyEvent, dummyGuild, dummyEmbedType);
     }
 
-    private final Guild dummyGuild = new Guild("1","guild");
+    private final Guild dummyGuild = new Guild("1", "guild");
+
+    private final EmbedType dummyEmbedType = new EmbedType(
+            1,
+            "test",
+            "{\"-1\":\"Absence\",\"-2\":\"Late\",\"1\":\"Tank\",\"-3\":\"Tentative\",\"2\":\"Melee\",\"3\":\"Ranged\",\"4\":\"Healer\",\"5\":\"Support\"}",
+            new ArrayList<>()
+    );
     private final Event dummyEvent = new Event(
             "10",
             "event",
@@ -259,7 +294,8 @@ class ParticipantRepositoryTest extends TestDatabaseContainer {
             null,
             "15",
             new ArrayList<>(),
-            dummyGuild
+            dummyGuild,
+            dummyEmbedType
     );
     private final Participant dummyParticipant = new Participant(
             "100",

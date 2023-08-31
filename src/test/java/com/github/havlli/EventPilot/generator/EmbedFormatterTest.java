@@ -46,6 +46,21 @@ class EmbedFormatterTest {
     }
 
     @Test
+    void raidSize_WithString() {
+        // Arrange
+        int current = 5;
+        int maximum = 10;
+        String pattern = "%s/%s";
+        String expected = String.format(pattern, current, maximum);
+
+        // Act
+        String actual = underTest.raidSize(current, String.valueOf(maximum));
+
+        // Assert
+        assertThat(actual).isEqualTo(expected);
+    }
+
+    @Test
     void leaderWithId() {
         // Arrange
         String leader = "leader";

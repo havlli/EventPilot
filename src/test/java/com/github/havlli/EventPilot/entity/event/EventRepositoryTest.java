@@ -2,6 +2,8 @@ package com.github.havlli.EventPilot.entity.event;
 
 import com.github.havlli.EventPilot.TestDatabaseContainer;
 import com.github.havlli.EventPilot.TimeTester;
+import com.github.havlli.EventPilot.entity.embedtype.EmbedType;
+import com.github.havlli.EventPilot.entity.embedtype.EmbedTypeRepository;
 import com.github.havlli.EventPilot.entity.guild.Guild;
 import com.github.havlli.EventPilot.entity.guild.GuildRepository;
 import org.assertj.core.api.Assertions;
@@ -34,6 +36,8 @@ class EventRepositoryTest extends TestDatabaseContainer {
     private static final Logger LOG = LoggerFactory.getLogger(EventRepositoryTest.class);
     @Autowired
     private GuildRepository guildRepository;
+    @Autowired
+    private EmbedTypeRepository embedTypeRepository;
     @Autowired
     private EventRepository underTest;
     @Autowired
@@ -82,6 +86,14 @@ class EventRepositoryTest extends TestDatabaseContainer {
         Instant expiredEvent1DateTime = instantNow.minus(1, ChronoUnit.MINUTES);
         Instant expiredEvent2DateTime = instantNow.minus(1, ChronoUnit.MINUTES);
 
+        List<Event> events = new ArrayList<>();
+        EmbedType embedType = new EmbedType(
+                1,
+                "test",
+                "{\"-1\":\"Absence\",\"-2\":\"Late\",\"1\":\"Tank\",\"-3\":\"Tentative\",\"2\":\"Melee\",\"3\":\"Ranged\",\"4\":\"Healer\",\"5\":\"Support\"}",
+                events
+        );
+
         Event validEvent = new Event(
                 "123",
                 "event1",
@@ -92,9 +104,10 @@ class EventRepositoryTest extends TestDatabaseContainer {
                 null,
                 "15",
                 new ArrayList<>(),
-                guild
-        );
-        Event fetchedValidEvent = saveEventToDatabase(validEvent, guild);
+                guild,
+                embedType);
+        events.add(validEvent);
+        Event fetchedValidEvent = saveEventToDatabase(validEvent, guild, embedType);
 
         Event expiredEvent1 = new Event(
                 "456",
@@ -106,9 +119,10 @@ class EventRepositoryTest extends TestDatabaseContainer {
                 null,
                 "15",
                 new ArrayList<>(),
-                guild
-        );
-        Event fetchedExpiredEvent1 = saveEventToDatabase(expiredEvent1, guild);
+                guild,
+                embedType);
+        events.add(expiredEvent1);
+        Event fetchedExpiredEvent1 = saveEventToDatabase(expiredEvent1, guild, embedType);
 
         Event expiredEvent2 = new Event(
                 "789",
@@ -120,9 +134,10 @@ class EventRepositoryTest extends TestDatabaseContainer {
                 null,
                 "15",
                 new ArrayList<>(),
-                guild
-        );
-        Event fetchedExpiredEvent2 = saveEventToDatabase(expiredEvent2, guild);
+                guild,
+                embedType);
+        events.add(expiredEvent2);
+        Event fetchedExpiredEvent2 = saveEventToDatabase(expiredEvent2, guild, embedType);
 
         // Act
         List<Event> actual = underTest.findAllWithDatetimeBeforeCurrentTime();
@@ -156,6 +171,14 @@ class EventRepositoryTest extends TestDatabaseContainer {
         Instant expiredEvent1DateTime = instantNow.minus(1, ChronoUnit.SECONDS);
         Instant expiredEvent2DateTime = instantNow.minus(1, ChronoUnit.SECONDS);
 
+        List<Event> events = new ArrayList<>();
+        EmbedType embedType = new EmbedType(
+                1,
+                "test",
+                "{\"-1\":\"Absence\",\"-2\":\"Late\",\"1\":\"Tank\",\"-3\":\"Tentative\",\"2\":\"Melee\",\"3\":\"Ranged\",\"4\":\"Healer\",\"5\":\"Support\"}",
+                events
+        );
+
         Event validEvent = new Event(
                 "123",
                 "event1",
@@ -166,9 +189,10 @@ class EventRepositoryTest extends TestDatabaseContainer {
                 null,
                 "15",
                 new ArrayList<>(),
-                guild
-        );
-        Event fetchedValidEvent = saveEventToDatabase(validEvent, guild);
+                guild,
+                embedType);
+        events.add(validEvent);
+        Event fetchedValidEvent = saveEventToDatabase(validEvent, guild, embedType);
 
         Event expiredEvent1 = new Event(
                 "456",
@@ -180,9 +204,10 @@ class EventRepositoryTest extends TestDatabaseContainer {
                 null,
                 "15",
                 new ArrayList<>(),
-                guild
-        );
-        Event fetchedExpiredEvent1 = saveEventToDatabase(expiredEvent1, guild);
+                guild,
+                embedType);
+        events.add(expiredEvent1);
+        Event fetchedExpiredEvent1 = saveEventToDatabase(expiredEvent1, guild, embedType);
 
         Event expiredEvent2 = new Event(
                 "789",
@@ -194,9 +219,10 @@ class EventRepositoryTest extends TestDatabaseContainer {
                 null,
                 "15",
                 new ArrayList<>(),
-                guild
-        );
-        Event fetchedExpiredEvent2 = saveEventToDatabase(expiredEvent2, guild);
+                guild,
+                embedType);
+        events.add(expiredEvent2);
+        Event fetchedExpiredEvent2 = saveEventToDatabase(expiredEvent2, guild, embedType);
 
         // Act
         List<Event> actual = underTest.findAllWithDatetimeBeforeCurrentTime();
@@ -238,6 +264,14 @@ class EventRepositoryTest extends TestDatabaseContainer {
         Instant expiredEvent1DateTime = instantNow.minus(250, ChronoUnit.MILLIS);
         Instant expiredEvent2DateTime = instantNow.minus(250, ChronoUnit.MILLIS);
 
+        List<Event> events = new ArrayList<>();
+        EmbedType embedType = new EmbedType(
+                1,
+                "test",
+                "{\"-1\":\"Absence\",\"-2\":\"Late\",\"1\":\"Tank\",\"-3\":\"Tentative\",\"2\":\"Melee\",\"3\":\"Ranged\",\"4\":\"Healer\",\"5\":\"Support\"}",
+                events
+        );
+
         Event validEvent = new Event(
                 "123",
                 "event1",
@@ -248,9 +282,10 @@ class EventRepositoryTest extends TestDatabaseContainer {
                 null,
                 "15",
                 new ArrayList<>(),
-                guild
-        );
-        Event fetchedValidEvent = saveEventToDatabase(validEvent, guild);
+                guild,
+                embedType);
+        events.add(validEvent);
+        Event fetchedValidEvent = saveEventToDatabase(validEvent, guild, embedType);
 
         Event expiredEvent1 = new Event(
                 "456",
@@ -262,9 +297,10 @@ class EventRepositoryTest extends TestDatabaseContainer {
                 null,
                 "15",
                 new ArrayList<>(),
-                guild
-        );
-        Event fetchedExpiredEvent1 = saveEventToDatabase(expiredEvent1, guild);
+                guild,
+                embedType);
+        events.add(expiredEvent1);
+        Event fetchedExpiredEvent1 = saveEventToDatabase(expiredEvent1, guild, embedType);
 
         Event expiredEvent2 = new Event(
                 "789",
@@ -276,9 +312,10 @@ class EventRepositoryTest extends TestDatabaseContainer {
                 null,
                 "15",
                 new ArrayList<>(),
-                guild
-        );
-        Event fetchedExpiredEvent2 = saveEventToDatabase(expiredEvent2, guild);
+                guild,
+                embedType);
+        events.add(expiredEvent2);
+        Event fetchedExpiredEvent2 = saveEventToDatabase(expiredEvent2, guild, embedType);
 
         // Act
         List<Event> actual = underTest.findAllWithDatetimeBeforeCurrentTime();
@@ -311,6 +348,15 @@ class EventRepositoryTest extends TestDatabaseContainer {
         Guild guild = new Guild("1", "guild");
         saveGuildToDatabase(guild);
 
+        List<Event> events = new ArrayList<>();
+        EmbedType embedType = new EmbedType(
+                1,
+                "test",
+                "{\"-1\":\"Absence\",\"-2\":\"Late\",\"1\":\"Tank\",\"-3\":\"Tentative\",\"2\":\"Melee\",\"3\":\"Ranged\",\"4\":\"Healer\",\"5\":\"Support\"}",
+                events
+        );
+        saveEmbedTypeToDatabase(embedType);
+
         Event expected = new Event(
                 "123",
                 "event1",
@@ -321,8 +367,8 @@ class EventRepositoryTest extends TestDatabaseContainer {
                 null,
                 "15",
                 new ArrayList<>(),
-                guild
-        );
+                guild,
+                embedType);
 
         // Act
         underTest.save(expected);
@@ -340,6 +386,15 @@ class EventRepositoryTest extends TestDatabaseContainer {
         Guild guild = new Guild("1", "guild");
         saveGuildToDatabase(guild);
 
+        List<Event> events = new ArrayList<>();
+        EmbedType embedType = new EmbedType(
+                1,
+                "test",
+                "{\"-1\":\"Absence\",\"-2\":\"Late\",\"1\":\"Tank\",\"-3\":\"Tentative\",\"2\":\"Melee\",\"3\":\"Ranged\",\"4\":\"Healer\",\"5\":\"Support\"}",
+                events
+        );
+        saveEmbedTypeToDatabase(embedType);
+
         Event expectedEvent1 = new Event(
                 "123",
                 "event1",
@@ -350,8 +405,8 @@ class EventRepositoryTest extends TestDatabaseContainer {
                 null,
                 "15",
                 new ArrayList<>(),
-                guild
-        );
+                guild,
+                embedType);
         Event expectedEvent2 = new Event(
                 "234",
                 "event2",
@@ -362,8 +417,8 @@ class EventRepositoryTest extends TestDatabaseContainer {
                 null,
                 "15",
                 new ArrayList<>(),
-                guild
-        );
+                guild,
+                embedType);
 
         underTest.save(expectedEvent1);
         underTest.save(expectedEvent2);
@@ -395,6 +450,15 @@ class EventRepositoryTest extends TestDatabaseContainer {
         Guild guild = new Guild("1", "guild");
         saveGuildToDatabase(guild);
 
+        List<Event> events = new ArrayList<>();
+        EmbedType embedType = new EmbedType(
+                1,
+                "test",
+                "{\"-1\":\"Absence\",\"-2\":\"Late\",\"1\":\"Tank\",\"-3\":\"Tentative\",\"2\":\"Melee\",\"3\":\"Ranged\",\"4\":\"Healer\",\"5\":\"Support\"}",
+                events
+        );
+        saveEmbedTypeToDatabase(embedType);
+
         Event expectedEvent = new Event(
                 "123",
                 "event1",
@@ -405,8 +469,8 @@ class EventRepositoryTest extends TestDatabaseContainer {
                 null,
                 "15",
                 new ArrayList<>(),
-                guild
-        );
+                guild,
+                embedType);
 
         underTest.save(expectedEvent);
 
@@ -425,6 +489,15 @@ class EventRepositoryTest extends TestDatabaseContainer {
         Guild guild = new Guild("1", "guild");
         saveGuildToDatabase(guild);
 
+        List<Event> events = new ArrayList<>();
+        EmbedType embedType = new EmbedType(
+                1,
+                "test",
+                "{\"-1\":\"Absence\",\"-2\":\"Late\",\"1\":\"Tank\",\"-3\":\"Tentative\",\"2\":\"Melee\",\"3\":\"Ranged\",\"4\":\"Healer\",\"5\":\"Support\"}",
+                events
+        );
+        saveEmbedTypeToDatabase(embedType);
+
         Event existingEvent = new Event(
                 "123",
                 "existing",
@@ -435,8 +508,8 @@ class EventRepositoryTest extends TestDatabaseContainer {
                 null,
                 "15",
                 new ArrayList<>(),
-                guild
-        );
+                guild,
+                embedType);
         underTest.save(existingEvent);
 
         Event notExistingEvent = new Event(
@@ -449,8 +522,8 @@ class EventRepositoryTest extends TestDatabaseContainer {
                 null,
                 "15",
                 new ArrayList<>(),
-                guild
-        );
+                guild,
+                embedType);
 
         // Act
         underTest.delete(notExistingEvent);
@@ -469,6 +542,15 @@ class EventRepositoryTest extends TestDatabaseContainer {
         Guild guild = new Guild("1", "guild");
         saveGuildToDatabase(guild);
 
+        List<Event> events = new ArrayList<>();
+        EmbedType embedType = new EmbedType(
+                1,
+                "test",
+                "{\"-1\":\"Absence\",\"-2\":\"Late\",\"1\":\"Tank\",\"-3\":\"Tentative\",\"2\":\"Melee\",\"3\":\"Ranged\",\"4\":\"Healer\",\"5\":\"Support\"}",
+                events
+        );
+        saveEmbedTypeToDatabase(embedType);
+
         Event expectedEvent1 = new Event(
                 "123",
                 "event1",
@@ -479,8 +561,8 @@ class EventRepositoryTest extends TestDatabaseContainer {
                 null,
                 "15",
                 new ArrayList<>(),
-                guild
-        );
+                guild,
+                embedType);
         underTest.save(expectedEvent1);
 
         Event expectedEvent2 = new Event(
@@ -493,8 +575,8 @@ class EventRepositoryTest extends TestDatabaseContainer {
                 null,
                 "15",
                 new ArrayList<>(),
-                guild
-        );
+                guild,
+                embedType);
         underTest.save(expectedEvent2);
 
         List<Event> expectedEvents = List.of(expectedEvent1,expectedEvent2);
@@ -514,6 +596,15 @@ class EventRepositoryTest extends TestDatabaseContainer {
         Guild guild = new Guild("1", "guild");
         saveGuildToDatabase(guild);
 
+        List<Event> events = new ArrayList<>();
+        EmbedType embedType = new EmbedType(
+                1,
+                "test",
+                "{\"-1\":\"Absence\",\"-2\":\"Late\",\"1\":\"Tank\",\"-3\":\"Tentative\",\"2\":\"Melee\",\"3\":\"Ranged\",\"4\":\"Healer\",\"5\":\"Support\"}",
+                events
+        );
+        saveEmbedTypeToDatabase(embedType);
+
         Event expectedEvent1 = new Event(
                 "123",
                 "event1",
@@ -524,8 +615,8 @@ class EventRepositoryTest extends TestDatabaseContainer {
                 null,
                 "15",
                 new ArrayList<>(),
-                guild
-        );
+                guild,
+                embedType);
         underTest.save(expectedEvent1);
 
         Event expectedEvent2 = new Event(
@@ -538,8 +629,8 @@ class EventRepositoryTest extends TestDatabaseContainer {
                 null,
                 "15",
                 new ArrayList<>(),
-                guild
-        );
+                guild,
+                embedType);
         underTest.save(expectedEvent2);
 
         Event notExpectedEvent = new Event(
@@ -552,8 +643,8 @@ class EventRepositoryTest extends TestDatabaseContainer {
                 null,
                 "15",
                 new ArrayList<>(),
-                guild
-        );
+                guild,
+                embedType);
 
         List<Event> passedEvents = List.of(expectedEvent1,expectedEvent2, notExpectedEvent);
         // Act
@@ -572,6 +663,15 @@ class EventRepositoryTest extends TestDatabaseContainer {
         Guild guild = new Guild("1", "guild");
         saveGuildToDatabase(guild);
 
+        List<Event> events = new ArrayList<>();
+        EmbedType embedType = new EmbedType(
+                1,
+                "test",
+                "{\"-1\":\"Absence\",\"-2\":\"Late\",\"1\":\"Tank\",\"-3\":\"Tentative\",\"2\":\"Melee\",\"3\":\"Ranged\",\"4\":\"Healer\",\"5\":\"Support\"}",
+                events
+        );
+        saveEmbedTypeToDatabase(embedType);
+
         Event existingEvent = new Event(
                 "123",
                 "existing",
@@ -582,8 +682,8 @@ class EventRepositoryTest extends TestDatabaseContainer {
                 null,
                 "15",
                 new ArrayList<>(),
-                guild
-        );
+                guild,
+                embedType);
         underTest.save(existingEvent);
 
         Event notExistingEvent1 = new Event(
@@ -596,8 +696,8 @@ class EventRepositoryTest extends TestDatabaseContainer {
                 null,
                 "15",
                 new ArrayList<>(),
-                guild
-        );
+                guild,
+                embedType);
 
         Event notExistingEvent2 = new Event(
                 "789",
@@ -609,8 +709,8 @@ class EventRepositoryTest extends TestDatabaseContainer {
                 null,
                 "15",
                 new ArrayList<>(),
-                guild
-        );
+                guild,
+                embedType);
 
         List<Event> passedEvents = List.of(notExistingEvent1,notExistingEvent2);
         // Act
@@ -635,6 +735,15 @@ class EventRepositoryTest extends TestDatabaseContainer {
         Guild guild = new Guild("1", "guild");
         saveGuildToDatabase(guild);
 
+        List<Event> events = new ArrayList<>();
+        EmbedType embedType = new EmbedType(
+                1,
+                "test",
+                "{\"-1\":\"Absence\",\"-2\":\"Late\",\"1\":\"Tank\",\"-3\":\"Tentative\",\"2\":\"Melee\",\"3\":\"Ranged\",\"4\":\"Healer\",\"5\":\"Support\"}",
+                events
+        );
+        saveEmbedTypeToDatabase(embedType);
+
         Event existingEvent = new Event(
                 "123",
                 "existing",
@@ -645,8 +754,8 @@ class EventRepositoryTest extends TestDatabaseContainer {
                 null,
                 "15",
                 new ArrayList<>(),
-                guild
-        );
+                guild,
+                embedType);
         underTest.save(existingEvent);
 
         Event existingEventToDelete = new Event(
@@ -659,8 +768,8 @@ class EventRepositoryTest extends TestDatabaseContainer {
                 null,
                 "15",
                 new ArrayList<>(),
-                guild
-        );
+                guild,
+                embedType);
         underTest.save(existingEventToDelete);
 
         Event notExistingEventToDelete = new Event(
@@ -673,8 +782,8 @@ class EventRepositoryTest extends TestDatabaseContainer {
                 null,
                 "15",
                 new ArrayList<>(),
-                guild
-        );
+                guild,
+                embedType);
 
         List<Event> passedEvents = List.of(existingEventToDelete,notExistingEventToDelete);
         // Act
@@ -694,7 +803,7 @@ class EventRepositoryTest extends TestDatabaseContainer {
     }
 
     // Helper methods
-    public Guild saveGuildToDatabase(Guild guild) {
+    public void saveGuildToDatabase(Guild guild) {
         guildRepository.save(guild);
         Optional<Guild> actual = guildRepository.findById(guild.getId());
 
@@ -706,13 +815,26 @@ class EventRepositoryTest extends TestDatabaseContainer {
                     assertThat(g.getName()).isEqualTo(guild.getName());
                     assertThat(g.getEvents()).isEqualTo(guild.getEvents());
                 });
-
-        return actual.get();
     }
 
-    public Event saveEventToDatabase(Event event, Guild guild) {
+    public void saveEmbedTypeToDatabase(EmbedType embedType) {
+        embedTypeRepository.save(embedType);
+        Optional<EmbedType> actual = embedTypeRepository.findById(embedType.getId());
+
+        assertThat(actual).hasValueSatisfying(e -> {
+            assertThat(e.getId()).isEqualTo(embedType.getId());
+            assertThat(e.getName()).isEqualTo(embedType.getName());
+            assertThat(e.getStructure()).isEqualTo(embedType.getStructure());
+            assertThat(e.getEvents()).usingRecursiveComparison().isEqualTo(embedType.getEvents());
+        });
+    }
+
+    public Event saveEventToDatabase(Event event, Guild guild, EmbedType embedType) {
         if (!guildRepository.existsById(guild.getId())) {
             saveGuildToDatabase(guild);
+        }
+        if (!embedTypeRepository.existsById(embedType.getId())) {
+            saveEmbedTypeToDatabase(embedType);
         }
         underTest.save(event);
         Optional<Event> actual = underTest.findById(event.getEventId());
