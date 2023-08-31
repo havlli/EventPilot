@@ -1,5 +1,6 @@
 package com.github.havlli.EventPilot.entity.event;
 
+import com.github.havlli.EventPilot.entity.embedtype.EmbedType;
 import com.github.havlli.EventPilot.entity.guild.Guild;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -12,6 +13,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.Mockito.mock;
 
 class EventTest {
 
@@ -31,6 +33,7 @@ class EventTest {
     void builder_ReturnsCompleteEvent_WhenBuildMethodCalled() {
         // Arrange
         Event.Builder builder = Event.builder();
+        EmbedType embedTypeMock = mock(EmbedType.class);
 
         // Act
         Event actual = builder.withEventId("testId")
@@ -42,6 +45,7 @@ class EventTest {
                 .withInstances(List.of("test"))
                 .withMemberSize("test")
                 .withGuild(new Guild("test", "test"))
+                .withEmbedType(embedTypeMock)
                 .build();
 
         // Assert

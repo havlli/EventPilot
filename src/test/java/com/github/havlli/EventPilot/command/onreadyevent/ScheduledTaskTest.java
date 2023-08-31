@@ -39,7 +39,7 @@ class ScheduledTaskTest {
     }
 
     @Test
-    public void getFlux_InvokesServicesTwiceIn15Seconds_WhenIntervalIs5Seconds() {
+    public void getFlux_InvokesServicesTwiceIn13Seconds_WhenIntervalIs5Seconds() {
         // Arrange
         List<Event> expiredEvents = new ArrayList<>();
         when(eventServiceMock.getExpiredEvents()).thenReturn(expiredEvents);
@@ -48,7 +48,7 @@ class ScheduledTaskTest {
         // Assert
         StepVerifier.create(underTest.getFlux())
                 .expectSubscription()
-                .thenAwait(Duration.ofSeconds(15))
+                .thenAwait(Duration.ofSeconds(13))
                 .thenCancel()
                 .verify();
 

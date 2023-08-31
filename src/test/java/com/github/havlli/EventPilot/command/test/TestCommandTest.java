@@ -34,6 +34,7 @@ class TestCommandTest {
         // Arrange
         String actualUsername = "username";
         ChatInputInteractionEvent event = mock(ChatInputInteractionEvent.class);
+        when(event.getCommandName()).thenReturn("test");
         InteractionApplicationCommandCallbackReplyMono replyMono = mock(InteractionApplicationCommandCallbackReplyMono.class);
         when(event.reply()).thenReturn(replyMono);
         InteractionApplicationCommandCallbackReplyMono replyEphemeralMono = mock(InteractionApplicationCommandCallbackReplyMono.class);
@@ -47,7 +48,6 @@ class TestCommandTest {
         User userMock = mock(User.class);
         when(interactionMock.getUser()).thenReturn(userMock);
         when(userMock.getUsername()).thenReturn(actualUsername);
-
 
         // Act
         underTest.handle(event);

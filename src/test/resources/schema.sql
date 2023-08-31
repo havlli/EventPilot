@@ -1,7 +1,15 @@
 CREATE TABLE guild
 (
     id      VARCHAR(30) NOT NULL,
-    name     VARCHAR(150) NOT NULL,
+    name    VARCHAR(150) NOT NULL,
+    PRIMARY KEY (id)
+);
+
+CREATE TABLE embed_type
+(
+    id      INT NOT NULL,
+    name    VARCHAR(150) NOT NULL,
+    structure TEXT NOT NULL,
     PRIMARY KEY (id)
 );
 
@@ -15,8 +23,10 @@ CREATE TABLE event
     dest_channel VARCHAR(30) NOT NULL,
     member_size  VARCHAR(5)  NOT NULL,
     guild_id     VARCHAR(30) NOT NULL,
+    embed_type   INT         NOT NULL,
     PRIMARY KEY (id),
-    FOREIGN KEY (guild_id) REFERENCES guild(id) ON DELETE CASCADE
+    FOREIGN KEY (guild_id) REFERENCES guild(id) ON DELETE CASCADE,
+    FOREIGN KEY (embed_type) REFERENCES embed_type(id) ON DELETE CASCADE
 );
 
 CREATE TABLE participant
