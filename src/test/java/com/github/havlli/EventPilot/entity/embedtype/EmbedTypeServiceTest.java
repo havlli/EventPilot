@@ -1,5 +1,6 @@
 package com.github.havlli.EventPilot.entity.embedtype;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import com.github.havlli.EventPilot.exception.ResourceNotFoundException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -89,5 +90,19 @@ class EmbedTypeServiceTest {
 
         // Assert
         verify(embedTypeDAO, only()).existsEmbedTypeById(id);
+    }
+
+    @Test
+    void getDeserializedMap() throws JsonProcessingException {
+        // Arrange
+        String structure = "json_structure";
+        EmbedType embedType = mock(EmbedType.class);
+        when(embedType.getStructure()).thenReturn(structure);
+
+        // Act
+        underTest.getDeserializedMap(embedType);
+
+        // Assert
+        verify(serializationMock, only()).deserializeMap(structure);
     }
 }

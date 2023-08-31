@@ -305,4 +305,16 @@ class EmbedGeneratorTest {
         // Assert
         verify(componentGeneratorMock, only()).eventButtons(any(), eq(eventMock));
     }
+
+    @Test
+    void getDelimiter() {
+        // Arrange
+        String expected = ",";
+
+        // Act
+        String actual = underTest.getDelimiter();
+
+        // Assert
+        assertThat(actual).isEqualTo(expected);
+    }
 }

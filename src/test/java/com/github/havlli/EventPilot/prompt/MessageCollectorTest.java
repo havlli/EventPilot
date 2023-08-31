@@ -75,4 +75,29 @@ class MessageCollectorTest {
         verify(messageOneMock, times(1)).delete();
         verify(messageTwoMock, times(1)).delete();
     }
+
+    @Test
+    void cleanup_WillHandleErrorGracefully() {
+        // Arrange
+        Message messageOneMock = mock(Message.class);
+        Message messageTwoMock = mock(Message.class);
+
+        when(messageOneMock.getId()).thenReturn(Snowflake.of(1L));
+        when(messageTwoMock.getId()).thenReturn(Snowflake.of(2L));
+
+        underTest.collect(messageOneMock);
+        underTest.collect(messageTwoMock);
+
+        when(messageOneMock.delete()).thenReturn(Mono.empty());
+        when(messageTwoMock.delete()).thenReturn(Mono.error(new RuntimeException()));
+
+        // Act
+        StepVerifier.create(underTest.cleanup())
+                .expectComplete()
+                .verify();
+
+        // Assert
+        verify(messageOneMock, times(1)).delete();
+        verify(messageTwoMock, times(1)).delete();
+    }
 }
