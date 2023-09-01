@@ -2,7 +2,9 @@ package com.github.havlli.EventPilot.command.onguildjoin;
 
 import com.github.havlli.EventPilot.entity.guild.GuildService;
 import discord4j.common.util.Snowflake;
+import discord4j.core.event.domain.Event;
 import discord4j.core.event.domain.guild.GuildCreateEvent;
+import discord4j.core.event.domain.interaction.InteractionCreateEvent;
 import discord4j.core.object.entity.Guild;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -12,6 +14,7 @@ import org.mockito.MockitoAnnotations;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
 class OnGuildJoinEventTest {
@@ -54,5 +57,42 @@ class OnGuildJoinEventTest {
         StepVerifier.create(actualMono)
                 .expectComplete()
                 .verify();
+    }
+
+    @Test
+    void getName() {
+        // Arrange
+        String expected = "on-guild-join";
+
+        // Act
+        String actual = underTest.getName();
+
+        // Assert
+        assertThat(actual).isEqualTo(expected);
+    }
+
+    @Test
+    void getEventType() {
+        // Arrange
+        Class<? extends Event> expected = GuildCreateEvent.class;
+
+        // Act
+        Class<? extends Event> actual = underTest.getEventType();
+
+        // Assert
+        assertThat(actual).isEqualTo(expected);
+    }
+
+    @Test
+    void setEventType() {
+        // Arrange
+        Class<? extends Event> expected = InteractionCreateEvent.class;
+
+        // Act
+        underTest.setEventType(expected);
+
+        // Assert
+        Class<? extends Event> actual = underTest.getEventType();
+        assertThat(actual).isEqualTo(expected);
     }
 }

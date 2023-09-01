@@ -56,7 +56,7 @@ public class DeleteEventCommand implements SlashCommand {
                 ));
     }
 
-    private Mono<Message> deleteEventInteraction(ChatInputInteractionEvent event) {
+    public Mono<Message> deleteEventInteraction(ChatInputInteractionEvent event) {
         return event.getInteraction().getChannel()
                 .flatMap(messageChannel -> {
                     Snowflake messageId = event.getOption(OPTION_MESSAGE_ID)
@@ -67,16 +67,23 @@ public class DeleteEventCommand implements SlashCommand {
                             .flatMap(message -> {
                                 Optional<User> author = message.getAuthor();
                                 if (author.isPresent() && author.get().getId().equals(event.getClient().getSelfId())) {
-                                    return message.delete()
-                                            .then(event.createFollowup("Event deleted!")
-                                                    .withEphemeral(true));
+                                    return deleteMessage(event, message);
                                 } else {
-                                    return event.createFollowup("Event not found, already deleted or not posted by this bot!")
-                                            .withEphemeral(true);
+                                    return createMessage(event, "Event not found, already deleted or not posted by this bot!");
                                 }
                             })
-                            .onErrorResume(e -> event.createFollowup("Event not found!")
-                                    .withEphemeral(true));
+                            .onErrorResume(e -> createMessage(event, "Event not found!"));
                 });
+    }
+
+    public Mono<Message> createMessage(ChatInputInteractionEvent event, String content) {
+        return event.createFollowup(content)
+                .withEphemeral(true)
+                .flatMap(Mono::just);
+    }
+
+    public Mono<Message> deleteMessage(ChatInputInteractionEvent event, Message message) {
+        return message.delete()
+                .then(createMessage(event, "Event deleted!"));
     }
 }

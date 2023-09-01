@@ -1,5 +1,6 @@
 package com.github.havlli.EventPilot.command.onreadyevent;
 
+import discord4j.core.event.domain.Event;
 import discord4j.core.event.domain.lifecycle.ReadyEvent;
 import discord4j.core.object.entity.Guild;
 import org.junit.jupiter.api.AfterEach;
@@ -11,6 +12,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
 class OnReadyEventTest {
@@ -53,5 +55,30 @@ class OnReadyEventTest {
         verify(scheduledTaskMock, times(1)).getFlux();
         StepVerifier.create(actualMono)
                 .verifyComplete();
+    }
+
+    @Test
+    void getName() {
+        // Arrange
+        String expected = "on-ready";
+
+        // Act
+        String actual = underTest.getName();
+
+        // Assert
+        assertThat(actual).isEqualTo(expected);
+    }
+
+    @Test
+    void setEventType() {
+        // Arrange
+        Class<? extends Event> expected = ReadyEvent.class;
+
+        // Act
+        underTest.setEventType(expected);
+
+        // Assert
+        Class<? extends Event> actual = underTest.getEventType();
+        assertThat(actual).isEqualTo(expected);
     }
 }

@@ -1,7 +1,9 @@
 package com.github.havlli.EventPilot.command.createevent;
 
 import com.github.havlli.EventPilot.core.SimplePermissionChecker;
+import discord4j.core.event.domain.Event;
 import discord4j.core.event.domain.interaction.ChatInputInteractionEvent;
+import discord4j.core.event.domain.interaction.InteractionCreateEvent;
 import discord4j.core.spec.InteractionCallbackSpecDeferReplyMono;
 import discord4j.core.spec.InteractionFollowupCreateMono;
 import org.junit.jupiter.api.AfterEach;
@@ -70,6 +72,19 @@ class CreateEventCommandTest {
 
         var expected = Mono.empty().block();
         var actual = underTest.handle(event).block();
+        assertThat(actual).isEqualTo(expected);
+    }
+
+    @Test
+    void setEventType() {
+        // Arrange
+        Class<? extends Event> expected = InteractionCreateEvent.class;
+
+        // Act
+        underTest.setEventType(expected);
+
+        // Assert
+        Class<? extends Event> actual = underTest.getEventType();
         assertThat(actual).isEqualTo(expected);
     }
 }
