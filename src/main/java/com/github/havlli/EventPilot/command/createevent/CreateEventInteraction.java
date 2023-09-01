@@ -4,6 +4,8 @@ import com.github.havlli.EventPilot.component.ButtonRow;
 import com.github.havlli.EventPilot.component.selectmenu.ChannelSelectMenu;
 import com.github.havlli.EventPilot.component.selectmenu.MemberSizeSelectMenu;
 import com.github.havlli.EventPilot.component.selectmenu.RaidSelectMenu;
+import com.github.havlli.EventPilot.entity.embedtype.EmbedType;
+import com.github.havlli.EventPilot.entity.embedtype.EmbedTypeService;
 import com.github.havlli.EventPilot.entity.event.Event;
 import com.github.havlli.EventPilot.entity.event.EventService;
 import com.github.havlli.EventPilot.entity.guild.Guild;
@@ -40,6 +42,7 @@ public class CreateEventInteraction {
     private final EmbedGenerator embedGenerator;
     private final EventService eventService;
     private final GuildService guildService;
+    private final EmbedTypeService embedTypeService;
     private final TimeService timeService;
     private ChatInputInteractionEvent initialEvent;
     private User user;
@@ -56,6 +59,7 @@ public class CreateEventInteraction {
             EmbedGenerator embedGenerator,
             EventService eventService,
             GuildService guildService,
+            EmbedTypeService embedTypeService,
             TimeService timeService
     ) {
         this.client = client;
@@ -66,6 +70,7 @@ public class CreateEventInteraction {
         this.embedGenerator = embedGenerator;
         this.eventService = eventService;
         this.guildService = guildService;
+        this.embedTypeService = embedTypeService;
         this.timeService = timeService;
     }
 
@@ -75,6 +80,8 @@ public class CreateEventInteraction {
         this.eventBuilder = Event.builder();
         eventBuilder.withAuthor(user.getUsername());
         eventBuilder.withGuild(guild);
+        EmbedType embedType = embedTypeService.getEmbedTypeById(1);
+        eventBuilder.withEmbedType(embedType);
     }
 
     public Mono<Message> start(ChatInputInteractionEvent event) {
@@ -92,22 +99,16 @@ public class CreateEventInteraction {
                 .flatMap(ignored -> promptConfirmationAndDeferReply())
                 .flatMap(confirmation -> {
                     String customId = confirmation.getCustomId();
-                    switch (customId) {
-                        case "confirm" -> {
-                            return finalizeProcess()
-                                    .flatMapMany(ignored -> messageCollector.cleanup())
-                                    .then(confirmation.getInteractionResponse().deleteInitialResponse());
-                        }
-                        case "repeat" -> {
-                            return  messageCollector.cleanup()
-                                    .then(confirmation.getInteractionResponse().deleteInitialResponse())
-                                    .then(start(initialEvent));
-                        }
-                        default -> {
-                            return messageCollector.cleanup()
-                                    .then(confirmation.getInteractionResponse().deleteInitialResponse());
-                        }
-                    }
+                    return switch (customId) {
+                        case "confirm" -> finalizeProcess()
+                                .flatMapMany(ignored -> messageCollector.cleanup())
+                                .then(confirmation.getInteractionResponse().deleteInitialResponse());
+                        case "repeat" -> messageCollector.cleanup()
+                                .then(confirmation.getInteractionResponse().deleteInitialResponse())
+                                .then(start(initialEvent));
+                        default -> messageCollector.cleanup()
+                                .then(confirmation.getInteractionResponse().deleteInitialResponse());
+                    };
                 })
                 .doFinally(signalType -> {
                     if (signalType == SignalType.ON_COMPLETE) {
@@ -119,7 +120,7 @@ public class CreateEventInteraction {
                 .then(Mono.empty());
     }
 
-    private Mono<MessageCreateEvent> promptName() {
+    public Mono<MessageCreateEvent> promptName() {
         MessageCreateSpec messageCreateSpec = MessageCreateSpec.builder()
                 .content("**Step 1**\nEnter name for your event!")
                 .build();
@@ -138,7 +139,7 @@ public class CreateEventInteraction {
                 .mono();
     }
 
-    private Mono<MessageCreateEvent> promptDescription() {
+    public Mono<MessageCreateEvent> promptDescription() {
         MessageCreateSpec messageCreateSpec = MessageCreateSpec.builder()
                 .content("**Step 2**\nEnter description")
                 .build();
@@ -157,7 +158,7 @@ public class CreateEventInteraction {
                 .mono();
     }
 
-    private Mono<MessageCreateEvent> promptDateTime() {
+    public Mono<MessageCreateEvent> promptDateTime() {
         MessageCreateSpec messageCreateSpec = MessageCreateSpec.builder()
                 .content("**Step 3**\nEnter the date and time in UTC timezone (format: dd.MM.yyyy HH:mm)")
                 .build();
@@ -187,7 +188,7 @@ public class CreateEventInteraction {
                 );
     }
 
-    private Mono<SelectMenuInteractionEvent> promptRaidSelect() {
+    public Mono<SelectMenuInteractionEvent> promptRaidSelect() {
 
         RaidSelectMenu raidSelectMenu = new RaidSelectMenu();
         MessageCreateSpec prompt = MessageCreateSpec.builder()
@@ -207,7 +208,7 @@ public class CreateEventInteraction {
                 .mono();
     }
 
-    private Mono<SelectMenuInteractionEvent> promptMemberSize() {
+    public Mono<SelectMenuInteractionEvent> promptMemberSize() {
         MemberSizeSelectMenu memberSizeSelectMenu = new MemberSizeSelectMenu();
         String defaultSize = "25";
         MessageCreateSpec prompt = MessageCreateSpec.builder()
@@ -230,7 +231,7 @@ public class CreateEventInteraction {
                 .mono();
     }
 
-    private Mono<SelectMenuInteractionEvent> promptDestinationChannel() {
+    public Mono<SelectMenuInteractionEvent> promptDestinationChannel() {
         Snowflake originChannelId = initialEvent.getInteraction().getChannelId();
 
         return promptService.fetchGuildTextChannels(initialEvent)
@@ -260,7 +261,7 @@ public class CreateEventInteraction {
                 });
     }
 
-    private Mono<ButtonInteractionEvent> promptConfirmationAndDeferReply() {
+    public Mono<ButtonInteractionEvent> promptConfirmationAndDeferReply() {
         ButtonRow buttonRow = ButtonRow.builder()
                 .addButton("confirm", "Confirm", ButtonRow.Builder.ButtonType.PRIMARY)
                 .addButton("cancel", "Cancel", ButtonRow.Builder.ButtonType.DANGER)
@@ -283,7 +284,7 @@ public class CreateEventInteraction {
                 .mono();
     }
 
-    private Mono<Message> finalizeProcess() {
+    public Mono<Message> finalizeProcess() {
         Snowflake destinationChannel = Snowflake.of(eventBuilder.getDestinationChannelId());
         return initialEvent.getInteraction()
                 .getGuild()
@@ -303,7 +304,7 @@ public class CreateEventInteraction {
                             MessageEditSpec finalEmbed = MessageEditSpec.builder()
                                     .contentOrNull(null)
                                     .addEmbed(embedGenerator.generateEmbed(event))
-                                    .addAllComponents(embedGenerator.generateComponents(event.getEventId()))
+                                    .addAllComponents(embedGenerator.generateComponents(event))
                                     .build();
 
                             embedGenerator.subscribeInteractions(event);
@@ -313,5 +314,17 @@ public class CreateEventInteraction {
                                     .then(finalMessage);
                         })
                 );
+    }
+
+    public void setPrivateChannel(Mono<PrivateChannel> privateChannel) {
+        this.privateChannelMono = privateChannel;
+    }
+
+    public void setInitialEvent(ChatInputInteractionEvent initialEvent) {
+        this.initialEvent = initialEvent;
+    }
+
+    public void setEventBuilder(Event.Builder builder) {
+        this.eventBuilder = builder;
     }
 }
