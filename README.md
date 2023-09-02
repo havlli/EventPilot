@@ -1,1 +1,1 @@
-# TODO
+<a href="https://discord4j.com"><img align="right" src="https://raw.githubusercontent.com/havlli/EventPilot/main/public/logo.svg?sanitize=true" width=27%></a>
