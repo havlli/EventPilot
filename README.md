@@ -1,4 +1,4 @@
-<div width=100%>
+<div width=100% height=100%>
 <a href="https://discord4j.com"><img align="left" src="https://raw.githubusercontent.com/havlli/EventPilot/main/public/logo.svg?sanitize=true" width=45%></a>
 </div>
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
