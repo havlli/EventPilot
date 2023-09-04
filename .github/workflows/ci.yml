@@ -30,6 +30,6 @@ jobs:
           java-version: '17'
           cache: 'maven'
       - name: Generate .env File
-        run: .github/workflows/generate-env-file.sh
+        run: ./.github/workflows/generate-env-file.sh
       - name: Build and run Tests with Maven
         run: mvn -ntp -B verify
