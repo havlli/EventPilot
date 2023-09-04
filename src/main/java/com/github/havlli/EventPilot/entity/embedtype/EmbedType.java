@@ -33,32 +33,16 @@ public class EmbedType {
         return id;
     }
 
-    public void setId(Integer id) {
-        this.id = id;
-    }
-
     public String getName() {
         return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
     }
 
     public String getStructure() {
         return structure;
     }
 
-    public void setStructure(String structure) {
-        this.structure = structure;
-    }
-
     public List<Event> getEvents() {
         return events;
-    }
-
-    public void setEvents(List<Event> events) {
-        this.events = events;
     }
 
     @Override

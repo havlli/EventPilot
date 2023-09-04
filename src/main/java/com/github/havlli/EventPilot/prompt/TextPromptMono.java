@@ -37,7 +37,7 @@ public class TextPromptMono<T extends Event> {
     private final PromptType promptType;
 
     public TextPromptMono(
-            TextPromptMono.Builder<T> builder
+        TextPromptMono.Builder<T> builder
     ) {
         this.messageChannel = builder.messageChannel;
         this.messageCollector = builder.messageCollector;
@@ -54,30 +54,30 @@ public class TextPromptMono<T extends Event> {
 
     public Mono<T> mono() {
         return messageChannel.flatMap(channel -> channel.createMessage(messageCreateSpec))
-                .flatMap(promptedMessage -> {
-                    messageCollector.collect(promptedMessage);
+            .flatMap(promptedMessage -> {
+                messageCollector.collect(promptedMessage);
 
-                    Mono<T> responseMono = constructResponse();
+                Mono<T> responseMono = constructResponse();
 
-                    if (onErrorMessage != null) {
-                        responseMono = responseMono.onErrorResume(errorClass, e -> messageChannel
-                                .flatMap(channel -> channel.createMessage(onErrorMessage))
-                                .flatMap(message -> {
-                                    LOG.error("threw error {}\n{}", errorClass.getCanonicalName(), e.getStackTrace());
-                                    messageCollector.collect(message);
-                                    return this.mono();
-                                }));
-                    }
+                if (onErrorMessage != null) {
+                    responseMono = responseMono.onErrorResume(errorClass, e -> messageChannel
+                        .flatMap(channel -> channel.createMessage(onErrorMessage))
+                        .flatMap(message -> {
+                            LOG.error("threw error {}\n{}", errorClass.getCanonicalName(), e.getStackTrace());
+                            messageCollector.collect(message);
+                            return this.mono();
+                        }));
+                }
 
-                    return responseMono;
-                });
+                return responseMono;
+            });
     }
 
     private Mono<T> constructResponse() {
         return client.getEventDispatcher().on(eventClass)
-                .filter(eventPredicate)
-                .next()
-                .flatMap(interactionResponseMono());
+            .filter(eventPredicate)
+            .next()
+            .flatMap(interactionResponseMono());
     }
 
     private Function<T, Mono<T>> interactionResponseMono() {
@@ -97,16 +97,16 @@ public class TextPromptMono<T extends Event> {
         return event -> {
             if (event instanceof SelectMenuInteractionEvent selectMenuEvent) {
                 return selectMenuEvent.deferEdit()
-                        .then(selectMenuEvent.editReply(InteractionReplyEditSpec.builder()
-                                .components(List.of(actionRowComponent.getDisabledRow()))
-                                .build()))
-                        .then(Mono.just(event));
+                    .then(selectMenuEvent.editReply(InteractionReplyEditSpec.builder()
+                        .components(List.of(actionRowComponent.getDisabledRow()))
+                        .build()))
+                    .then(Mono.just(event));
             } else if (event instanceof ButtonInteractionEvent buttonEvent) {
                 return buttonEvent.deferEdit()
-                        .then(buttonEvent.editReply(InteractionReplyEditSpec.builder()
-                                .components(List.of())
-                                .build()))
-                        .then(Mono.just(event));
+                    .then(buttonEvent.editReply(InteractionReplyEditSpec.builder()
+                        .components(List.of())
+                        .build()))
+                    .then(Mono.just(event));
             } else if (event instanceof MessageCreateEvent) {
                 return Mono.just(event);
             }
@@ -119,12 +119,12 @@ public class TextPromptMono<T extends Event> {
         return event -> {
             if (event instanceof SelectMenuInteractionEvent selectMenuEvent) {
                 return selectMenuEvent.deferEdit()
-                        .then(selectMenuEvent.getInteractionResponse().deleteInitialResponse())
-                        .then(Mono.just(event));
+                    .then(selectMenuEvent.getInteractionResponse().deleteInitialResponse())
+                    .then(Mono.just(event));
             } else if (event instanceof ButtonInteractionEvent buttonEvent) {
                 return buttonEvent.deferEdit()
-                        .then(buttonEvent.getInteractionResponse().deleteInitialResponse())
-                        .then(Mono.just(event));
+                    .then(buttonEvent.getInteractionResponse().deleteInitialResponse())
+                    .then(Mono.just(event));
             }
 
             throw new IllegalStateException("%s not supported operation for %s".formatted(eventClass, promptType));
@@ -135,10 +135,10 @@ public class TextPromptMono<T extends Event> {
         return event -> {
             if (event instanceof SelectMenuInteractionEvent selectMenuEvent) {
                 return selectMenuEvent.deferEdit()
-                        .then(Mono.just(event));
+                    .then(Mono.just(event));
             } else if (event instanceof ButtonInteractionEvent buttonEvent) {
                 return buttonEvent.deferEdit()
-                        .then(Mono.just(event));
+                    .then(Mono.just(event));
             }
 
             throw new IllegalStateException("%s not supported operation for %s".formatted(eventClass, promptType));
@@ -149,10 +149,10 @@ public class TextPromptMono<T extends Event> {
         return event -> {
             if (event instanceof SelectMenuInteractionEvent selectMenuEvent) {
                 return selectMenuEvent.deferReply()
-                        .then(Mono.just(event));
+                    .then(Mono.just(event));
             } else if (event instanceof ButtonInteractionEvent buttonEvent) {
                 return buttonEvent.deferReply()
-                        .then(Mono.just(event));
+                    .then(Mono.just(event));
             }
 
             throw new IllegalStateException("%s not supported operation for %s".formatted(eventClass, promptType));

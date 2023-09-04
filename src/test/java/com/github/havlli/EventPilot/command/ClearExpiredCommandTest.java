@@ -7,9 +7,14 @@ import discord4j.core.event.domain.Event;
 import discord4j.core.event.domain.interaction.ChatInputInteractionEvent;
 import discord4j.core.event.domain.interaction.InteractionCreateEvent;
 import discord4j.core.object.command.Interaction;
+import discord4j.core.object.component.LayoutComponent;
+import discord4j.core.object.component.MessageComponent;
+import discord4j.core.object.component.SelectMenu;
 import discord4j.core.object.entity.Message;
+import discord4j.core.object.entity.User;
 import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.spec.InteractionCallbackSpecDeferReplyMono;
+import discord4j.core.spec.InteractionFollowupCreateMono;
 import discord4j.rest.util.Permission;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -19,6 +24,9 @@ import org.mockito.MockitoAnnotations;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
+
+import java.util.List;
+import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -89,6 +97,124 @@ class ClearExpiredCommandTest {
         // Assert
         verify(permissionCheckerMock, times(1))
                 .followupWith(eq(interactionEvent), eq(Permission.MANAGE_CHANNELS), any());
+    }
+
+    @Test
+    void sendMessage() {
+        // Arrange
+        String response = "response";
+        InteractionFollowupCreateMono expected = mock(InteractionFollowupCreateMono.class);
+        when(interactionEvent.createFollowup(response)).thenReturn(expected);
+
+        // Act
+        underTest.sendMessage(interactionEvent, response);
+
+        // Assert
+        verify(interactionEvent, only()).createFollowup(response);
+    }
+
+    @Test
+    void filterBotMessagesPredicate_ReturnsTrue_WhenAuthorIsBot() {
+        // Arrange
+        Message messageMock = mock(Message.class);
+        User userMock = mock(User.class);
+        when(messageMock.getAuthor()).thenReturn(Optional.of(userMock));
+        when(userMock.isBot()).thenReturn(true);
+
+        // Act
+        boolean actual = underTest.filterBotMessages().test(messageMock);
+
+        // Assert
+        assertThat(actual).isTrue();
+    }
+
+    @Test
+    void filterBotMessagesPredicate_ReturnsFalse_WhenAuthorIsNotBot() {
+        // Arrange
+        Message messageMock = mock(Message.class);
+        User userMock = mock(User.class);
+        when(messageMock.getAuthor()).thenReturn(Optional.of(userMock));
+        when(userMock.isBot()).thenReturn(false);
+
+        // Act
+        boolean actual = underTest.filterBotMessages().test(messageMock);
+
+        // Assert
+        assertThat(actual).isFalse();
+    }
+
+    @Test
+    void filterExpiredPredicate_ReturnsTrue_WhenAnyComponentsMatchExpiredComponent() {
+        // Arrange
+        Message messageMock = mock(Message.class);
+        LayoutComponent layoutComponentMock = mock(LayoutComponent.class);
+        List<LayoutComponent> layoutComponentList = List.of(layoutComponentMock);
+        when(messageMock.getComponents()).thenReturn(layoutComponentList);
+
+        SelectMenu selectComponentMock = mock(SelectMenu.class);
+        List<MessageComponent> messageComponentList = List.of(selectComponentMock);
+        when(layoutComponentMock.getChildren()).thenReturn(messageComponentList);
+        when(selectComponentMock.getCustomId()).thenReturn("expired");
+        when(selectMenuComponentMock.getCustomId()).thenReturn("expired");
+
+        // Act
+        boolean actual = underTest.filterExpired().test(messageMock);
+
+        // Assert
+        assertThat(actual).isTrue();
+    }
+
+    @Test
+    void filterExpiredPredicate_ReturnsFalse_WhenNoComponentsMatchesExpired() {
+        // Arrange
+        Message messageMock = mock(Message.class);
+        LayoutComponent layoutComponentMock = mock(LayoutComponent.class);
+        List<LayoutComponent> layoutComponentList = List.of(layoutComponentMock);
+        when(messageMock.getComponents()).thenReturn(layoutComponentList);
+
+        SelectMenu selectComponentMock = mock(SelectMenu.class);
+        List<MessageComponent> messageComponentList = List.of(selectComponentMock);
+        when(layoutComponentMock.getChildren()).thenReturn(messageComponentList);
+        when(selectComponentMock.getCustomId()).thenReturn("component");
+        when(selectMenuComponentMock.getCustomId()).thenReturn("expired");
+
+        // Act
+        boolean actual = underTest.filterExpired().test(messageMock);
+
+        // Assert
+        assertThat(actual).isFalse();
+    }
+
+    @Test
+    void filterExpiredPredicate_ReturnsFalse_WhenNoMessageComponentsExistsInMessage() {
+        // Arrange
+        Message messageMock = mock(Message.class);
+        LayoutComponent layoutComponentMock = mock(LayoutComponent.class);
+        List<LayoutComponent> layoutComponentList = List.of(layoutComponentMock);
+        when(messageMock.getComponents()).thenReturn(layoutComponentList);
+
+        List<MessageComponent> messageComponentList = List.of();
+        when(layoutComponentMock.getChildren()).thenReturn(messageComponentList);
+
+        // Act
+        boolean actual = underTest.filterExpired().test(messageMock);
+
+        // Assert
+        assertThat(actual).isFalse();
+    }
+
+    @Test
+    void filterExpiredPredicate_ReturnsFalse_WhenNoLayoutComponentsExistsInMessage() {
+        // Arrange
+        Message messageMock = mock(Message.class);
+        List<LayoutComponent> layoutComponentList = List.of();
+        when(messageMock.getComponents()).thenReturn(layoutComponentList);
+
+        // Act
+        boolean actual = underTest.filterExpired().test(messageMock);
+
+        // Assert
+        assertThat(actual).isFalse();
     }
 
     @Test

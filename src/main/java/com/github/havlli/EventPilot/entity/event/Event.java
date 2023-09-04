@@ -85,88 +85,44 @@ public class Event {
         return eventId;
     }
 
-    public void setEventId(String eventId) {
-        this.eventId = eventId;
-    }
-
     public String getName() {
         return name;
-    }
-
-    public void setName(String name) {
-        this.name = name;
     }
 
     public String getDescription() {
         return description;
     }
 
-    public void setDescription(String description) {
-        this.description = description;
-    }
-
     public String getAuthor() {
         return author;
-    }
-
-    public void setAuthor(String author) {
-        this.author = author;
     }
 
     public Instant getDateTime() {
         return dateTime;
     }
 
-    public void setDateTime(Instant dateTime) {
-        this.dateTime = dateTime;
-    }
-
     public String getDestinationChannelId() {
         return destinationChannelId;
-    }
-
-    public void setDestinationChannelId(String destinationChannelId) {
-        this.destinationChannelId = destinationChannelId;
     }
 
     public String getInstances() {
         return instances;
     }
 
-    public void setInstances(String instances) {
-        this.instances = instances;
-    }
-
     public String getMemberSize() {
         return memberSize;
-    }
-
-    public void setMemberSize(String memberSize) {
-        this.memberSize = memberSize;
     }
 
     public List<Participant> getParticipants() {
         return participants;
     }
 
-    public void setParticipants(List<Participant> participants) {
-        this.participants = participants;
-    }
-
     public Guild getGuild() {
         return guild;
     }
 
-    public void setGuild(Guild guild) {
-        this.guild = guild;
-    }
-
     public EmbedType getEmbedType() {
         return embedType;
-    }
-
-    public void setEmbedType(EmbedType embedType) {
-        this.embedType = embedType;
     }
 
     @Override
@@ -278,6 +234,7 @@ public class Event {
         }
 
         public Event getEvent() {
+            if (this.event == null) throw new IllegalStateException("Cannot retrieve event that was not built yet!");
             return this.event;
         }
 

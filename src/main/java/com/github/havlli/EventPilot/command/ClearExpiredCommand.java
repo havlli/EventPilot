@@ -80,15 +80,19 @@ public class ClearExpiredCommand implements SlashCommand {
                         response = String.format("Deleted %d %s in this channel.", count, messagePlural);
                     }
 
-                    return event.createFollowup(response);
+                    return sendMessage(event, response);
                 });
     }
 
-    private Predicate<Message> filterBotMessages() {
+    public Mono<Message> sendMessage(ChatInputInteractionEvent event, String response) {
+        return event.createFollowup(response);
+    }
+
+    public Predicate<Message> filterBotMessages() {
         return message -> message.getAuthor().map(User::isBot).orElse(false);
     }
 
-    private Predicate<Message> filterExpired() {
+    public Predicate<Message> filterExpired() {
         String expiredCustomTag = expiredSelectMenu.getCustomId();
         return message -> message.getComponents().stream()
                 .flatMap(layoutComponent -> layoutComponent.getChildren().stream())

@@ -38,24 +38,12 @@ public class Guild {
         return id;
     }
 
-    public void setId(String id) {
-        this.id = id;
-    }
-
     public String getName() {
         return name;
     }
 
-    public void setName(String guildName) {
-        this.name = guildName;
-    }
-
     public List<Event> getEvents() {
         return events;
-    }
-
-    public void setEvents(List<Event> events) {
-        this.events = events;
     }
 
     @Override

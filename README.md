@@ -2,6 +2,7 @@
 ---
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![codecov](https://codecov.io/gh/havlli/EventPilot/graph/badge.svg?token=T39ORJEZSP)](https://codecov.io/gh/havlli/EventPilot)
+
 EventPilot is a Discord bot written in Java using the Discord4J library. Its primary functionality is to help users create and manage events, allowing other Discord members to sign up for these events. Whether you're organizing gaming sessions, study groups, or any other kind of event, EventPilot simplifies the process by providing a user-friendly interface within your Discord server.
 
 ## Table of Contents
