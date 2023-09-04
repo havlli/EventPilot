@@ -21,6 +21,7 @@ public class TestDatabaseConnection extends TestDatabaseContainer {
 
     @Test
     void canPopulatePostgresDB() throws SQLException, IOException {
+        setupSchema();
         populateDummyData();
         assertThat(postgresSQLContainer.isRunning()).isTrue();
     }

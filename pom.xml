@@ -38,6 +38,11 @@
             <artifactId>postgresql</artifactId>
             <scope>runtime</scope>
         </dependency>
+        <!-- 	Flyway Core		-->
+        <dependency>
+            <groupId>org.flywaydb</groupId>
+            <artifactId>flyway-core</artifactId>
+        </dependency>
         <!-- 	Spring Test 	-->
         <dependency>
             <groupId>org.springframework.boot</groupId>

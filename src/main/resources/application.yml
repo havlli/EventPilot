@@ -8,6 +8,7 @@ spring:
     url: jdbc:postgresql://localhost:5555/eventpilot
     username: havlli
     password: password
+    driver-class-name: org.postgresql.Driver
   main:
     web-application-type: servlet
   jpa:

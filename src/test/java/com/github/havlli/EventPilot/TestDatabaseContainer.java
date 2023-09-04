@@ -1,6 +1,7 @@
 package com.github.havlli.EventPilot;
 
 import com.github.havlli.EventPilot.entity.guild.Guild;
+import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.BeforeAll;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,7 +29,11 @@ public abstract class TestDatabaseContainer {
 
     @BeforeAll
     static void beforeAll() throws SQLException, IOException {
-        setupSchema();
+        Flyway flyway = Flyway.configure().dataSource(
+                postgresSQLContainer.getJdbcUrl(),
+                postgresSQLContainer.getUsername(),
+                postgresSQLContainer.getPassword()
+        ).load();
         logContainerInfo();
     }
 
@@ -94,7 +99,7 @@ public abstract class TestDatabaseContainer {
         }
     };
 
-    private static void setupSchema() throws SQLException, IOException {
+    protected static void setupSchema() throws SQLException, IOException {
         executeSQLFile(SCHEMA_SQL);
     }
 
