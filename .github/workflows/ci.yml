@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     services:
       postgres:
-        image: postgres
+        image: postgres:15-alpine
         env:
           POSTGRES_USER: havlli
           POSTGRES_PASSWORD: password
@@ -30,6 +30,6 @@ jobs:
           java-version: '17'
           cache: 'maven'
       - name: Generate .env File
-        run: ./generate-env-file.sh
+        run: .github/workflows/generate-env-file.sh
       - name: Build and run Tests with Maven
         run: mvn -ntp -B verify
