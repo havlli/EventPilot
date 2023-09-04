@@ -15,7 +15,7 @@ class ClientTest extends DiscordBotTestConfig {
 
     @BeforeEach
     void setUp() {
-        underTest = new Client(token);
+        underTest = new Client(getToken());
     }
 
     @Test

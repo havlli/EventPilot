@@ -20,7 +20,7 @@ spring:
     show-sql: true
 
 discord:
-  token: INSERT_BOT_TOKEN
+  token: ${DISCORD_BOT_TOKEN}
   commands:
     folder: commands
   scheduler:
