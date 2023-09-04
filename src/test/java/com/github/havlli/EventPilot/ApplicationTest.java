@@ -7,7 +7,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ApplicationContext;
 
-@SpringBootTest(classes = Application.class)
+@SpringBootTest
 class ApplicationTest {
 
     private static final Logger LOG = LoggerFactory.getLogger(ApplicationTest.class);
