@@ -30,9 +30,9 @@ jobs:
           java-version: '17'
           cache: 'maven'
       - name: Generate .env File
-        run: >
+        run: |
           echo "DISCORD_BOT_TOKEN=${{ secrets.DISCORD_BOT_TOKEN }}" > .env
-          export TEST_DISCORD_BOT_TOKEN=${{ secrets.TEST_DISCORD_BOT_TOKEN }}
+          echo "TEST_DISCORD_BOT_TOKEN=${{ secrets.TEST_DISCORD_BOT_TOKEN }}" >> .env
           echo "Generated .env file:"
           cat .env
       - name: Build and run Tests with Maven
