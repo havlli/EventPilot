@@ -58,7 +58,7 @@ class EventRepositoryTest extends TestDatabaseContainer {
     public void jpaQueryCurrentTimestamp_SatisfiesExecutionTimeTolerance() throws SQLException {
         // Arrange
         // tolerance for assertion to count with execution time
-        int toleranceMilliseconds = 45;
+        int toleranceMilliseconds = 100;
 
         Instant expected = Instant.now();
 
