@@ -30,6 +30,10 @@ jobs:
           java-version: '17'
           cache: 'maven'
       - name: Generate .env File
-        run: ./.github/workflows/generate-env-file.sh
+        run: >
+          echo "DISCORD_BOT_TOKEN=${{ secrets.DISCORD_BOT_TOKEN }}" > .env
+          echo "DATABASE_URL=${{ secrets.DATABASE_URL }}" >> .env
+          echo "Generated .env file:"
+          cat .env
       - name: Build and run Tests with Maven
         run: mvn -ntp -B verify
