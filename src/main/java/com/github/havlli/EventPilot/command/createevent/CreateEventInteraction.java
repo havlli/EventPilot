@@ -1,7 +1,9 @@
 package com.github.havlli.EventPilot.command.createevent;
 
+import com.github.havlli.EventPilot.component.ActionRowComponent;
 import com.github.havlli.EventPilot.component.ButtonRow;
 import com.github.havlli.EventPilot.component.selectmenu.ChannelSelectMenu;
+import com.github.havlli.EventPilot.component.selectmenu.CustomSelectMenu;
 import com.github.havlli.EventPilot.component.selectmenu.MemberSizeSelectMenu;
 import com.github.havlli.EventPilot.component.selectmenu.RaidSelectMenu;
 import com.github.havlli.EventPilot.entity.embedtype.EmbedType;
@@ -31,6 +33,8 @@ import reactor.core.publisher.SignalType;
 
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
+import java.util.Map;
+import java.util.stream.Collectors;
 
 @Component
 public class CreateEventInteraction {
@@ -80,8 +84,6 @@ public class CreateEventInteraction {
         this.eventBuilder = Event.builder();
         eventBuilder.withAuthor(user.getUsername());
         eventBuilder.withGuild(guild);
-        EmbedType embedType = embedTypeService.getEmbedTypeById(1);
-        eventBuilder.withEmbedType(embedType);
     }
 
     public Mono<Message> start(ChatInputInteractionEvent event) {
@@ -93,23 +95,12 @@ public class CreateEventInteraction {
         return promptName()
                 .flatMap(ignored -> promptDescription())
                 .flatMap(ignored -> promptDateTime())
+                .flatMap(ignored -> promptEmbedType())
                 .flatMap(ignored -> promptRaidSelect())
                 .flatMap(ignored -> promptMemberSize())
                 .flatMap(ignored -> promptDestinationChannel())
                 .flatMap(ignored -> promptConfirmationAndDeferReply())
-                .flatMap(confirmation -> {
-                    String customId = confirmation.getCustomId();
-                    return switch (customId) {
-                        case "confirm" -> finalizeProcess()
-                                .flatMapMany(ignored -> messageCollector.cleanup())
-                                .then(confirmation.getInteractionResponse().deleteInitialResponse());
-                        case "repeat" -> messageCollector.cleanup()
-                                .then(confirmation.getInteractionResponse().deleteInitialResponse())
-                                .then(start(initialEvent));
-                        default -> messageCollector.cleanup()
-                                .then(confirmation.getInteractionResponse().deleteInitialResponse());
-                    };
-                })
+                .flatMap(this::handleConfirmationResponse)
                 .doFinally(signalType -> {
                     if (signalType == SignalType.ON_COMPLETE) {
                         System.out.println("Sequence completed successfully");
@@ -120,10 +111,23 @@ public class CreateEventInteraction {
                 .then(Mono.empty());
     }
 
+    private Mono<?> handleConfirmationResponse(ButtonInteractionEvent event) {
+        String customId = event.getCustomId();
+        return switch (customId) {
+            case "confirm" -> finalizeProcess()
+                    .flatMapMany(ignored -> messageCollector.cleanup())
+                    .then(event.getInteractionResponse().deleteInitialResponse());
+            case "repeat" -> messageCollector.cleanup()
+                    .then(event.getInteractionResponse().deleteInitialResponse())
+                    .then(start(initialEvent));
+            default -> messageCollector.cleanup()
+                    .then(event.getInteractionResponse().deleteInitialResponse());
+        };
+    }
+
     public Mono<MessageCreateEvent> promptName() {
-        MessageCreateSpec messageCreateSpec = MessageCreateSpec.builder()
-                .content("**Step 1**\nEnter name for your event!")
-                .build();
+        String promptMessage = "**Step 1**\nEnter name for your event!";
+        MessageCreateSpec messageCreateSpec = getMessageCreateSpec(promptMessage);
 
         return new TextPromptMono.Builder<>(client, MessageCreateEvent.class)
                 .withPromptType(TextPromptMono.PromptType.DEFAULT)
@@ -140,9 +144,8 @@ public class CreateEventInteraction {
     }
 
     public Mono<MessageCreateEvent> promptDescription() {
-        MessageCreateSpec messageCreateSpec = MessageCreateSpec.builder()
-                .content("**Step 2**\nEnter description")
-                .build();
+        String promptMessage = "**Step 2**\nEnter description";
+        MessageCreateSpec messageCreateSpec = getMessageCreateSpec(promptMessage);
 
         return new TextPromptMono.Builder<>(client, MessageCreateEvent.class)
                 .withPromptType(TextPromptMono.PromptType.DEFAULT)
@@ -159,9 +162,8 @@ public class CreateEventInteraction {
     }
 
     public Mono<MessageCreateEvent> promptDateTime() {
-        MessageCreateSpec messageCreateSpec = MessageCreateSpec.builder()
-                .content("**Step 3**\nEnter the date and time in UTC timezone (format: dd.MM.yyyy HH:mm)")
-                .build();
+        String promptMessage = "**Step 3**\nEnter the date and time in UTC timezone (format: dd.MM.yyyy HH:mm)";
+        MessageCreateSpec messageCreateSpec = getMessageCreateSpec(promptMessage);
 
         return new TextPromptMono.Builder<>(client, MessageCreateEvent.class)
                 .withPromptType(TextPromptMono.PromptType.DEFAULT)
@@ -188,13 +190,40 @@ public class CreateEventInteraction {
                 );
     }
 
-    public Mono<SelectMenuInteractionEvent> promptRaidSelect() {
+    public Mono<SelectMenuInteractionEvent> promptEmbedType() {
+        String promptMessage = "**Step 4**\nChoose type of the event";
+        Map<Integer,String> embedTypeMap = embedTypeService.getAllEmbedTypes()
+                .stream()
+                .collect(Collectors.toMap(EmbedType::getId, EmbedType::getName));
+        CustomSelectMenu embedTypeCustomMenu = new CustomSelectMenu(
+                "embed-type",
+                "Choose type of the event!",
+                embedTypeMap
+        );
+        MessageCreateSpec messageCreateSpec = getMessageCreateSpec(promptMessage, embedTypeCustomMenu);
 
+        return new TextPromptMono.Builder<>(client, SelectMenuInteractionEvent.class)
+                .withPromptType(TextPromptMono.PromptType.DEFAULT)
+                .messageChannel(privateChannelMono)
+                .messageCreateSpec(messageCreateSpec)
+                .actionRowComponent(embedTypeCustomMenu)
+                .withMessageCollector(messageCollector)
+                .eventPredicate(promptFilter.selectInteractionEvent(embedTypeCustomMenu, user))
+                .eventProcessor(event -> {
+                    String result = event.getValues().stream()
+                            .findFirst()
+                            .orElse("0");
+                    EmbedType embedType = embedTypeService.getEmbedTypeById(Integer.parseInt(result));
+                    eventBuilder.withEmbedType(embedType);
+                })
+                .build()
+                .mono();
+    }
+
+    public Mono<SelectMenuInteractionEvent> promptRaidSelect() {
+        String promptMessage = "**Step 4**\nChoose which raids is this signup for:\nRequired 1 selection, maximum 3";
         RaidSelectMenu raidSelectMenu = new RaidSelectMenu();
-        MessageCreateSpec prompt = MessageCreateSpec.builder()
-                .content("**Step 4**\nChoose which raids is this signup for:\nRequired 1 selection, maximum 3")
-                .addComponent(raidSelectMenu.getActionRow())
-                .build();
+        MessageCreateSpec prompt = getMessageCreateSpec(promptMessage, raidSelectMenu);
 
         return new TextPromptMono.Builder<>(client, SelectMenuInteractionEvent.class)
                 .withPromptType(TextPromptMono.PromptType.DEFAULT)
@@ -211,10 +240,8 @@ public class CreateEventInteraction {
     public Mono<SelectMenuInteractionEvent> promptMemberSize() {
         MemberSizeSelectMenu memberSizeSelectMenu = new MemberSizeSelectMenu();
         String defaultSize = "25";
-        MessageCreateSpec prompt = MessageCreateSpec.builder()
-                .content("**Step 5**\nChoose maximum attendants count for this event")
-                .addComponent(memberSizeSelectMenu.getActionRow())
-                .build();
+        String promptMessage = "**Step 5**\nChoose maximum attendants count for this event";
+        MessageCreateSpec prompt = getMessageCreateSpec(promptMessage, memberSizeSelectMenu);
 
         return new TextPromptMono.Builder<>(client, SelectMenuInteractionEvent.class)
                 .withPromptType(TextPromptMono.PromptType.DEFAULT)
@@ -232,16 +259,14 @@ public class CreateEventInteraction {
     }
 
     public Mono<SelectMenuInteractionEvent> promptDestinationChannel() {
+        String promptMessage = "**Step 6**\nChoose in which channel post this raid signup";
         Snowflake originChannelId = initialEvent.getInteraction().getChannelId();
 
         return promptService.fetchGuildTextChannels(initialEvent)
                 .collectList()
                 .flatMap(list -> {
                     ChannelSelectMenu channelSelectMenu = new ChannelSelectMenu(list);
-                    MessageCreateSpec prompt = MessageCreateSpec.builder()
-                            .content("**Step 6**\nChoose in which channel post this raid signup")
-                            .addComponent(channelSelectMenu.getActionRow())
-                            .build();
+                    MessageCreateSpec prompt = getMessageCreateSpec(promptMessage, channelSelectMenu);
 
                     return new TextPromptMono.Builder<>(client, SelectMenuInteractionEvent.class)
                             .withPromptType(TextPromptMono.PromptType.DEFAULT)
@@ -314,6 +339,19 @@ public class CreateEventInteraction {
                                     .then(finalMessage);
                         })
                 );
+    }
+
+    private static MessageCreateSpec getMessageCreateSpec(String message) {
+        return MessageCreateSpec.builder()
+                .content(message)
+                .build();
+    }
+
+    private static MessageCreateSpec getMessageCreateSpec(String message, ActionRowComponent actionRowComponent) {
+        return MessageCreateSpec.builder()
+                .content(message)
+                .addComponent(actionRowComponent.getActionRow())
+                .build();
     }
 
     public void setPrivateChannel(Mono<PrivateChannel> privateChannel) {

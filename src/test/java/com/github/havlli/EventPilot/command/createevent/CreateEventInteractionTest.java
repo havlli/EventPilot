@@ -116,6 +116,7 @@ class CreateEventInteractionTest {
 
         SelectMenuInteractionEvent selectMenuInteractionEventMock = mock(SelectMenuInteractionEvent.class);
         Mono<SelectMenuInteractionEvent> selectMenuInteractionEventMono = Mono.just(selectMenuInteractionEventMock);
+        doReturn(selectMenuInteractionEventMono).when(underTestSpy).promptEmbedType();
         doReturn(selectMenuInteractionEventMono).when(underTestSpy).promptRaidSelect();
         doReturn(selectMenuInteractionEventMono).when(underTestSpy).promptMemberSize();
         doReturn(selectMenuInteractionEventMono).when(underTestSpy).promptDestinationChannel();
@@ -167,6 +168,7 @@ class CreateEventInteractionTest {
 
         SelectMenuInteractionEvent selectMenuInteractionEventMock = mock(SelectMenuInteractionEvent.class);
         Mono<SelectMenuInteractionEvent> selectMenuInteractionEventMono = Mono.just(selectMenuInteractionEventMock);
+        doReturn(selectMenuInteractionEventMono).when(underTestSpy).promptEmbedType();
         doReturn(selectMenuInteractionEventMono).when(underTestSpy).promptRaidSelect();
         doReturn(selectMenuInteractionEventMono).when(underTestSpy).promptMemberSize();
         doReturn(selectMenuInteractionEventMono).when(underTestSpy).promptDestinationChannel();
@@ -221,6 +223,7 @@ class CreateEventInteractionTest {
 
         SelectMenuInteractionEvent selectMenuInteractionEventMock = mock(SelectMenuInteractionEvent.class);
         Mono<SelectMenuInteractionEvent> selectMenuInteractionEventMono = Mono.just(selectMenuInteractionEventMock);
+        doReturn(selectMenuInteractionEventMono).when(underTestSpy).promptEmbedType();
         doReturn(selectMenuInteractionEventMono).when(underTestSpy).promptRaidSelect();
         doReturn(selectMenuInteractionEventMono).when(underTestSpy).promptMemberSize();
         doReturn(selectMenuInteractionEventMono).when(underTestSpy).promptDestinationChannel();
@@ -358,6 +361,34 @@ class CreateEventInteractionTest {
         // Act
         underTest.setPrivateChannel(messageChannelMono);
         Mono<MessageCreateEvent> actual = underTest.promptDateTime();
+
+        // Assert
+        StepVerifier.create(actual)
+                .expectSubscription()
+                .verifyComplete();
+    }
+
+    @Test
+    void promptEmbedType() {
+        // Arrange
+        PrivateChannel messageChannelMock = mock(PrivateChannel.class);
+        Mono<PrivateChannel> messageChannelMono = Mono.just(messageChannelMock);
+
+        Message messageMock = mock(Message.class);
+        Mono<Message> messageMono = Mono.just(messageMock);
+        when(messageChannelMock.createMessage(any(MessageCreateSpec.class))).thenReturn(messageMono);
+        doNothing().when(collectorMock).collect(messageMock);
+
+        EventDispatcher eventDispatcherMock = mock(EventDispatcher.class);
+        when(clientMock.getEventDispatcher()).thenReturn(eventDispatcherMock);
+        when(eventDispatcherMock.on(SelectMenuInteractionEvent.class)).thenReturn(Flux.empty());
+
+        Predicate<SelectMenuInteractionEvent> predicate = event -> false;
+        when(filterMock.selectInteractionEvent(any(), any())).thenReturn(predicate);
+
+        // Act
+        underTest.setPrivateChannel(messageChannelMono);
+        Mono<SelectMenuInteractionEvent> actual = underTest.promptEmbedType();
 
         // Assert
         StepVerifier.create(actual)
