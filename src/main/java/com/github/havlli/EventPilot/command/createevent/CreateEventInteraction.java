@@ -27,17 +27,24 @@ import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.object.entity.channel.PrivateChannel;
 import discord4j.core.spec.MessageCreateSpec;
 import discord4j.core.spec.MessageEditSpec;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.SignalType;
 
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
 import java.util.Map;
+import java.util.function.Consumer;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Component
 public class CreateEventInteraction {
+
+    private final static Logger LOG = LoggerFactory.getLogger(CreateEventInteraction.class);
     private final GatewayDiscordClient client;
     private final MessageCollector messageCollector;
     private final PromptFormatter promptFormatter;
@@ -101,28 +108,43 @@ public class CreateEventInteraction {
                 .flatMap(ignored -> promptDestinationChannel())
                 .flatMap(ignored -> promptConfirmationAndDeferReply())
                 .flatMap(this::handleConfirmationResponse)
-                .doFinally(signalType -> {
-                    if (signalType == SignalType.ON_COMPLETE) {
-                        System.out.println("Sequence completed successfully");
-                    } else if (signalType == SignalType.ON_ERROR) {
-                        System.out.println("Sequence completed with an error");
-                    }
-                })
+                .doFinally(sequenceChecker())
                 .then(Mono.empty());
+    }
+
+    private Consumer<SignalType> sequenceChecker() {
+        return signalType -> {
+            switch (signalType) {
+                case ON_COMPLETE -> LOG.info("Sequence completed successfully");
+                case ON_ERROR -> LOG.info("Sequence completed with an error");
+            }
+        };
     }
 
     private Mono<?> handleConfirmationResponse(ButtonInteractionEvent event) {
         String customId = event.getCustomId();
         return switch (customId) {
             case "confirm" -> finalizeProcess()
-                    .flatMapMany(ignored -> messageCollector.cleanup())
-                    .then(event.getInteractionResponse().deleteInitialResponse());
-            case "repeat" -> messageCollector.cleanup()
-                    .then(event.getInteractionResponse().deleteInitialResponse())
-                    .then(start(initialEvent));
-            default -> messageCollector.cleanup()
-                    .then(event.getInteractionResponse().deleteInitialResponse());
+                    .flatMapMany(ignored -> deleteAllSentMessages())
+                    .then(sendCompleteDeferredInteractionSignal(event));
+            case "repeat" -> deleteAllSentMessages()
+                    .then(sendCompleteDeferredInteractionSignal(event))
+                    .then(startOver());
+            default -> deleteAllSentMessages()
+                    .then(sendCompleteDeferredInteractionSignal(event));
         };
+    }
+
+    private Mono<Void> sendCompleteDeferredInteractionSignal(ButtonInteractionEvent event) {
+        return event.getInteractionResponse().deleteInitialResponse();
+    }
+
+    private Flux<Void> deleteAllSentMessages() {
+        return messageCollector.cleanup();
+    }
+
+    private Mono<Message> startOver() {
+        return start(initialEvent);
     }
 
     public Mono<MessageCreateEvent> promptName() {
@@ -135,12 +157,16 @@ public class CreateEventInteraction {
                 .messageCreateSpec(messageCreateSpec)
                 .withMessageCollector(messageCollector)
                 .eventPredicate(promptFilter.isMessageAuthor(user))
-                .eventProcessor(event -> {
-                    eventBuilder.withName(event.getMessage().getContent());
-                    System.out.println(event.getMessage().getContent());
-                })
+                .eventProcessor(processNameInput())
                 .build()
                 .mono();
+    }
+
+    private Consumer<MessageCreateEvent> processNameInput() {
+        return event -> {
+            eventBuilder.withName(event.getMessage().getContent());
+            System.out.println(event.getMessage().getContent());
+        };
     }
 
     public Mono<MessageCreateEvent> promptDescription() {
@@ -153,12 +179,16 @@ public class CreateEventInteraction {
                 .messageCreateSpec(messageCreateSpec)
                 .withMessageCollector(messageCollector)
                 .eventPredicate(promptFilter.isMessageAuthor(user))
-                .eventProcessor(event -> {
-                    eventBuilder.withDescription(event.getMessage().getContent());
-                    System.out.println(event.getMessage().getContent());
-                })
+                .eventProcessor(processDescriptionInput())
                 .build()
                 .mono();
+    }
+
+    private Consumer<MessageCreateEvent> processDescriptionInput() {
+        return event -> {
+            eventBuilder.withDescription(event.getMessage().getContent());
+            System.out.println(event.getMessage().getContent());
+        };
     }
 
     public Mono<MessageCreateEvent> promptDateTime() {
@@ -171,23 +201,30 @@ public class CreateEventInteraction {
                 .messageCreateSpec(messageCreateSpec)
                 .withMessageCollector(messageCollector)
                 .eventPredicate(promptFilter.isMessageAuthor(user))
-                .eventProcessor(event -> {
-                    String messageContent = event.getMessage().getContent();
-                    Instant instant = timeService.parseUtcInstant(messageContent, "dd.MM.yyyy HH:mm");
-                    timeService.isValidFutureTime(instant);
-                    eventBuilder.withDateTime(instant);
-                })
+                .eventProcessor(processDateTimeInput())
                 .onErrorRepeat(DateTimeParseException.class, "Invalid Format")
                 .build()
                 .mono()
-                .onErrorResume(InvalidDateTimeException.class, e -> privateChannelMono
-                        .flatMap(channel -> channel.createMessage("Date and time of the event has to be in future!"))
-                            .flatMap(message -> {
-                                System.out.println(InvalidDateTimeException.class.getCanonicalName() + " triggered");
-                                messageCollector.collect(message);
-                                return promptDateTime();
-                            })
-                );
+                .onErrorResume(InvalidDateTimeException.class, sendMessageToUserAndRepeatOnException());
+    }
+
+    private Consumer<MessageCreateEvent> processDateTimeInput() {
+        return event -> {
+            String messageContent = event.getMessage().getContent();
+            Instant instant = timeService.parseUtcInstant(messageContent, "dd.MM.yyyy HH:mm");
+            timeService.isValidFutureTime(instant);
+            eventBuilder.withDateTime(instant);
+        };
+    }
+
+    private Function<InvalidDateTimeException, Mono<MessageCreateEvent>> sendMessageToUserAndRepeatOnException() {
+        return e -> privateChannelMono
+                .flatMap(channel -> channel.createMessage("Date and time of the event has to be in future!"))
+                .flatMap(message -> {
+                    System.out.println(InvalidDateTimeException.class.getCanonicalName() + " triggered");
+                    messageCollector.collect(message);
+                    return promptDateTime();
+                });
     }
 
     public Mono<SelectMenuInteractionEvent> promptEmbedType() {
@@ -209,15 +246,19 @@ public class CreateEventInteraction {
                 .actionRowComponent(embedTypeCustomMenu)
                 .withMessageCollector(messageCollector)
                 .eventPredicate(promptFilter.selectInteractionEvent(embedTypeCustomMenu, user))
-                .eventProcessor(event -> {
-                    String result = event.getValues().stream()
-                            .findFirst()
-                            .orElse("0");
-                    EmbedType embedType = embedTypeService.getEmbedTypeById(Integer.parseInt(result));
-                    eventBuilder.withEmbedType(embedType);
-                })
+                .eventProcessor(processEmbedTypeInput())
                 .build()
                 .mono();
+    }
+
+    private Consumer<SelectMenuInteractionEvent> processEmbedTypeInput() {
+        return event -> {
+            String result = event.getValues().stream()
+                    .findFirst()
+                    .orElse("0");
+            EmbedType embedType = embedTypeService.getEmbedTypeById(Integer.parseInt(result));
+            eventBuilder.withEmbedType(embedType);
+        };
     }
 
     public Mono<SelectMenuInteractionEvent> promptRaidSelect() {
@@ -232,9 +273,13 @@ public class CreateEventInteraction {
                 .messageChannel(privateChannelMono)
                 .withMessageCollector(messageCollector)
                 .eventPredicate(promptFilter.selectInteractionEvent(raidSelectMenu, user))
-                .eventProcessor(event -> eventBuilder.withInstances(event.getValues()))
+                .eventProcessor(processRaidSelectInput())
                 .build()
                 .mono();
+    }
+
+    private Consumer<SelectMenuInteractionEvent> processRaidSelectInput() {
+        return event -> eventBuilder.withInstances(event.getValues());
     }
 
     public Mono<SelectMenuInteractionEvent> promptMemberSize() {
@@ -250,12 +295,16 @@ public class CreateEventInteraction {
                 .actionRowComponent(memberSizeSelectMenu)
                 .withMessageCollector(messageCollector)
                 .eventPredicate(promptFilter.selectInteractionEvent(memberSizeSelectMenu, user))
-                .eventProcessor(event -> {
-                    String result = event.getValues().stream().findFirst().orElse(defaultSize);
-                    eventBuilder.withMemberSize(result);
-                })
+                .eventProcessor(processMemberSizeInput(defaultSize))
                 .build()
                 .mono();
+    }
+
+    private Consumer<SelectMenuInteractionEvent> processMemberSizeInput(String defaultSize) {
+        return event -> {
+            String result = event.getValues().stream().findFirst().orElse(defaultSize);
+            eventBuilder.withMemberSize(result);
+        };
     }
 
     public Mono<SelectMenuInteractionEvent> promptDestinationChannel() {
@@ -275,15 +324,19 @@ public class CreateEventInteraction {
                             .actionRowComponent(channelSelectMenu)
                             .withMessageCollector(messageCollector)
                             .eventPredicate(promptFilter.selectInteractionEvent(channelSelectMenu, user))
-                            .eventProcessor(event -> {
-                                String result = event.getValues().stream()
-                                        .findFirst()
-                                        .orElse(originChannelId.asString());
-                                eventBuilder.withDestinationChannel(result);
-                            })
+                            .eventProcessor(processDestinationChannelInput(originChannelId))
                             .build()
                             .mono();
                 });
+    }
+
+    private Consumer<SelectMenuInteractionEvent> processDestinationChannelInput(Snowflake originChannelId) {
+        return event -> {
+            String result = event.getValues().stream()
+                    .findFirst()
+                    .orElse(originChannelId.asString());
+            eventBuilder.withDestinationChannel(result);
+        };
     }
 
     public Mono<ButtonInteractionEvent> promptConfirmationAndDeferReply() {
@@ -303,8 +356,7 @@ public class CreateEventInteraction {
                 .messageCreateSpec(prompt)
                 .withMessageCollector(messageCollector)
                 .eventPredicate(promptFilter.buttonInteractionEvent(buttonRow, user))
-                .eventProcessor(event -> {
-                })
+                .eventProcessor(event -> { })
                 .build()
                 .mono();
     }
@@ -319,26 +371,37 @@ public class CreateEventInteraction {
                         .flatMap(message -> {
                             Snowflake messageId = message.getId();
                             eventBuilder.withEventId(messageId.asString());
-
                             Event event = eventBuilder.build();
-
-                            String messageUrl = promptFormatter.messageUrl(guild.getId(), destinationChannel, messageId);
-                            Mono<Message> finalMessage = privateChannelMono
-                                    .flatMap(channel -> channel.createMessage("Event created in " + messageUrl));
-
-                            MessageEditSpec finalEmbed = MessageEditSpec.builder()
-                                    .contentOrNull(null)
-                                    .addEmbed(embedGenerator.generateEmbed(event))
-                                    .addAllComponents(embedGenerator.generateComponents(event))
-                                    .build();
-
-                            embedGenerator.subscribeInteractions(event);
-                            eventService.saveEvent(event);
-
+                            String messageUrl = constructMessageUrl(destinationChannel, guild, messageId);
+                            Mono<Message> finalMessage = getFinalMessage("Event created in " + messageUrl);
+                            MessageEditSpec finalEmbed = getFinalEmbed(event);
+                            subscribeInteractionsAndSaveToDatabase(event);
                             return message.edit(finalEmbed)
                                     .then(finalMessage);
                         })
                 );
+    }
+
+    private void subscribeInteractionsAndSaveToDatabase(Event event) {
+        embedGenerator.subscribeInteractions(event);
+        eventService.saveEvent(event);
+    }
+
+    private MessageEditSpec getFinalEmbed(Event event) {
+        return MessageEditSpec.builder()
+                .contentOrNull(null)
+                .addEmbed(embedGenerator.generateEmbed(event))
+                .addAllComponents(embedGenerator.generateComponents(event))
+                .build();
+    }
+
+    private Mono<Message> getFinalMessage(String messageUrl) {
+        return privateChannelMono
+                .flatMap(channel -> channel.createMessage(messageUrl));
+    }
+
+    private String constructMessageUrl(Snowflake destinationChannel, discord4j.core.object.entity.Guild guild, Snowflake messageId) {
+        return promptFormatter.messageUrl(guild.getId(), destinationChannel, messageId);
     }
 
     private static MessageCreateSpec getMessageCreateSpec(String message) {
