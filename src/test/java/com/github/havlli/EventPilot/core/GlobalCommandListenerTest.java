@@ -15,10 +15,10 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.atomic.AtomicBoolean;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -29,7 +29,6 @@ class GlobalCommandListenerTest {
     private AutoCloseable autoCloseable;
     @Mock
     private GatewayDiscordClient client;
-
     private GlobalCommandListener underTest;
     private List<SlashCommand> slashCommands;
 
@@ -50,12 +49,16 @@ class GlobalCommandListenerTest {
         // Arrange
         slashCommands.add(new TestCommand());
         slashCommands.add(new TestCommand());
+        when(client.on(any(), any())).thenReturn(Flux.just("test"));
 
         // Act
-        Flux<?> result = underTest.constructListeners();
+        Flux<?> actual = underTest.constructListeners();
 
         // Assert
-        assertThat(result).isNotNull();
+        StepVerifier.create(actual)
+                .expectSubscription()
+                .expectNextCount(2L)
+                .verifyComplete();
         verify(client, times(2)).on(any(), any());
     }
 
@@ -70,11 +73,16 @@ class GlobalCommandListenerTest {
         slashCommands.add(commandOnReadyEvent);
         slashCommands.add(commandTwo);
 
+        when(client.on(any(), any())).thenReturn(Flux.just("test"));
+
         // Act
-        Flux<?> result = underTest.constructListeners();
+        Flux<?> actual = underTest.constructListeners();
 
         // Assert
-        assertThat(result).isNotEqualTo(Flux.empty());
+        StepVerifier.create(actual)
+                .expectSubscription()
+                .expectNextCount(3L)
+                .verifyComplete();
         assertThat(slashCommands.get(0)).isEqualTo(commandOnReadyEvent);
         verify(client, times(3)).on(any(), any());
     }
@@ -89,28 +97,29 @@ class GlobalCommandListenerTest {
 
         slashCommands.add(matchingCommand);
 
-        when(client.on(any(),any())).thenReturn(Flux.just(5));
+        when(client.on(any(), any())).thenReturn(Flux.just("test"));
 
         // Act
-        underTest.constructListeners()
-                .then()
-                .block();
+        Flux<?> actual = underTest.constructListeners();
 
         // Assert
+        StepVerifier.create(actual)
+                .expectSubscription()
+                .expectNextCount(1L)
+                .verifyComplete();
         verify(client, times(1)).on(any(), any());
     }
 
     @Test
     void constructListeners_WithNoMatchingCommand_ShouldNotInvoke() {
-        // Arrange
-
         // Act
-        underTest.constructListeners()
-                .then()
-                .block();
+        Flux<?> actual = underTest.constructListeners();
 
         // Assert
-        verify(client, never()).on(any(),any());
+        StepVerifier.create(actual)
+                .expectSubscription()
+                .verifyComplete();
+        verify(client, never()).on(any(), any());
     }
 
     @Test
@@ -118,22 +127,17 @@ class GlobalCommandListenerTest {
         // Arrange
         SlashCommand errorCommand = mock(SlashCommand.class);
         errorCommand.setEventType(ChatInputInteractionEvent.class);
-        when(errorCommand.handle(any())).thenReturn(Mono.error(new RuntimeException("Command handling error")));
+        when(client.on(any(), any())).thenReturn(Flux.error(new RuntimeException("Command handling error")));
 
         slashCommands.add(errorCommand);
 
-        AtomicBoolean errorHandled = new AtomicBoolean(false);
-
         // Act
-        underTest.constructListeners()
-                .onErrorResume(error -> {
-                    errorHandled.set(true);
-                    return Mono.empty();
-                })
-                .then()
-                .block();
+        Flux<?> actual = underTest.constructListeners();
 
         // Assert
-        assertThat(errorHandled.get()).isTrue();
+        StepVerifier.create(actual)
+                .expectSubscription()
+                .expectError(RuntimeException.class)
+                .verify();
     }
 }

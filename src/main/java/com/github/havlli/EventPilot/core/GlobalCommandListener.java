@@ -34,15 +34,8 @@ public class GlobalCommandListener {
     }
 
     public Flux<?> constructListeners() {
-        Flux<?> commandFlux = Flux.empty();
-
         commands.sort(typeComparator);
-
-        for (SlashCommand command : commands) {
-            Flux<?> flux = client.on(command.getEventType(), command::handle);
-            commandFlux = Flux.merge(commandFlux, flux);
-        }
-
-        return commandFlux;
+        return Flux.fromIterable(commands)
+                .flatMap(slashCommand -> client.on(slashCommand.getEventType(), slashCommand::handle));
     }
 }
