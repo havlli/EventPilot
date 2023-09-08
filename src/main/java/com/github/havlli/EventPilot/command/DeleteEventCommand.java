@@ -7,11 +7,13 @@ import discord4j.core.event.domain.interaction.ChatInputInteractionEvent;
 import discord4j.core.object.command.ApplicationCommandInteractionOption;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.User;
+import discord4j.core.spec.InteractionCallbackSpecDeferReplyMono;
 import discord4j.rest.util.Permission;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
 import java.util.Optional;
+import java.util.function.Function;
 
 @Component
 public class DeleteEventCommand implements SlashCommand {
@@ -43,40 +45,64 @@ public class DeleteEventCommand implements SlashCommand {
     @Override
     public Mono<?> handle(Event event) {
         ChatInputInteractionEvent interactionEvent = (ChatInputInteractionEvent) event;
-        if (!interactionEvent.getCommandName().equals(EVENT_NAME)) {
-            return Mono.empty();
+        if (!isValidEvent(interactionEvent)) {
+            return terminateInteraction();
         }
 
+        return deferInteractionWithEphemeralResponse(interactionEvent)
+                .then(validatePermissions(interactionEvent));
+    }
+
+    private Mono<Message> validatePermissions(ChatInputInteractionEvent event) {
+        return permissionChecker.followupWith(event, Permission.MANAGE_CHANNELS, deleteEventInteraction(event));
+    }
+
+    private InteractionCallbackSpecDeferReplyMono deferInteractionWithEphemeralResponse(ChatInputInteractionEvent interactionEvent) {
         return interactionEvent.deferReply()
-                .withEphemeral(true)
-                .then(permissionChecker.followupWith(
-                        interactionEvent,
-                        Permission.MANAGE_CHANNELS,
-                        deleteEventInteraction(interactionEvent)
-                ));
+                .withEphemeral(true);
+    }
+
+    private Mono<Object> terminateInteraction() {
+        return Mono.empty();
+    }
+
+    private boolean isValidEvent(ChatInputInteractionEvent interactionEvent) {
+        return interactionEvent.getCommandName().equals(EVENT_NAME);
     }
 
     public Mono<Message> deleteEventInteraction(ChatInputInteractionEvent event) {
         return event.getInteraction().getChannel()
                 .flatMap(messageChannel -> {
-                    Snowflake messageId = event.getOption(OPTION_MESSAGE_ID)
-                            .flatMap(ApplicationCommandInteractionOption::getValue)
-                            .map(value -> Snowflake.of(value.asString()))
-                            .orElse(Snowflake.of(0));
-                    return messageChannel.getMessageById(messageId)
-                            .flatMap(message -> {
-                                Optional<User> author = message.getAuthor();
-                                if (author.isPresent() && author.get().getId().equals(event.getClient().getSelfId())) {
-                                    return deleteMessage(event, message);
-                                } else {
-                                    return createMessage(event, "Event not found, already deleted or not posted by this bot!");
-                                }
-                            })
-                            .onErrorResume(e -> createMessage(event, "Event not found!"));
+                    Snowflake targetMessageId = getTargetMessageId(event);
+                    return messageChannel.getMessageById(targetMessageId)
+                            .flatMap(handleMessageFound(event))
+                            .onErrorResume(handleMessageNotFound(event));
                 });
     }
 
-    public Mono<Message> createMessage(ChatInputInteractionEvent event, String content) {
+    private Function<Throwable, Mono<? extends Message>> handleMessageNotFound(ChatInputInteractionEvent event) {
+        return e -> sendMessage(event, "Event not found!");
+    }
+
+    private Function<Message, Mono<? extends Message>> handleMessageFound(ChatInputInteractionEvent event) {
+        return message -> {
+            Optional<User> author = message.getAuthor();
+            if (author.isPresent() && author.get().getId().equals(event.getClient().getSelfId())) {
+                return deleteMessage(event, message);
+            } else {
+                return sendMessage(event, "Event not found, already deleted or not posted by this bot!");
+            }
+        };
+    }
+
+    private static Snowflake getTargetMessageId(ChatInputInteractionEvent event) {
+        return event.getOption(OPTION_MESSAGE_ID)
+                .flatMap(ApplicationCommandInteractionOption::getValue)
+                .map(value -> Snowflake.of(value.asString()))
+                .orElse(Snowflake.of(0));
+    }
+
+    public Mono<Message> sendMessage(ChatInputInteractionEvent event, String content) {
         return event.createFollowup(content)
                 .withEphemeral(true)
                 .flatMap(Mono::just);
@@ -84,6 +110,6 @@ public class DeleteEventCommand implements SlashCommand {
 
     public Mono<Message> deleteMessage(ChatInputInteractionEvent event, Message message) {
         return message.delete()
-                .then(createMessage(event, "Event deleted!"));
+                .then(sendMessage(event, "Event deleted!"));
     }
 }

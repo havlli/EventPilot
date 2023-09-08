@@ -8,10 +8,13 @@ import discord4j.core.event.domain.interaction.ChatInputInteractionEvent;
 import discord4j.core.object.component.SelectMenu;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.User;
+import discord4j.core.spec.InteractionCallbackSpecDeferReplyMono;
 import discord4j.rest.util.Permission;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
+import java.util.List;
+import java.util.function.Function;
 import java.util.function.Predicate;
 
 @Component
@@ -47,20 +50,19 @@ public class ClearExpiredCommand implements SlashCommand {
     public Mono<?> handle(Event event) {
         ChatInputInteractionEvent interactionEvent = ((ChatInputInteractionEvent) event);
 
-        if (!interactionEvent.getCommandName().equals(EVENT_NAME)) {
-            return Mono.empty();
+        if (!isValidEvent(interactionEvent)) {
+            return terminateInteraction();
         }
 
-        return interactionEvent.deferReply()
-                .withEphemeral(true)
-                .then(permissionChecker.followupWith(
-                        interactionEvent,
-                        Permission.MANAGE_CHANNELS,
-                        deferredResponse(interactionEvent)
-                ));
+        return deferInteractionWithEphemeralResponse(interactionEvent)
+                .then(validatePermissions(interactionEvent));
     }
 
-    private Mono<Message> deferredResponse(ChatInputInteractionEvent event) {
+    private Mono<Message> validatePermissions(ChatInputInteractionEvent interactionEvent) {
+        return permissionChecker.followupWith(interactionEvent, Permission.MANAGE_CHANNELS, followupResponse(interactionEvent));
+    }
+
+    private Mono<Message> followupResponse(ChatInputInteractionEvent event) {
         return event.getInteraction()
                 .getChannel()
                 .flatMapMany(messageChannel -> messageChannel.getMessagesAfter(Snowflake.of(0))
@@ -70,21 +72,39 @@ public class ClearExpiredCommand implements SlashCommand {
                                 .thenReturn(message))
                 )
                 .collectList()
-                .flatMap(messages -> {
-                    int count = messages.size();
-                    String response;
-                    if (count < 1) {
-                        response = "No expired events found in this channel.";
-                    } else {
-                        String messagePlural = count == 1 ? "event" : "events";
-                        response = String.format("Deleted %d %s in this channel.", count, messagePlural);
-                    }
-
-                    return sendMessage(event, response);
-                });
+                .flatMap(handleResponse(event));
     }
 
-    public Mono<Message> sendMessage(ChatInputInteractionEvent event, String response) {
+    private Function<List<Message>, Mono<? extends Message>> handleResponse(ChatInputInteractionEvent event) {
+        return messages -> {
+            String response = formatResponseMessage(messages.size());
+            return sendResponse(event, response);
+        };
+    }
+
+    private String formatResponseMessage(int count) {
+        if (count == 0) {
+            return  "No expired events found in this channel.";
+        } else {
+            String messagePlural = count == 1 ? "event" : "events";
+            return String.format("Deleted %d %s in this channel.", count, messagePlural);
+        }
+    }
+
+    private InteractionCallbackSpecDeferReplyMono deferInteractionWithEphemeralResponse(ChatInputInteractionEvent interactionEvent) {
+        return interactionEvent.deferReply()
+                .withEphemeral(true);
+    }
+
+    private Mono<Object> terminateInteraction() {
+        return Mono.empty();
+    }
+
+    private boolean isValidEvent(ChatInputInteractionEvent event) {
+        return event.getCommandName().equals(EVENT_NAME);
+    }
+
+    public Mono<Message> sendResponse(ChatInputInteractionEvent event, String response) {
         return event.createFollowup(response);
     }
 

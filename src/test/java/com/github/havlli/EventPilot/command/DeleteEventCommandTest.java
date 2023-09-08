@@ -97,7 +97,7 @@ class DeleteEventCommandTest {
         when(messageChannel.getMessageById(any())).thenReturn(Mono.error(new RuntimeException("Event not found")));
 
         DeleteEventCommand underTestSpy = spy(underTest);
-        doReturn(Mono.empty()).when(underTestSpy).createMessage(interactionEvent, "Event not found!");
+        doReturn(Mono.empty()).when(underTestSpy).sendMessage(interactionEvent, "Event not found!");
 
         // Act
         Mono<Message> actual = underTestSpy.deleteEventInteraction(interactionEvent);
@@ -106,7 +106,7 @@ class DeleteEventCommandTest {
         StepVerifier.create(actual)
                 .expectSubscription()
                 .verifyComplete();
-        verify(underTestSpy, times(1)).createMessage(interactionEvent, "Event not found!");
+        verify(underTestSpy, times(1)).sendMessage(interactionEvent, "Event not found!");
     }
 
     @Test
@@ -153,7 +153,7 @@ class DeleteEventCommandTest {
         when(clientMock.getSelfId()).thenReturn(Snowflake.of("1234"));
 
         DeleteEventCommand underTestSpy = spy(underTest);
-        doReturn(Mono.empty()).when(underTestSpy).createMessage(interactionEvent, "Event not found, already deleted or not posted by this bot!");
+        doReturn(Mono.empty()).when(underTestSpy).sendMessage(interactionEvent, "Event not found, already deleted or not posted by this bot!");
 
         // Act
         Mono<Message> actual = underTestSpy.deleteEventInteraction(interactionEvent);
@@ -162,7 +162,7 @@ class DeleteEventCommandTest {
         StepVerifier.create(actual)
                 .expectSubscription()
                 .verifyComplete();
-        verify(underTestSpy, times(1)).createMessage(interactionEvent, "Event not found, already deleted or not posted by this bot!");
+        verify(underTestSpy, times(1)).sendMessage(interactionEvent, "Event not found, already deleted or not posted by this bot!");
     }
 
     @Test
@@ -175,7 +175,7 @@ class DeleteEventCommandTest {
         when(messageMock.getAuthor()).thenReturn(Optional.empty());
 
         DeleteEventCommand underTestSpy = spy(underTest);
-        doReturn(Mono.empty()).when(underTestSpy).createMessage(interactionEvent, "Event not found, already deleted or not posted by this bot!");
+        doReturn(Mono.empty()).when(underTestSpy).sendMessage(interactionEvent, "Event not found, already deleted or not posted by this bot!");
 
         // Act
         Mono<Message> actual = underTestSpy.deleteEventInteraction(interactionEvent);
@@ -184,7 +184,7 @@ class DeleteEventCommandTest {
         StepVerifier.create(actual)
                 .expectSubscription()
                 .verifyComplete();
-        verify(underTestSpy, times(1)).createMessage(interactionEvent, "Event not found, already deleted or not posted by this bot!");
+        verify(underTestSpy, times(1)).sendMessage(interactionEvent, "Event not found, already deleted or not posted by this bot!");
     }
 
     @Test
@@ -196,7 +196,7 @@ class DeleteEventCommandTest {
         when(followupCreateMono.withEphemeral(true)).thenReturn(followupCreateMono);
 
         // Act
-        underTest.createMessage(interactionEvent, content);
+        underTest.sendMessage(interactionEvent, content);
 
         // Assert
         verify(interactionEvent, times(1)).createFollowup(content);
@@ -209,7 +209,7 @@ class DeleteEventCommandTest {
         when(messageMock.delete()).thenReturn(Mono.empty());
 
         DeleteEventCommand underTestSpy = spy(underTest);
-        doReturn(Mono.empty()).when(underTestSpy).createMessage(interactionEvent, "Event deleted!");
+        doReturn(Mono.empty()).when(underTestSpy).sendMessage(interactionEvent, "Event deleted!");
         // Act
         Mono<Message> actual = underTestSpy.deleteMessage(interactionEvent, messageMock);
 

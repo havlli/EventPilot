@@ -22,9 +22,7 @@ public class EventTypeComparator implements Comparator<SlashCommand> {
         } else if (isOnReadyEvent2) {
             return 1;
         } else {
-            String eventTypeCanonical1 = eventType1.getCanonicalName();
-            String eventTypeCanonical2 = eventType2.getCanonicalName();
-            return eventTypeCanonical1.compareTo(eventTypeCanonical2);
+            return eventType1.getCanonicalName().compareTo(eventType2.getCanonicalName());
         }
     }
 }

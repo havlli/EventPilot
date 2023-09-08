@@ -11,7 +11,6 @@ import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
 import java.util.function.Function;
-import java.util.function.Predicate;
 
 @Component
 public class CreateEventCommand implements SlashCommand {
@@ -44,15 +43,15 @@ public class CreateEventCommand implements SlashCommand {
     @Override
     public Mono<?> handle(Event event) {
         ChatInputInteractionEvent interactionEvent = (ChatInputInteractionEvent) event;
-        if (!isEventCommandIdEqualToThis.test(interactionEvent)) {
+        if (!isValidEvent(interactionEvent)) {
             return terminateInteraction();
         }
 
-        return deferInteractionWithEphemeral(interactionEvent)
+        return deferInteractionWithEphemeralResponse(interactionEvent)
                 .then(validatePermissions(interactionEvent));
     }
 
-    private InteractionCallbackSpecDeferReplyMono deferInteractionWithEphemeral(ChatInputInteractionEvent event) {
+    private InteractionCallbackSpecDeferReplyMono deferInteractionWithEphemeralResponse(ChatInputInteractionEvent event) {
         return event.deferReply()
                 .withEphemeral(true);
     }
@@ -76,8 +75,9 @@ public class CreateEventCommand implements SlashCommand {
         return ignored -> createEventInteraction.start(event);
     }
 
-    private final Predicate<ChatInputInteractionEvent> isEventCommandIdEqualToThis = event ->
-            event.getCommandName().equals(this.getName());
+    private boolean isValidEvent(ChatInputInteractionEvent event) {
+        return event.getCommandName().equals(this.getName());
+    }
 
     private Mono<Message> terminateInteraction() {
         return Mono.empty();

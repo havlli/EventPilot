@@ -107,7 +107,7 @@ class ClearExpiredCommandTest {
         when(interactionEvent.createFollowup(response)).thenReturn(expected);
 
         // Act
-        underTest.sendMessage(interactionEvent, response);
+        underTest.sendResponse(interactionEvent, response);
 
         // Assert
         verify(interactionEvent, only()).createFollowup(response);
