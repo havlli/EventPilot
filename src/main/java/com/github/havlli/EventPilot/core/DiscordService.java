@@ -15,6 +15,7 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
+import java.util.function.Function;
 
 @Service
 public class DiscordService {
@@ -32,16 +33,28 @@ public class DiscordService {
         Snowflake channelId = Snowflake.of(event.getDestinationChannelId());
 
         return client.getMessageById(channelId, messageId)
-                .flatMap(message -> {
-                    if (isAlreadyDeactivated(message)) return Mono.empty();
-                    else return deactivateEventMessage(message);
-                })
-                .onErrorResume(ClientException.class, e -> {
-                    String errorMessage = "Message {%s} was not found in channel {%s}"
-                            .formatted(messageId.asString(), channelId.asString());
-                    logger.error(errorMessage, e);
-                    return Mono.empty();
-                });
+                .flatMap(handleMessage())
+                .onErrorResume(ClientException.class, handleMessageNotFound(messageId, channelId));
+    }
+
+    private Function<ClientException, Mono<? extends Message>> handleMessageNotFound(Snowflake messageId, Snowflake channelId) {
+        return e -> {
+            logger.error("Message {} was not found in channel {}", messageId.asString(), channelId.asString(), e);
+            return completeSignal();
+        };
+    }
+
+    private Function<Message, Mono<? extends Message>> handleMessage() {
+        return message -> {
+            if (isAlreadyDeactivated(message))
+                return completeSignal();
+            else
+                return deactivateEventMessage(message);
+        };
+    }
+
+    private Mono<Message> completeSignal() {
+        return Mono.empty();
     }
 
     public Flux<Message> deactivateEvents(List<Event> events) {
@@ -50,11 +63,13 @@ public class DiscordService {
     }
 
     private Mono<Message> deactivateEventMessage(Message message) {
-        MessageEditSpec editedMessage = MessageEditSpec.builder()
+        return message.edit(getMessageWithDeactivatedComponents());
+    }
+
+    private MessageEditSpec getMessageWithDeactivatedComponents() {
+        return MessageEditSpec.builder()
                 .addComponent(EXPIRED_COMPONENT.getActionRow())
                 .build();
-
-        return message.edit(editedMessage);
     }
 
     private boolean isAlreadyDeactivated(Message message) {
