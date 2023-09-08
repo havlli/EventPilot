@@ -17,7 +17,7 @@ import java.util.List;
 @Component
 public class StartupTask {
 
-    private static final Logger logger = LoggerFactory.getLogger(StartupTask.class);
+    private static final Logger LOG = LoggerFactory.getLogger(StartupTask.class);
     private final EventService eventService;
     private final GuildService guildService;
     private final EmbedGenerator embedGenerator;
@@ -38,8 +38,7 @@ public class StartupTask {
     public Mono<Void> subscribeEventInteractions() {
         List<Event> events = eventService.getAllEvents();
         events.forEach(embedGenerator::subscribeInteractions);
-        logger.info("%d event interactions subscribed".formatted(events.size()));
-
+        LOG.info("%d event interactions subscribed".formatted(events.size()));
         return Mono.empty();
     }
 
@@ -48,7 +47,6 @@ public class StartupTask {
             String id = guild.getId().asString();
             String name = guild.getName();
             guildService.createGuildIfNotExists(id, name);
-
             return Mono.just(guild);
         });
     }

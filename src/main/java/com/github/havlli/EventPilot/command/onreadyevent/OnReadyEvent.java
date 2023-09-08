@@ -3,7 +3,9 @@ package com.github.havlli.EventPilot.command.onreadyevent;
 import com.github.havlli.EventPilot.command.SlashCommand;
 import discord4j.core.event.domain.Event;
 import discord4j.core.event.domain.lifecycle.ReadyEvent;
+import discord4j.core.object.entity.Guild;
 import org.springframework.stereotype.Component;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 @Component
@@ -36,8 +38,20 @@ public class OnReadyEvent implements SlashCommand {
 
     @Override
     public Mono<?> handle(Event event) {
-        return startupTask.handleNewGuilds()
-                .then(startupTask.subscribeEventInteractions())
-                .then(scheduledTask.getFlux().then());
+        return initiateSequence()
+                .then(subscribeExistingInteractions())
+                .then(subscribeSchedulers());
+    }
+
+    private Mono<Void> subscribeSchedulers() {
+        return scheduledTask.getSchedulersFlux().then();
+    }
+
+    private Mono<Void> subscribeExistingInteractions() {
+        return startupTask.subscribeEventInteractions();
+    }
+
+    private Flux<Guild> initiateSequence() {
+        return startupTask.handleNewGuilds();
     }
 }

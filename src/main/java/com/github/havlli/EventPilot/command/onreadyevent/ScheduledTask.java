@@ -1,6 +1,7 @@
 package com.github.havlli.EventPilot.command.onreadyevent;
 
 import com.github.havlli.EventPilot.core.DiscordService;
+import com.github.havlli.EventPilot.entity.event.Event;
 import com.github.havlli.EventPilot.entity.event.EventService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -12,13 +13,13 @@ import reactor.core.scheduler.Scheduler;
 import reactor.core.scheduler.Schedulers;
 
 import java.time.Duration;
+import java.util.List;
 
 @Component
 public class ScheduledTask {
 
-    private static final Logger logger = LoggerFactory.getLogger(ScheduledTask.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ScheduledTask.class);
     private final Integer intervalSeconds;
-
     private final EventService eventService;
     private final DiscordService discordService;
 
@@ -32,9 +33,9 @@ public class ScheduledTask {
         this.intervalSeconds = intervalSeconds;
     }
 
-    public Flux<Void> getFlux() {
-        logger.info("MainScheduler registered");
+    public Flux<Void> getSchedulersFlux() {
         Scheduler scheduler = Schedulers.newSingle("MainScheduler");
+        LOG.info("Scheduler {} registered!", scheduler);
 
         return handleExpiredEvents()
                 .delaySubscription(Duration.ofSeconds(intervalSeconds))
@@ -43,9 +44,13 @@ public class ScheduledTask {
     }
 
     private Mono<Void> handleExpiredEvents() {
-        return Mono.defer(() -> Mono.just(eventService.getExpiredEvents())
+        return Mono.defer(() -> getExpiredEventList()
                 .flatMapMany(discordService::deactivateEvents)
                 .then()
         );
+    }
+
+    private Mono<List<Event>> getExpiredEventList() {
+        return Mono.just(eventService.getExpiredEvents());
     }
 }

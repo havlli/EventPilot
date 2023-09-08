@@ -46,7 +46,7 @@ class ScheduledTaskTest {
         when(discordServiceMock.deactivateEvents(expiredEvents)).thenReturn(Flux.empty());
 
         // Assert
-        StepVerifier.create(underTest.getFlux())
+        StepVerifier.create(underTest.getSchedulersFlux())
                 .expectSubscription()
                 .thenAwait(Duration.ofSeconds(13))
                 .thenCancel()
