@@ -15,15 +15,15 @@ public class GuildService {
     }
 
     public void saveGuild(Guild guild) {
-        guildDAO.insertGuild(guild);
+        guildDAO.saveGuild(guild);
     }
 
     public List<Guild> getAllGuilds() {
-        return guildDAO.selectAllGuilds();
+        return guildDAO.getGuilds();
     }
 
     public Guild getGuildById(String id) {
-        return guildDAO.selectGuildById(id)
+        return guildDAO.getGuildById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("Guild with id {%s} was not found!".formatted(id)));
     }
 

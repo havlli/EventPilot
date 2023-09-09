@@ -15,12 +15,12 @@ public class GuildJPADataAccessService implements GuildDAO {
     }
 
     @Override
-    public Optional<Guild> selectGuildById(String id) {
+    public Optional<Guild> getGuildById(String id) {
         return guildRepository.findById(id);
     }
 
     @Override
-    public List<Guild> selectAllGuilds() {
+    public List<Guild> getGuilds() {
         return guildRepository.findAll();
     }
 
@@ -30,7 +30,7 @@ public class GuildJPADataAccessService implements GuildDAO {
     }
 
     @Override
-    public void insertGuild(Guild guild) {
+    public void saveGuild(Guild guild) {
         guildRepository.save(guild);
     }
 }

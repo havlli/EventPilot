@@ -4,8 +4,8 @@ import java.util.List;
 import java.util.Optional;
 
 public interface GuildDAO {
-    Optional<Guild> selectGuildById(String id);
-    List<Guild> selectAllGuilds();
+    Optional<Guild> getGuildById(String id);
+    List<Guild> getGuilds();
     boolean existsGuildById(String id);
-    void insertGuild(Guild guild);
+    void saveGuild(Guild guild);
 }

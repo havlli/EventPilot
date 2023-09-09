@@ -33,7 +33,7 @@ class GuildJPADataAccessServiceTest {
         String id = "1";
 
         // Act
-        underTest.selectGuildById(id);
+        underTest.getGuildById(id);
 
         // Assert
         verify(guildRepository, times(1)).findById(id);
@@ -42,7 +42,7 @@ class GuildJPADataAccessServiceTest {
     @Test
     void selectAllGuilds() {
         // Act
-        underTest.selectAllGuilds();
+        underTest.getGuilds();
 
         // Assert
         verify(guildRepository, times(1)).findAll();
@@ -66,7 +66,7 @@ class GuildJPADataAccessServiceTest {
         Guild guild = mock(Guild.class);
 
         // Act
-        underTest.insertGuild(guild);
+        underTest.saveGuild(guild);
 
         // Assert
         verify(guildRepository, times(1)).save(guild);

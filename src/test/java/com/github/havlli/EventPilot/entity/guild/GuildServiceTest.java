@@ -41,7 +41,7 @@ class GuildServiceTest {
         underTest.saveGuild(guildMock);
 
         // Assert
-        verify(guildDAO, times(1)).insertGuild(guildMock);
+        verify(guildDAO, times(1)).saveGuild(guildMock);
     }
 
     @Test
@@ -49,7 +49,7 @@ class GuildServiceTest {
         underTest.getAllGuilds();
 
         // Assert
-        verify(guildDAO, times(1)).selectAllGuilds();
+        verify(guildDAO, times(1)).getGuilds();
     }
 
     @Test
@@ -57,27 +57,27 @@ class GuildServiceTest {
         // Arrange
         Guild guildMock = mock(Guild.class);
         String id = "1";
-        when(guildDAO.selectGuildById(id)).thenReturn(Optional.of(guildMock));
+        when(guildDAO.getGuildById(id)).thenReturn(Optional.of(guildMock));
 
         // Act
         Guild result = underTest.getGuildById(id);
 
         // Assert
         assertThat(result).isEqualTo(guildMock);
-        verify(guildDAO, times(1)).selectGuildById(id);
+        verify(guildDAO, times(1)).getGuildById(id);
     }
 
     @Test
     public void getGuildById_WillThrow_WhenNotExists() {
         // Arrange
         String id = "1";
-        when(guildDAO.selectGuildById(id)).thenReturn(Optional.empty());
+        when(guildDAO.getGuildById(id)).thenReturn(Optional.empty());
 
         // Assert thrown
         assertThatThrownBy(() -> underTest.getGuildById(id))
                 .isInstanceOf(ResourceNotFoundException.class)
                 .hasMessageContaining("Guild with id {%s} was not found!".formatted(id));
-        verify(guildDAO, times(1)).selectGuildById(id);
+        verify(guildDAO, times(1)).getGuildById(id);
     }
 
     @Test
@@ -91,7 +91,7 @@ class GuildServiceTest {
         underTest.createGuildIfNotExists(id, name);
 
         // Assert
-        verify(guildDAO, times(1)).insertGuild(any());
+        verify(guildDAO, times(1)).saveGuild(any());
     }
 
     @Test
@@ -105,7 +105,7 @@ class GuildServiceTest {
         underTest.createGuildIfNotExists(id, name);
 
         // Assert
-        verify(guildDAO, never()).insertGuild(any());
+        verify(guildDAO, never()).saveGuild(any());
     }
 
     @Test

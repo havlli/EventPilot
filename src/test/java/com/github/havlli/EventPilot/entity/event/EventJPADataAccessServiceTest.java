@@ -36,7 +36,7 @@ class EventJPADataAccessServiceTest {
         Event event = mock(Event.class);
 
         // Act
-        underTest.insertEvent(event);
+        underTest.saveEvent(event);
 
         // Assert
         verify(eventRepository, times(1)).save(event);
@@ -45,7 +45,7 @@ class EventJPADataAccessServiceTest {
     @Test
     void fetchEvents() {
         // Act
-        underTest.fetchEvents();
+        underTest.getEvents();
 
         // Assert
         verify(eventRepository, times(1)).findAll();
@@ -79,7 +79,7 @@ class EventJPADataAccessServiceTest {
     @Test
     void fetchExpiredEvents() {
         // Act
-        underTest.fetchExpiredEvents();
+        underTest.getExpiredEvents();
 
         // Assert
         verify(eventRepository, times(1)).findAllWithDatetimeBeforeCurrentTime();

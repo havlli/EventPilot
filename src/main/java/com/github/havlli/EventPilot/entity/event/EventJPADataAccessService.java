@@ -14,12 +14,12 @@ public class EventJPADataAccessService implements EventDAO {
     }
 
     @Override
-    public void insertEvent(Event event) {
+    public void saveEvent(Event event) {
         eventRepository.save(event);
     }
 
     @Override
-    public List<Event> fetchEvents() {
+    public List<Event> getEvents() {
         return eventRepository.findAll();
     }
 
@@ -34,7 +34,7 @@ public class EventJPADataAccessService implements EventDAO {
     }
 
     @Override
-    public List<Event> fetchExpiredEvents() {
+    public List<Event> getExpiredEvents() {
         return eventRepository.findAllWithDatetimeBeforeCurrentTime();
     }
 }

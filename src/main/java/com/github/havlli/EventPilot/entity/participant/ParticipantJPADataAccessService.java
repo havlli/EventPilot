@@ -15,7 +15,7 @@ public class ParticipantJPADataAccessService implements ParticipantDAO {
     }
 
     @Override
-    public List<Participant> getAllParticipantsByEvent(Event event) {
+    public List<Participant> getParticipantsByEvent(Event event) {
         return participantRepository.findAllByEvent(event);
     }
 

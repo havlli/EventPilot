@@ -3,9 +3,9 @@ package com.github.havlli.EventPilot.entity.event;
 import java.util.List;
 
 public interface EventDAO {
-    void insertEvent(Event event);
-    List<Event> fetchEvents();
+    void saveEvent(Event event);
+    List<Event> getEvents();
     void deleteEvent(Event event);
     void deleteAllEvents(List<Event> events);
-    List<Event> fetchExpiredEvents();
+    List<Event> getExpiredEvents();
 }

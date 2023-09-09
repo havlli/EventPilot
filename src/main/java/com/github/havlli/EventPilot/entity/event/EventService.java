@@ -14,11 +14,11 @@ public class EventService {
     }
 
     public void saveEvent(Event event) {
-        eventDAO.insertEvent(event);
+        eventDAO.saveEvent(event);
     }
 
     public List<Event> getAllEvents() {
-        return eventDAO.fetchEvents();
+        return eventDAO.getEvents();
     }
 
     public void deleteEvent(Event event) {
@@ -30,6 +30,6 @@ public class EventService {
     }
 
     public List<Event> getExpiredEvents() {
-        return eventDAO.fetchExpiredEvents();
+        return eventDAO.getExpiredEvents();
     }
 }

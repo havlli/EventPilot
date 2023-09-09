@@ -100,6 +100,6 @@ class ParticipantServiceTest {
         underTest.getParticipantsByEvent(eventMock);
 
         // Assert
-        verify(participantDAO, times(1)).getAllParticipantsByEvent(eventMock);
+        verify(participantDAO, times(1)).getParticipantsByEvent(eventMock);
     }
 }

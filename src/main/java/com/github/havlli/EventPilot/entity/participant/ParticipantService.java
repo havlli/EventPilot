@@ -30,6 +30,6 @@ public class ParticipantService {
     }
 
     public List<Participant> getParticipantsByEvent(Event event) {
-        return participantDAO.getAllParticipantsByEvent(event);
+        return participantDAO.getParticipantsByEvent(event);
     }
 }

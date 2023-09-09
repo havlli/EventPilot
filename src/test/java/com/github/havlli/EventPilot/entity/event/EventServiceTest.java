@@ -39,7 +39,7 @@ class EventServiceTest {
         underTest.saveEvent(event);
 
         // Assert
-        verify(eventDAO, times(1)).insertEvent(event);
+        verify(eventDAO, times(1)).saveEvent(event);
     }
 
     @Test
@@ -48,7 +48,7 @@ class EventServiceTest {
         underTest.getAllEvents();
 
         // Assert
-        verify(eventDAO, times(1)).fetchEvents();
+        verify(eventDAO, times(1)).getEvents();
     }
 
     @Test
@@ -82,6 +82,6 @@ class EventServiceTest {
         underTest.getExpiredEvents();
 
         // Assert
-        verify(eventDAO, times(1)).fetchExpiredEvents();
+        verify(eventDAO, times(1)).getExpiredEvents();
     }
 }

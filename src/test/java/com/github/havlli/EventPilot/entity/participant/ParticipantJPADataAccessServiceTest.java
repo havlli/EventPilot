@@ -34,7 +34,7 @@ class ParticipantJPADataAccessServiceTest {
         Event event = mock(Event.class);
 
         // Act
-        underTest.getAllParticipantsByEvent(event);
+        underTest.getParticipantsByEvent(event);
 
         // Assert
         verify(participantRepository, times(1)).findAllByEvent(event);
