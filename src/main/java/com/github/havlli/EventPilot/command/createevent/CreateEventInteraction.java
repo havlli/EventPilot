@@ -368,18 +368,27 @@ public class CreateEventInteraction {
                 .flatMap(guild -> guild.getChannelById(destinationChannel)
                         .cast(MessageChannel.class)
                         .flatMap(channel -> channel.createMessage("Generating event..."))
-                        .flatMap(message -> {
-                            Snowflake messageId = message.getId();
-                            eventBuilder.withEventId(messageId.asString());
-                            Event event = eventBuilder.build();
-                            String messageUrl = constructMessageUrl(destinationChannel, guild, messageId);
-                            Mono<Message> finalMessage = getFinalMessage("Event created in " + messageUrl);
-                            MessageEditSpec finalEmbed = getFinalEmbed(event);
-                            subscribeInteractionsAndSaveToDatabase(event);
-                            return message.edit(finalEmbed)
-                                    .then(finalMessage);
-                        })
+                        .flatMap(finalize(destinationChannel, guild))
                 );
+    }
+
+    private Function<Message, Mono<? extends Message>> finalize(Snowflake destinationChannel, discord4j.core.object.entity.Guild guild) {
+        return message -> {
+            Snowflake messageId = message.getId();
+            eventBuilder.withEventId(messageId.asString());
+            Event event = buildEventAndSubscribeInteractions();
+            String messageUrl = constructMessageUrl(destinationChannel, guild, messageId);
+            Mono<Message> finalMessage = getFinalMessage("Event created in " + messageUrl);
+            MessageEditSpec finalEmbed = getFinalEmbed(event);
+            return message.edit(finalEmbed)
+                    .then(finalMessage);
+        };
+    }
+
+    private Event buildEventAndSubscribeInteractions() {
+        Event event = eventBuilder.build();
+        subscribeInteractionsAndSaveToDatabase(event);
+        return event;
     }
 
     private void subscribeInteractionsAndSaveToDatabase(Event event) {

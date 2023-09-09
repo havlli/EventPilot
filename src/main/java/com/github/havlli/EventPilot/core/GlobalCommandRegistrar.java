@@ -40,29 +40,45 @@ public class GlobalCommandRegistrar implements ApplicationRunner {
     @Override
     public void run(ApplicationArguments args) throws IOException{
         final JacksonResources d4jMapper = JacksonResources.create();
+        final ApplicationService applicationService = getApplicationService();
+        final long applicationId = getApplicationId();
 
-        final ApplicationService applicationService = restClient.getApplicationService();
-        final long applicationId = restClient.getApplicationId().block();
+        List<ApplicationCommandRequest> commands = extractApplicationCommandRequstList(d4jMapper);
+        overwriteGlobalApplicationCommands(applicationService, applicationId, commands);
+    }
 
+    private String getLocationPattern() {
+        return parentFolder + "/*.json";
+    }
+
+    private List<ApplicationCommandRequest> extractApplicationCommandRequstList(JacksonResources d4jMapper) throws IOException {
         List<ApplicationCommandRequest> commands = new ArrayList<>();
-
-        String locationPattern = parentFolder + "/*.json";
-
         try {
-            for (Resource resource : pathMatcher.getResources(locationPattern)) {
+            for (Resource resource : pathMatcher.getResources(getLocationPattern())) {
                 ApplicationCommandRequest request = d4jMapper.getObjectMapper()
                         .readValue(resource.getInputStream(), ApplicationCommandRequest.class);
                 commands.add(request);
             }
         } catch (IOException e) {
-            logger.error("Error while trying to match locationPattern[%s]".formatted(locationPattern), e);
+            logger.error("Error while trying to match locationPattern[%s]".formatted(getLocationPattern()), e);
             throw e;
         }
 
+        return commands;
+    }
 
+    private static void overwriteGlobalApplicationCommands(ApplicationService applicationService, long applicationId, List<ApplicationCommandRequest> commands) {
         applicationService.bulkOverwriteGlobalApplicationCommand(applicationId, commands)
                 .doOnNext(ignore -> logger.info("Successfully registered Global Commands"))
                 .doOnError(e -> logger.error("Failed to register global commands", e))
                 .subscribe();
+    }
+
+    private Long getApplicationId() {
+        return restClient.getApplicationId().block();
+    }
+
+    private ApplicationService getApplicationService() {
+        return restClient.getApplicationService();
     }
 }
