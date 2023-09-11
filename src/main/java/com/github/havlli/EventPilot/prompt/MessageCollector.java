@@ -11,7 +11,6 @@ import reactor.core.publisher.Mono;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 
 @Component
 @Scope("prototype")
@@ -29,18 +28,14 @@ public class MessageCollector {
     }
 
     public Flux<Void> cleanup() {
+        Collections.reverse(messageList);
+        return Flux.fromIterable(messageList)
+                .flatMap(this::deleteMessage)
+                .doFinally(onFinally -> clearMessageList());
+    }
 
-        if (messageList.isEmpty()) return Flux.empty();
-
-        List<Mono<Void>> monoList = messageList.stream()
-                .map(this::deleteMessage)
-                .collect(Collectors.collectingAndThen(Collectors.toList(), list -> {
-                    Collections.reverse(list);
-                    return list;
-                }));
+    private void clearMessageList() {
         messageList.clear();
-
-        return Flux.concat(monoList);
     }
 
     private Mono<Void> deleteMessage(Message message) {

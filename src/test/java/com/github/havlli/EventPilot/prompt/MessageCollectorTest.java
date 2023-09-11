@@ -74,6 +74,7 @@ class MessageCollectorTest {
         // Assert
         verify(messageOneMock, times(1)).delete();
         verify(messageTwoMock, times(1)).delete();
+        assertThat(underTest.getMessageList()).hasSize(0);
     }
 
     @Test
