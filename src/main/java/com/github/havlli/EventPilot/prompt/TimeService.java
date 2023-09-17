@@ -12,17 +12,36 @@ import java.time.format.DateTimeFormatter;
 public class TimeService {
 
     public Instant parseUtcInstant(String dateTime, String formatPattern) {
-        DateTimeFormatter formatter = DateTimeFormatter.ofPattern(formatPattern);
-        LocalDateTime localDateTime = LocalDateTime.parse(dateTime, formatter);
-        return localDateTime.atZone(ZoneOffset.UTC).toInstant();
+        LocalDateTime localDateTime = parseDateTime(dateTime, formatPattern);
+        return utcDateTimeToInstant(localDateTime);
     }
 
-    public boolean isValidFutureTime(Instant instant) {
-        Instant instantNow = Instant.now();
-        if (!instantNow.isBefore(instant)) {
-            throw new InvalidDateTimeException("Processed instant {%s} is before System Instant.now() {%s}"
-                    .formatted(instant, instantNow));
+    public boolean isValidFutureTime(Instant testedTime) {
+        Instant currentTime = getCurrentTime();
+        if (!currentTime.isBefore(testedTime)) {
+            throwInvalidDateTimeException(testedTime, currentTime);
         }
         return true;
+    }
+
+    private DateTimeFormatter getDateTimeFormatter(String pattern) {
+        return DateTimeFormatter.ofPattern(pattern);
+    }
+
+    private LocalDateTime parseDateTime(String dateTime, String pattern) {
+        return LocalDateTime.parse(dateTime, getDateTimeFormatter(pattern));
+    }
+
+    private Instant utcDateTimeToInstant(LocalDateTime localDateTime) {
+        return localDateTime.toInstant(ZoneOffset.UTC);
+    }
+
+    private Instant getCurrentTime() {
+        return Instant.now();
+    }
+
+    private void throwInvalidDateTimeException(Instant testedTime, Instant currentTime) {
+        throw new InvalidDateTimeException("Processed instant {%s} is before System Instant {%s}"
+                .formatted(testedTime, currentTime));
     }
 }
