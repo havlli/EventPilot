@@ -159,7 +159,7 @@ public class CreateEventInteraction {
                 .eventPredicate(promptFilter.isMessageAuthor(user))
                 .eventProcessor(processNameInput())
                 .build()
-                .mono();
+                .createMono();
     }
 
     private Consumer<MessageCreateEvent> processNameInput() {
@@ -181,7 +181,7 @@ public class CreateEventInteraction {
                 .eventPredicate(promptFilter.isMessageAuthor(user))
                 .eventProcessor(processDescriptionInput())
                 .build()
-                .mono();
+                .createMono();
     }
 
     private Consumer<MessageCreateEvent> processDescriptionInput() {
@@ -204,7 +204,7 @@ public class CreateEventInteraction {
                 .eventProcessor(processDateTimeInput())
                 .onErrorRepeat(DateTimeParseException.class, "Invalid Format")
                 .build()
-                .mono()
+                .createMono()
                 .onErrorResume(InvalidDateTimeException.class, sendMessageToUserAndRepeatOnException());
     }
 
@@ -248,7 +248,7 @@ public class CreateEventInteraction {
                 .eventPredicate(promptFilter.selectInteractionEvent(embedTypeCustomMenu, user))
                 .eventProcessor(processEmbedTypeInput())
                 .build()
-                .mono();
+                .createMono();
     }
 
     private Consumer<SelectMenuInteractionEvent> processEmbedTypeInput() {
@@ -275,7 +275,7 @@ public class CreateEventInteraction {
                 .eventPredicate(promptFilter.selectInteractionEvent(raidSelectMenu, user))
                 .eventProcessor(processRaidSelectInput())
                 .build()
-                .mono();
+                .createMono();
     }
 
     private Consumer<SelectMenuInteractionEvent> processRaidSelectInput() {
@@ -297,7 +297,7 @@ public class CreateEventInteraction {
                 .eventPredicate(promptFilter.selectInteractionEvent(memberSizeSelectMenu, user))
                 .eventProcessor(processMemberSizeInput(defaultSize))
                 .build()
-                .mono();
+                .createMono();
     }
 
     private Consumer<SelectMenuInteractionEvent> processMemberSizeInput(String defaultSize) {
@@ -326,7 +326,7 @@ public class CreateEventInteraction {
                             .eventPredicate(promptFilter.selectInteractionEvent(channelSelectMenu, user))
                             .eventProcessor(processDestinationChannelInput(originChannelId))
                             .build()
-                            .mono();
+                            .createMono();
                 });
     }
 
@@ -358,7 +358,7 @@ public class CreateEventInteraction {
                 .eventPredicate(promptFilter.buttonInteractionEvent(buttonRow, user))
                 .eventProcessor(event -> { })
                 .build()
-                .mono();
+                .createMono();
     }
 
     public Mono<Message> finalizeProcess() {

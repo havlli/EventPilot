@@ -7,6 +7,8 @@ import discord4j.core.event.domain.interaction.ButtonInteractionEvent;
 import discord4j.core.event.domain.interaction.ComponentInteractionEvent;
 import discord4j.core.event.domain.interaction.SelectMenuInteractionEvent;
 import discord4j.core.event.domain.message.MessageCreateEvent;
+import discord4j.core.object.component.LayoutComponent;
+import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.spec.InteractionCallbackSpecDeferEditMono;
 import discord4j.core.spec.InteractionCallbackSpecDeferReplyMono;
@@ -71,32 +73,42 @@ public class TextPromptMono<T extends Event> {
         this.actionRowComponent = builder.actionRowComponent;
     }
 
-    public Mono<T> mono() {
-        return messageChannel.flatMap(channel -> channel.createMessage(messageCreateSpec))
-                .flatMap(promptedMessage -> {
-                    messageCollector.collect(promptedMessage);
-
-                    Mono<T> responseMono = constructResponse();
-
-                    if (onErrorMessage != null) {
-                        responseMono = responseMono.onErrorResume(errorClass, e -> messageChannel
-                                .flatMap(channel -> channel.createMessage(onErrorMessage))
-                                .flatMap(message -> {
-                                    LOG.error("threw error {}\n{}", errorClass.getCanonicalName(), e.getStackTrace());
-                                    messageCollector.collect(message);
-                                    return this.mono();
-                                }));
-                    }
-
-                    return responseMono;
-                });
+    public Mono<T> createMono() {
+        return messageChannel
+                .flatMap(this::sendMessageAndCollect)
+                .flatMap(this::handleResponse);
     }
 
-    private Mono<T> constructResponse() {
+    private Mono<Message> sendMessageAndCollect(MessageChannel messageChannel) {
+        return messageChannel.createMessage(messageCreateSpec)
+                .doOnNext(messageCollector::collect);
+    }
+
+    private Mono<T> handleResponse(Message previousMessage) {
+        Mono<T> responseMono = subscribeEventAndCreateResponse();
+
+        if (onErrorMessage != null) {
+            responseMono = responseMono.onErrorResume(errorClass, this::handleErrorThenRepeatInteraction);
+        }
+
+        return responseMono;
+    }
+
+    private Mono<T> subscribeEventAndCreateResponse() {
         return client.getEventDispatcher().on(eventClass)
                 .filter(eventPredicate)
                 .next()
                 .flatMap(processEventThenCreateResponse());
+    }
+
+    private Mono<T> handleErrorThenRepeatInteraction(Throwable e) {
+        return messageChannel
+                .flatMap(channel -> channel.createMessage(onErrorMessage))
+                .flatMap(message -> {
+                    LOG.error("threw error {}\n{}", errorClass.getCanonicalName(), e.getStackTrace());
+                    messageCollector.collect(message);
+                    return repeatInteraction();
+                });
     }
 
     private Function<T, Mono<T>> processEventThenCreateResponse() {
@@ -111,34 +123,21 @@ public class TextPromptMono<T extends Event> {
         };
     }
 
+    private Mono<T> repeatInteraction() {
+        return this.createMono();
+    }
+
     private Function<T, Mono<T>> defaultResponse() {
         return event -> {
             if (event instanceof SelectMenuInteractionEvent selectMenuEvent) {
-                return deferEditResponse(selectMenuEvent)
-                        .then(selectMenuEvent.editReply(InteractionReplyEditSpec.builder()
-                                .components(List.of(actionRowComponent.getDisabledRow()))
-                                .build()))
-                        .then(just(event));
+                List<LayoutComponent> components = List.of(actionRowComponent.getDisabledRow());
+                return deferEditResponseThenEditWithComponents(event, selectMenuEvent, components);
             } else if (event instanceof ButtonInteractionEvent buttonEvent) {
-                return deferEditResponse(buttonEvent)
-                        .then(buttonEvent.editReply(InteractionReplyEditSpec.builder()
-                                .components(List.of())
-                                .build()))
-                        .then(just(event));
-            } else if (event instanceof MessageCreateEvent) {
+                return deferEditResponseThenEditWithComponents(event, buttonEvent, List.of());
+            } else {
                 return just(event);
             }
-
-            throw new IllegalStateException("%s not supported operation for %s".formatted(eventClass, promptType));
         };
-    }
-
-    private InteractionCallbackSpecDeferEditMono deferEditResponse(ComponentInteractionEvent componentInteractionEvent) {
-        return componentInteractionEvent.deferEdit();
-    }
-
-    private InteractionCallbackSpecDeferReplyMono deferReplyResponse(ComponentInteractionEvent componentInteractionEvent) {
-        return componentInteractionEvent.deferReply();
     }
 
     private Function<T, Mono<T>> deleteOnResponse() {
@@ -148,14 +147,6 @@ public class TextPromptMono<T extends Event> {
                     .then(deleteInitialResponse(interactionEvent))
                     .then(just(event));
         };
-    }
-
-    private static <T extends Event> Mono<T> just(T event) {
-        return Mono.just(event);
-    }
-
-    private static Mono<Void> deleteInitialResponse(ComponentInteractionEvent selectMenuEvent) {
-        return selectMenuEvent.getInteractionResponse().deleteInitialResponse();
     }
 
     private Function<T, Mono<T>> deferrableEditResponse() {
@@ -172,6 +163,34 @@ public class TextPromptMono<T extends Event> {
             return deferReplyResponse(interactionEvent)
                     .then(just(event));
         };
+    }
+
+    private Mono<T> deferEditResponseThenEditWithComponents(T event, ComponentInteractionEvent interactionEvent, List<LayoutComponent> components) {
+        return deferEditResponse(interactionEvent)
+                .then(editResponseWithComponents(interactionEvent, components))
+                .then(just(event));
+    }
+
+    private InteractionCallbackSpecDeferEditMono deferEditResponse(ComponentInteractionEvent interactionEvent) {
+        return interactionEvent.deferEdit();
+    }
+
+    private InteractionCallbackSpecDeferReplyMono deferReplyResponse(ComponentInteractionEvent interactionEvent) {
+        return interactionEvent.deferReply();
+    }
+
+    private Mono<Message> editResponseWithComponents(ComponentInteractionEvent interactionEvent, List<LayoutComponent> layoutComponents) {
+        return interactionEvent.editReply(InteractionReplyEditSpec.builder()
+                .components(layoutComponents)
+                .build());
+    }
+
+    private static <T extends Event> Mono<T> just(T event) {
+        return Mono.just(event);
+    }
+
+    private static Mono<Void> deleteInitialResponse(ComponentInteractionEvent selectMenuEvent) {
+        return selectMenuEvent.getInteractionResponse().deleteInitialResponse();
     }
 
     public enum PromptType {
@@ -248,23 +267,18 @@ public class TextPromptMono<T extends Event> {
         }
 
         public TextPromptMono<T> build() {
-            requiredFieldsCheck();
+            validate();
             return new TextPromptMono<>(this);
         }
 
-        private void requiredFieldsCheck() {
+        private void validate() {
             Objects.requireNonNull(messageChannel, "messageChannel is required");
             Objects.requireNonNull(messageCreateSpec, "messageCreateSpec is required");
             Objects.requireNonNull(eventProcessor, "eventProcessor is required");
             Objects.requireNonNull(eventPredicate, "eventPredicate is required");
             Objects.requireNonNull(promptType, "promptType is required");
-
             validateEventPromptType();
-
-            List<Class<? extends ComponentInteractionEvent>> eventsRequiringComponents = List.of(SelectMenuInteractionEvent.class);
-            if (promptType.equals(PromptType.DEFAULT) && eventsRequiringComponents.contains(eventClass)) {
-                Objects.requireNonNull(actionRowComponent, "actionRowComponent is required");
-            }
+            validateEventsRequiringComponents();
         }
 
         private void validateEventPromptType() {
@@ -275,6 +289,13 @@ public class TextPromptMono<T extends Event> {
                     .anyMatch(type -> type == promptType);
             if (!isPromptTypeValid) {
                 throw new IllegalStateException("%s not supported operation for %s".formatted(promptType, eventClass));
+            }
+        }
+
+        private void validateEventsRequiringComponents() {
+            List<Class<? extends ComponentInteractionEvent>> eventsRequiringComponents = List.of(SelectMenuInteractionEvent.class);
+            if (promptType.equals(PromptType.DEFAULT) && eventsRequiringComponents.contains(eventClass)) {
+                Objects.requireNonNull(actionRowComponent, "actionRowComponent is required");
             }
         }
     }

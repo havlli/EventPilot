@@ -83,7 +83,7 @@ class TextPromptMonoTest {
                 .build();
 
         // Act
-        Mono<MessageCreateEvent> actual = textPromptMono.mono();
+        Mono<MessageCreateEvent> actual = textPromptMono.createMono();
 
         // Assert
         StepVerifier.create(actual)
@@ -132,7 +132,7 @@ class TextPromptMonoTest {
                 .build();
 
         // Act
-        Mono<SelectMenuInteractionEvent> actual = textPromptMono.mono();
+        Mono<SelectMenuInteractionEvent> actual = textPromptMono.createMono();
 
         // Assert
         StepVerifier.create(actual)
@@ -177,7 +177,7 @@ class TextPromptMonoTest {
                 .build();
 
         // Act
-        Mono<SelectMenuInteractionEvent> actual = textPromptMono.mono();
+        Mono<SelectMenuInteractionEvent> actual = textPromptMono.createMono();
 
         // Assert
         StepVerifier.create(actual)
@@ -219,7 +219,7 @@ class TextPromptMonoTest {
                 .build();
 
         // Act
-        Mono<SelectMenuInteractionEvent> actual = textPromptMono.mono();
+        Mono<SelectMenuInteractionEvent> actual = textPromptMono.createMono();
 
         // Assert
         StepVerifier.create(actual)
@@ -261,7 +261,7 @@ class TextPromptMonoTest {
                 .build();
 
         // Act
-        Mono<SelectMenuInteractionEvent> actual = textPromptMono.mono();
+        Mono<SelectMenuInteractionEvent> actual = textPromptMono.createMono();
 
         // Assert
         StepVerifier.create(actual)
@@ -306,7 +306,7 @@ class TextPromptMonoTest {
                 .build();
 
         // Act
-        Mono<ButtonInteractionEvent> actual = textPromptMono.mono();
+        Mono<ButtonInteractionEvent> actual = textPromptMono.createMono();
 
         // Assert
         StepVerifier.create(actual)
@@ -350,7 +350,7 @@ class TextPromptMonoTest {
                 .build();
 
         // Act
-        Mono<ButtonInteractionEvent> actual = textPromptMono.mono();
+        Mono<ButtonInteractionEvent> actual = textPromptMono.createMono();
 
         // Assert
         StepVerifier.create(actual)
@@ -392,7 +392,7 @@ class TextPromptMonoTest {
                 .build();
 
         // Act
-        Mono<ButtonInteractionEvent> actual = textPromptMono.mono();
+        Mono<ButtonInteractionEvent> actual = textPromptMono.createMono();
 
         // Assert
         StepVerifier.create(actual)
@@ -434,7 +434,7 @@ class TextPromptMonoTest {
                 .build();
 
         // Act
-        Mono<ButtonInteractionEvent> actual = textPromptMono.mono();
+        Mono<ButtonInteractionEvent> actual = textPromptMono.createMono();
 
         // Assert
         StepVerifier.create(actual)
