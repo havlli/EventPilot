@@ -29,13 +29,13 @@ public class MessageCollector {
 
     public Flux<Void> cleanup() {
         Collections.reverse(messageList);
+        return deleteMessagesAndClearList();
+    }
+
+    private Flux<Void> deleteMessagesAndClearList() {
         return Flux.fromIterable(messageList)
                 .flatMap(this::deleteMessage)
                 .doFinally(onFinally -> clearMessageList());
-    }
-
-    private void clearMessageList() {
-        messageList.clear();
     }
 
     private Mono<Void> deleteMessage(Message message) {
@@ -43,6 +43,10 @@ public class MessageCollector {
             LOG.error("Error occurred while deleting message {}\n{}", message.getId().asString(), error.getStackTrace());
             return Mono.empty();
         });
+    }
+
+    private void clearMessageList() {
+        messageList.clear();
     }
 
     public List<Message> getMessageList() {

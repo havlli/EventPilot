@@ -151,8 +151,8 @@ public class CreateEventInteraction {
         String promptMessage = "**Step 1**\nEnter name for your event!";
         MessageCreateSpec messageCreateSpec = getMessageCreateSpec(promptMessage);
 
-        return new TextPromptMono.Builder<>(client, MessageCreateEvent.class)
-                .withPromptType(TextPromptMono.PromptType.DEFAULT)
+        return new TextPromptBuilder.Builder<>(client, MessageCreateEvent.class)
+                .withPromptType(TextPromptBuilder.PromptType.DEFAULT)
                 .messageChannel(privateChannelMono)
                 .messageCreateSpec(messageCreateSpec)
                 .withMessageCollector(messageCollector)
@@ -173,8 +173,8 @@ public class CreateEventInteraction {
         String promptMessage = "**Step 2**\nEnter description";
         MessageCreateSpec messageCreateSpec = getMessageCreateSpec(promptMessage);
 
-        return new TextPromptMono.Builder<>(client, MessageCreateEvent.class)
-                .withPromptType(TextPromptMono.PromptType.DEFAULT)
+        return new TextPromptBuilder.Builder<>(client, MessageCreateEvent.class)
+                .withPromptType(TextPromptBuilder.PromptType.DEFAULT)
                 .messageChannel(privateChannelMono)
                 .messageCreateSpec(messageCreateSpec)
                 .withMessageCollector(messageCollector)
@@ -195,8 +195,8 @@ public class CreateEventInteraction {
         String promptMessage = "**Step 3**\nEnter the date and time in UTC timezone (format: dd.MM.yyyy HH:mm)";
         MessageCreateSpec messageCreateSpec = getMessageCreateSpec(promptMessage);
 
-        return new TextPromptMono.Builder<>(client, MessageCreateEvent.class)
-                .withPromptType(TextPromptMono.PromptType.DEFAULT)
+        return new TextPromptBuilder.Builder<>(client, MessageCreateEvent.class)
+                .withPromptType(TextPromptBuilder.PromptType.DEFAULT)
                 .messageChannel(privateChannelMono)
                 .messageCreateSpec(messageCreateSpec)
                 .withMessageCollector(messageCollector)
@@ -239,8 +239,8 @@ public class CreateEventInteraction {
         );
         MessageCreateSpec messageCreateSpec = getMessageCreateSpec(promptMessage, embedTypeCustomMenu);
 
-        return new TextPromptMono.Builder<>(client, SelectMenuInteractionEvent.class)
-                .withPromptType(TextPromptMono.PromptType.DEFAULT)
+        return new TextPromptBuilder.Builder<>(client, SelectMenuInteractionEvent.class)
+                .withPromptType(TextPromptBuilder.PromptType.DEFAULT)
                 .messageChannel(privateChannelMono)
                 .messageCreateSpec(messageCreateSpec)
                 .actionRowComponent(embedTypeCustomMenu)
@@ -266,8 +266,8 @@ public class CreateEventInteraction {
         RaidSelectMenu raidSelectMenu = new RaidSelectMenu();
         MessageCreateSpec prompt = getMessageCreateSpec(promptMessage, raidSelectMenu);
 
-        return new TextPromptMono.Builder<>(client, SelectMenuInteractionEvent.class)
-                .withPromptType(TextPromptMono.PromptType.DEFAULT)
+        return new TextPromptBuilder.Builder<>(client, SelectMenuInteractionEvent.class)
+                .withPromptType(TextPromptBuilder.PromptType.DEFAULT)
                 .messageCreateSpec(prompt)
                 .actionRowComponent(raidSelectMenu)
                 .messageChannel(privateChannelMono)
@@ -288,8 +288,8 @@ public class CreateEventInteraction {
         String promptMessage = "**Step 5**\nChoose maximum attendants count for this event";
         MessageCreateSpec prompt = getMessageCreateSpec(promptMessage, memberSizeSelectMenu);
 
-        return new TextPromptMono.Builder<>(client, SelectMenuInteractionEvent.class)
-                .withPromptType(TextPromptMono.PromptType.DEFAULT)
+        return new TextPromptBuilder.Builder<>(client, SelectMenuInteractionEvent.class)
+                .withPromptType(TextPromptBuilder.PromptType.DEFAULT)
                 .messageChannel(privateChannelMono)
                 .messageCreateSpec(prompt)
                 .actionRowComponent(memberSizeSelectMenu)
@@ -317,8 +317,8 @@ public class CreateEventInteraction {
                     ChannelSelectMenu channelSelectMenu = new ChannelSelectMenu(list);
                     MessageCreateSpec prompt = getMessageCreateSpec(promptMessage, channelSelectMenu);
 
-                    return new TextPromptMono.Builder<>(client, SelectMenuInteractionEvent.class)
-                            .withPromptType(TextPromptMono.PromptType.DEFAULT)
+                    return new TextPromptBuilder.Builder<>(client, SelectMenuInteractionEvent.class)
+                            .withPromptType(TextPromptBuilder.PromptType.DEFAULT)
                             .messageChannel(privateChannelMono)
                             .messageCreateSpec(prompt)
                             .actionRowComponent(channelSelectMenu)
@@ -350,8 +350,8 @@ public class CreateEventInteraction {
                 .addComponent(buttonRow.getActionRow())
                 .build();
 
-        return new TextPromptMono.Builder<>(client, ButtonInteractionEvent.class)
-                .withPromptType(TextPromptMono.PromptType.DEFERRABLE_REPLY)
+        return new TextPromptBuilder.Builder<>(client, ButtonInteractionEvent.class)
+                .withPromptType(TextPromptBuilder.PromptType.DEFERRABLE_REPLY)
                 .messageChannel(privateChannelMono)
                 .messageCreateSpec(prompt)
                 .withMessageCollector(messageCollector)

@@ -1,7 +1,7 @@
 package com.github.havlli.EventPilot.prompt;
 
 import com.github.havlli.EventPilot.component.ActionRowComponent;
-import com.github.havlli.EventPilot.prompt.TextPromptMono.PromptType;
+import com.github.havlli.EventPilot.prompt.TextPromptBuilder.PromptType;
 import discord4j.core.GatewayDiscordClient;
 import discord4j.core.event.EventDispatcher;
 import discord4j.core.event.domain.interaction.ButtonInteractionEvent;
@@ -27,7 +27,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
-class TextPromptMonoTest {
+class TextPromptBuilderTest {
 
     private AutoCloseable autoCloseable;
     @Mock
@@ -73,7 +73,7 @@ class TextPromptMonoTest {
         Flux<MessageCreateEvent> messageCreateEventFlux = Flux.just(messageCreateEventMock);
         when(eventDispatcherMock.on(eventClass)).thenReturn(messageCreateEventFlux);
 
-        TextPromptMono<MessageCreateEvent> textPromptMono = new TextPromptMono.Builder<>(clientMock, eventClass)
+        TextPromptBuilder<MessageCreateEvent> textPromptBuilder = new TextPromptBuilder.Builder<>(clientMock, eventClass)
                 .withPromptType(promptType)
                 .messageChannel(messageChannelMono)
                 .messageCreateSpec(messageCreateSpec)
@@ -83,7 +83,7 @@ class TextPromptMonoTest {
                 .build();
 
         // Act
-        Mono<MessageCreateEvent> actual = textPromptMono.createMono();
+        Mono<MessageCreateEvent> actual = textPromptBuilder.createMono();
 
         // Assert
         StepVerifier.create(actual)
@@ -121,7 +121,7 @@ class TextPromptMonoTest {
 
         when(actionRowComponentMock.getDisabledRow()).thenReturn(actionRow);
 
-        TextPromptMono<SelectMenuInteractionEvent> textPromptMono = new TextPromptMono.Builder<>(clientMock, eventClass)
+        TextPromptBuilder<SelectMenuInteractionEvent> textPromptBuilder = new TextPromptBuilder.Builder<>(clientMock, eventClass)
                 .withPromptType(promptType)
                 .actionRowComponent(actionRowComponentMock)
                 .messageChannel(messageChannelMono)
@@ -132,7 +132,7 @@ class TextPromptMonoTest {
                 .build();
 
         // Act
-        Mono<SelectMenuInteractionEvent> actual = textPromptMono.createMono();
+        Mono<SelectMenuInteractionEvent> actual = textPromptBuilder.createMono();
 
         // Assert
         StepVerifier.create(actual)
@@ -166,7 +166,7 @@ class TextPromptMonoTest {
         when(interactionResponseMock.deleteInitialResponse()).thenReturn(Mono.empty());
         when(interactionCallbackSpecDeferEditMono.then(selectMenuInteractionEventMock.getInteractionResponse().deleteInitialResponse())).thenReturn(Mono.empty());
 
-        TextPromptMono<SelectMenuInteractionEvent> textPromptMono = new TextPromptMono.Builder<>(clientMock, eventClass)
+        TextPromptBuilder<SelectMenuInteractionEvent> textPromptBuilder = new TextPromptBuilder.Builder<>(clientMock, eventClass)
                 .withPromptType(promptType)
                 .actionRowComponent(actionRowComponentMock)
                 .messageChannel(messageChannelMono)
@@ -177,7 +177,7 @@ class TextPromptMonoTest {
                 .build();
 
         // Act
-        Mono<SelectMenuInteractionEvent> actual = textPromptMono.createMono();
+        Mono<SelectMenuInteractionEvent> actual = textPromptBuilder.createMono();
 
         // Assert
         StepVerifier.create(actual)
@@ -208,7 +208,7 @@ class TextPromptMonoTest {
 
         when(interactionCallbackSpecDeferEditMono.then(any())).thenReturn(Mono.empty());
 
-        TextPromptMono<SelectMenuInteractionEvent> textPromptMono = new TextPromptMono.Builder<>(clientMock, eventClass)
+        TextPromptBuilder<SelectMenuInteractionEvent> textPromptBuilder = new TextPromptBuilder.Builder<>(clientMock, eventClass)
                 .withPromptType(promptType)
                 .actionRowComponent(actionRowComponentMock)
                 .messageChannel(messageChannelMono)
@@ -219,7 +219,7 @@ class TextPromptMonoTest {
                 .build();
 
         // Act
-        Mono<SelectMenuInteractionEvent> actual = textPromptMono.createMono();
+        Mono<SelectMenuInteractionEvent> actual = textPromptBuilder.createMono();
 
         // Assert
         StepVerifier.create(actual)
@@ -250,7 +250,7 @@ class TextPromptMonoTest {
         Mono<SelectMenuInteractionEvent> selectMenuInteractionEventMockMono = Mono.just(selectMenuInteractionEventMock);
         doReturn(selectMenuInteractionEventMockMono).when(interactionCallbackSpecDeferReplyMono).then(any());
 
-        TextPromptMono<SelectMenuInteractionEvent> textPromptMono = new TextPromptMono.Builder<>(clientMock, eventClass)
+        TextPromptBuilder<SelectMenuInteractionEvent> textPromptBuilder = new TextPromptBuilder.Builder<>(clientMock, eventClass)
                 .withPromptType(promptType)
                 .actionRowComponent(actionRowComponentMock)
                 .messageChannel(messageChannelMono)
@@ -261,7 +261,7 @@ class TextPromptMonoTest {
                 .build();
 
         // Act
-        Mono<SelectMenuInteractionEvent> actual = textPromptMono.createMono();
+        Mono<SelectMenuInteractionEvent> actual = textPromptBuilder.createMono();
 
         // Assert
         StepVerifier.create(actual)
@@ -296,7 +296,7 @@ class TextPromptMonoTest {
                 .build()))
         ).thenReturn(buttonMenuMessageMono);
 
-        TextPromptMono<ButtonInteractionEvent> textPromptMono = new TextPromptMono.Builder<>(clientMock, eventClass)
+        TextPromptBuilder<ButtonInteractionEvent> textPromptBuilder = new TextPromptBuilder.Builder<>(clientMock, eventClass)
                 .withPromptType(promptType)
                 .messageChannel(messageChannelMono)
                 .messageCreateSpec(messageCreateSpec)
@@ -306,7 +306,7 @@ class TextPromptMonoTest {
                 .build();
 
         // Act
-        Mono<ButtonInteractionEvent> actual = textPromptMono.createMono();
+        Mono<ButtonInteractionEvent> actual = textPromptBuilder.createMono();
 
         // Assert
         StepVerifier.create(actual)
@@ -340,7 +340,7 @@ class TextPromptMonoTest {
         when(interactionResponseMock.deleteInitialResponse()).thenReturn(Mono.empty());
         when(interactionCallbackSpecDeferEditMono.then(buttonInteractionEventMock.getInteractionResponse().deleteInitialResponse())).thenReturn(Mono.empty());
 
-        TextPromptMono<ButtonInteractionEvent> textPromptMono = new TextPromptMono.Builder<>(clientMock, eventClass)
+        TextPromptBuilder<ButtonInteractionEvent> textPromptBuilder = new TextPromptBuilder.Builder<>(clientMock, eventClass)
                 .withPromptType(promptType)
                 .messageChannel(messageChannelMono)
                 .messageCreateSpec(messageCreateSpec)
@@ -350,7 +350,7 @@ class TextPromptMonoTest {
                 .build();
 
         // Act
-        Mono<ButtonInteractionEvent> actual = textPromptMono.createMono();
+        Mono<ButtonInteractionEvent> actual = textPromptBuilder.createMono();
 
         // Assert
         StepVerifier.create(actual)
@@ -382,7 +382,7 @@ class TextPromptMonoTest {
         Mono<ButtonInteractionEvent> buttonInteractionEventMono = Mono.just(buttonInteractionEventMock);
         doReturn(buttonInteractionEventMono).when(interactionCallbackSpecDeferEditMono).then(any());
 
-        TextPromptMono<ButtonInteractionEvent> textPromptMono = new TextPromptMono.Builder<>(clientMock, eventClass)
+        TextPromptBuilder<ButtonInteractionEvent> textPromptBuilder = new TextPromptBuilder.Builder<>(clientMock, eventClass)
                 .withPromptType(promptType)
                 .messageChannel(messageChannelMono)
                 .messageCreateSpec(messageCreateSpec)
@@ -392,7 +392,7 @@ class TextPromptMonoTest {
                 .build();
 
         // Act
-        Mono<ButtonInteractionEvent> actual = textPromptMono.createMono();
+        Mono<ButtonInteractionEvent> actual = textPromptBuilder.createMono();
 
         // Assert
         StepVerifier.create(actual)
@@ -424,7 +424,7 @@ class TextPromptMonoTest {
         Mono<ButtonInteractionEvent> buttonInteractionEventMono = Mono.just(buttonInteractionEventMock);
         doReturn(buttonInteractionEventMono).when(interactionCallbackSpecDeferReplyMono).then(any());
 
-        TextPromptMono<ButtonInteractionEvent> textPromptMono = new TextPromptMono.Builder<>(clientMock, eventClass)
+        TextPromptBuilder<ButtonInteractionEvent> textPromptBuilder = new TextPromptBuilder.Builder<>(clientMock, eventClass)
                 .withPromptType(promptType)
                 .messageChannel(messageChannelMono)
                 .messageCreateSpec(messageCreateSpec)
@@ -434,7 +434,7 @@ class TextPromptMonoTest {
                 .build();
 
         // Act
-        Mono<ButtonInteractionEvent> actual = textPromptMono.createMono();
+        Mono<ButtonInteractionEvent> actual = textPromptBuilder.createMono();
 
         // Assert
         StepVerifier.create(actual)
@@ -446,7 +446,7 @@ class TextPromptMonoTest {
     @Test
     void builder_ReturnsDefaultMessageCreateEvent_WhenBuildMethodCalled() {
         // Act
-        TextPromptMono<MessageCreateEvent> actual = new TextPromptMono.Builder<>(clientMock, MessageCreateEvent.class)
+        TextPromptBuilder<MessageCreateEvent> actual = new TextPromptBuilder.Builder<>(clientMock, MessageCreateEvent.class)
                 .withPromptType(PromptType.DEFAULT)
                 .messageChannel(messageChannelMono)
                 .messageCreateSpec(messageCreateSpec)
@@ -467,7 +467,7 @@ class TextPromptMonoTest {
     @Test
     void builder_ReturnsDefaultSelectMenuInteractionEvent_WhenBuildMethodCalled() {
         // Act
-        TextPromptMono<SelectMenuInteractionEvent> actual = new TextPromptMono.Builder<>(clientMock, SelectMenuInteractionEvent.class)
+        TextPromptBuilder<SelectMenuInteractionEvent> actual = new TextPromptBuilder.Builder<>(clientMock, SelectMenuInteractionEvent.class)
                 .withPromptType(PromptType.DEFAULT)
                 .messageChannel(messageChannelMono)
                 .messageCreateSpec(messageCreateSpec)
@@ -488,7 +488,7 @@ class TextPromptMonoTest {
     @Test
     void builder_ReturnsDefaultButtonInteractionEvent_WhenBuildMethodCalled() {
         // Act
-        TextPromptMono<ButtonInteractionEvent> actual = new TextPromptMono.Builder<>(clientMock, ButtonInteractionEvent.class)
+        TextPromptBuilder<ButtonInteractionEvent> actual = new TextPromptBuilder.Builder<>(clientMock, ButtonInteractionEvent.class)
                 .withPromptType(PromptType.DEFAULT)
                 .messageChannel(messageChannelMono)
                 .messageCreateSpec(messageCreateSpec)
@@ -509,7 +509,7 @@ class TextPromptMonoTest {
     @Test
     void builder_ThrowsException_WhenMessageChannelIsNotSetBeforeBuild() {
         // Assert
-        assertThatThrownBy(() -> new TextPromptMono.Builder<>(clientMock, MessageCreateEvent.class)
+        assertThatThrownBy(() -> new TextPromptBuilder.Builder<>(clientMock, MessageCreateEvent.class)
                 .withPromptType(PromptType.DEFAULT)
                 .messageCreateSpec(messageCreateSpec)
                 .withMessageCollector(messageCollectorMock)
@@ -523,7 +523,7 @@ class TextPromptMonoTest {
     @Test
     void builder_ThrowsException_WhenMessageCreateSpecIsNotSetBeforeBuild() {
         // Assert
-        assertThatThrownBy(() -> new TextPromptMono.Builder<>(clientMock, MessageCreateEvent.class)
+        assertThatThrownBy(() -> new TextPromptBuilder.Builder<>(clientMock, MessageCreateEvent.class)
                 .withPromptType(PromptType.DEFAULT)
                 .messageChannel(messageChannelMono)
                 .withMessageCollector(messageCollectorMock)
@@ -537,7 +537,7 @@ class TextPromptMonoTest {
     @Test
     void builder_ThrowsException_WhenEventProcessorIsNotSetBeforeBuild() {
         // Assert
-        assertThatThrownBy(() -> new TextPromptMono.Builder<>(clientMock, MessageCreateEvent.class)
+        assertThatThrownBy(() -> new TextPromptBuilder.Builder<>(clientMock, MessageCreateEvent.class)
                 .withPromptType(PromptType.DEFAULT)
                 .messageChannel(messageChannelMono)
                 .messageCreateSpec(messageCreateSpec)
@@ -551,7 +551,7 @@ class TextPromptMonoTest {
     @Test
     void builder_ThrowsException_WhenEventPredicateIsNotSetBeforeBuild() {
         // Assert
-        assertThatThrownBy(() -> new TextPromptMono.Builder<>(clientMock, MessageCreateEvent.class)
+        assertThatThrownBy(() -> new TextPromptBuilder.Builder<>(clientMock, MessageCreateEvent.class)
                 .withPromptType(PromptType.DEFAULT)
                 .messageChannel(messageChannelMono)
                 .messageCreateSpec(messageCreateSpec)
@@ -565,7 +565,7 @@ class TextPromptMonoTest {
     @Test
     void builder_ThrowsException_WhenPromptTypeIsNotSetBeforeBuild() {
         // Assert
-        assertThatThrownBy(() -> new TextPromptMono.Builder<>(clientMock, MessageCreateEvent.class)
+        assertThatThrownBy(() -> new TextPromptBuilder.Builder<>(clientMock, MessageCreateEvent.class)
                 .messageChannel(messageChannelMono)
                 .messageCreateSpec(messageCreateSpec)
                 .withMessageCollector(messageCollectorMock)
@@ -579,7 +579,7 @@ class TextPromptMonoTest {
     @Test
     void builder_ThrowsException_WhenSelectMenuAndPromptTypeIsDefaultButNoComponentSet() {
         // Assert
-        assertThatThrownBy(() -> new TextPromptMono.Builder<>(clientMock, SelectMenuInteractionEvent.class)
+        assertThatThrownBy(() -> new TextPromptBuilder.Builder<>(clientMock, SelectMenuInteractionEvent.class)
                 .withPromptType(PromptType.DEFAULT)
                 .messageChannel(messageChannelMono)
                 .messageCreateSpec(messageCreateSpec)
@@ -598,7 +598,7 @@ class TextPromptMonoTest {
 
         // Assert
         PromptType promptTypeDeferReply = PromptType.DEFERRABLE_REPLY;
-        assertThatThrownBy(() -> new TextPromptMono.Builder<>(clientMock, messageCreateEventClass)
+        assertThatThrownBy(() -> new TextPromptBuilder.Builder<>(clientMock, messageCreateEventClass)
                 .withPromptType(promptTypeDeferReply)
                 .messageChannel(messageChannelMono)
                 .messageCreateSpec(messageCreateSpec)
@@ -610,7 +610,7 @@ class TextPromptMonoTest {
                 .hasMessage("%s not supported operation for %s".formatted(promptTypeDeferReply, messageCreateEventClass));
 
         PromptType promptTypeDeferEdit = PromptType.DEFERRABLE_EDIT;
-        assertThatThrownBy(() -> new TextPromptMono.Builder<>(clientMock, messageCreateEventClass)
+        assertThatThrownBy(() -> new TextPromptBuilder.Builder<>(clientMock, messageCreateEventClass)
                 .withPromptType(promptTypeDeferEdit)
                 .messageChannel(messageChannelMono)
                 .messageCreateSpec(messageCreateSpec)
@@ -622,7 +622,7 @@ class TextPromptMonoTest {
                 .hasMessage("%s not supported operation for %s".formatted(promptTypeDeferEdit, messageCreateEventClass));
 
         PromptType promptTypeDeleteOnResponse = PromptType.DELETE_ON_RESPONSE;
-        assertThatThrownBy(() -> new TextPromptMono.Builder<>(clientMock, messageCreateEventClass)
+        assertThatThrownBy(() -> new TextPromptBuilder.Builder<>(clientMock, messageCreateEventClass)
                 .withPromptType(promptTypeDeleteOnResponse)
                 .messageChannel(messageChannelMono)
                 .messageCreateSpec(messageCreateSpec)

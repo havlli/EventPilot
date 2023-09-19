@@ -26,9 +26,9 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
-public class TextPromptMono<T extends Event> {
+public class TextPromptBuilder<T extends Event> {
 
-    private final static Logger LOG = LoggerFactory.getLogger(TextPromptMono.class);
+    private final static Logger LOG = LoggerFactory.getLogger(TextPromptBuilder.class);
     private final Mono<? extends MessageChannel> messageChannel;
     private final MessageCollector messageCollector;
     private final MessageCreateSpec messageCreateSpec;
@@ -57,8 +57,8 @@ public class TextPromptMono<T extends Event> {
             MessageCreateEvent.class, List.of(PromptType.DEFAULT)
     );
 
-    public TextPromptMono(
-            TextPromptMono.Builder<T> builder
+    public TextPromptBuilder(
+            TextPromptBuilder.Builder<T> builder
     ) {
         this.messageChannel = builder.messageChannel;
         this.messageCollector = builder.messageCollector;
@@ -266,19 +266,23 @@ public class TextPromptMono<T extends Event> {
             return this;
         }
 
-        public TextPromptMono<T> build() {
+        public TextPromptBuilder<T> build() {
             validate();
-            return new TextPromptMono<>(this);
+            return new TextPromptBuilder<>(this);
         }
 
         private void validate() {
+            validateRequiredFields();
+            validateEventPromptType();
+            validateEventsRequiringComponents();
+        }
+
+        private void validateRequiredFields() {
             Objects.requireNonNull(messageChannel, "messageChannel is required");
             Objects.requireNonNull(messageCreateSpec, "messageCreateSpec is required");
             Objects.requireNonNull(eventProcessor, "eventProcessor is required");
             Objects.requireNonNull(eventPredicate, "eventPredicate is required");
             Objects.requireNonNull(promptType, "promptType is required");
-            validateEventPromptType();
-            validateEventsRequiringComponents();
         }
 
         private void validateEventPromptType() {

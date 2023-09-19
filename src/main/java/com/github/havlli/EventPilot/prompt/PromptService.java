@@ -22,7 +22,7 @@ public class PromptService {
     public Flux<TextChannel> fetchGuildTextChannels(InteractionCreateEvent event) {
         return getGuild(event)
                 .map(Guild::getId)
-                .flatMapMany(guildId -> client.getGuildChannels(guildId).ofType(TextChannel.class));
+                .flatMapMany(this::getGuildTextChannels);
     }
 
     public Snowflake fetchGuildId(InteractionCreateEvent event) {
@@ -31,11 +31,15 @@ public class PromptService {
                 .orElse(Snowflake.of(0));
     }
 
-    private Interaction getInteraction(InteractionCreateEvent event) {
-        return event.getInteraction();
-    }
-
     private Mono<Guild> getGuild(InteractionCreateEvent event) {
         return getInteraction(event).getGuild();
+    }
+
+    private Flux<TextChannel> getGuildTextChannels(Snowflake guildId) {
+        return client.getGuildChannels(guildId).ofType(TextChannel.class);
+    }
+
+    private Interaction getInteraction(InteractionCreateEvent event) {
+        return event.getInteraction();
     }
 }

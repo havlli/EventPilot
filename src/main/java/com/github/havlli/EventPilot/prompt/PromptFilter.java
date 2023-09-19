@@ -18,7 +18,7 @@ public class PromptFilter {
     public Predicate<SelectMenuInteractionEvent> selectInteractionEvent(SelectMenuComponent selectMenuComponent, User user) {
         return event -> {
             Predicate<ComponentInteractionEvent> componentPredicate = isComponentInvolvedInInteraction(selectMenuComponent);
-            return createInteractionEventPredicate(user, componentPredicate)
+            return createEventPredicate(user, componentPredicate)
                     .test(event);
         };
     }
@@ -26,7 +26,7 @@ public class PromptFilter {
     public Predicate<ButtonInteractionEvent> buttonInteractionEvent(ButtonRowComponent buttonRowComponent, User user) {
         return event -> {
             Predicate<ComponentInteractionEvent> componentPredicate = isComponentInvolvedInInteraction(buttonRowComponent);
-            return createInteractionEventPredicate(user, componentPredicate)
+            return createEventPredicate(user, componentPredicate)
                     .test(event);
         };
     }
@@ -35,7 +35,7 @@ public class PromptFilter {
         return event -> event.getMessage().getAuthor().equals(Optional.of(user));
     }
 
-    private Predicate<ComponentInteractionEvent> createInteractionEventPredicate(User user, Predicate<ComponentInteractionEvent> componentPredicate) {
+    private Predicate<ComponentInteractionEvent> createEventPredicate(User user, Predicate<ComponentInteractionEvent> componentPredicate) {
         Predicate<ComponentInteractionEvent> userPredicate = isUserInvolvedInInteraction(user);
         return userPredicate.and(componentPredicate);
     }
