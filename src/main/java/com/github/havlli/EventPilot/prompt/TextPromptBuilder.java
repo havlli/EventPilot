@@ -84,7 +84,7 @@ public class TextPromptBuilder<T extends Event> {
                 .doOnNext(messageCollector::collect);
     }
 
-    private Mono<T> handleResponse(Message previousMessage) {
+    protected Mono<T> handleResponse(Message previousMessage) {
         Mono<T> responseMono = subscribeEventAndCreateResponse();
 
         if (onErrorMessage != null) {
@@ -94,14 +94,14 @@ public class TextPromptBuilder<T extends Event> {
         return responseMono;
     }
 
-    private Mono<T> subscribeEventAndCreateResponse() {
+    protected Mono<T> subscribeEventAndCreateResponse() {
         return client.getEventDispatcher().on(eventClass)
                 .filter(eventPredicate)
                 .next()
                 .flatMap(processEventThenCreateResponse());
     }
 
-    private Mono<T> handleErrorThenRepeatInteraction(Throwable e) {
+    protected Mono<T> handleErrorThenRepeatInteraction(Throwable e) {
         return messageChannel
                 .flatMap(channel -> channel.createMessage(onErrorMessage))
                 .flatMap(message -> {
@@ -186,7 +186,7 @@ public class TextPromptBuilder<T extends Event> {
     }
 
     private static <T extends Event> Mono<T> just(T event) {
-        return Mono.just(event);
+        return reactor.core.publisher.Mono.just(event);
     }
 
     private static Mono<Void> deleteInitialResponse(ComponentInteractionEvent selectMenuEvent) {

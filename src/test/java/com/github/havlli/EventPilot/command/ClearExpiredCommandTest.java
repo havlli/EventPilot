@@ -25,8 +25,12 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.List;
 import java.util.Optional;
+import java.util.function.Function;
+import java.util.function.Predicate;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -252,5 +256,101 @@ class ClearExpiredCommandTest {
         // Assert
         Class<? extends Event> actual = underTest.getEventType();
         assertThat(actual).isEqualTo(expected);
+    }
+
+    @Test
+    void formatResponseMessage_ReturnsNoExpiredEventsMessage_WhenCountIsZero() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        // Arrange
+        Class<?> underTestClass = ClearExpiredCommand.class;
+        Method formatResponseMessageMethod = underTestClass.getDeclaredMethod("formatResponseMessage", int.class);
+        formatResponseMessageMethod.setAccessible(true);
+
+        String expected = "No expired events found in this channel.";
+
+        // Act
+        String actual = (String) formatResponseMessageMethod.invoke(underTest, 0);
+
+        // Assert
+        assertThat(actual).isEqualTo(expected);
+    }
+
+    @Test
+    void formatResponseMessage_ReturnsResponseMessage_WhenCountIsNotZero() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        // Arrange
+        Class<?> underTestClass = ClearExpiredCommand.class;
+        Method formatResponseMessageMethod = underTestClass.getDeclaredMethod("formatResponseMessage", int.class);
+        formatResponseMessageMethod.setAccessible(true);
+
+        String expected = "Deleted 2 events in this channel.";
+
+        // Act
+        String actual = (String) formatResponseMessageMethod.invoke(underTest, 2);
+
+        // Assert
+        assertThat(actual).isEqualTo(expected);
+    }
+
+    @Test
+    void handleResponse_formatsResponseAndSendsResponse() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        // Arrange
+        ClearExpiredCommand underTestSpy = spy(underTest);
+        Class<?> underTestClass = ClearExpiredCommand.class;
+        Method handleResponseMethod = underTestClass.getDeclaredMethod("handleResponse", ChatInputInteractionEvent.class);
+        handleResponseMethod.setAccessible(true);
+        Function<List<Message>, Mono<? extends Message>> handleResponseFunction =
+                (Function<List<Message>, Mono<? extends Message>>) handleResponseMethod.invoke(underTestSpy, interactionEvent);
+
+        doReturn(Mono.empty()).when(underTestSpy).sendResponse(any(), any());
+
+        // Act
+        Mono<? extends Message> actual = handleResponseFunction.apply(List.of(mock(Message.class)));
+
+        // Assert
+        StepVerifier.create(actual)
+                .expectSubscription()
+                .verifyComplete();
+    }
+
+    @Test
+    void filterAllMessagesThenDelete_ReturnsDeleteMessages() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        // Arrange
+        Class<?> underTestClass = ClearExpiredCommand.class;
+        ClearExpiredCommand underTestSpy = spy(underTest);
+        Method filterAllMessagesThenDeleteMethod = underTestClass.getDeclaredMethod("filterAllMessagesThenDelete", MessageChannel.class);
+        filterAllMessagesThenDeleteMethod.setAccessible(true);
+
+        Message messageMock = mock(Message.class);
+        when(messageChannel.getMessagesAfter(Snowflake.of(0))).thenReturn(Flux.just(messageMock));
+        Predicate<Message> ignorePredicate = message -> true;
+        doReturn(ignorePredicate).when(underTestSpy).filterBotMessages();
+        doReturn(ignorePredicate).when(underTestSpy).filterExpired();
+
+        // Act
+        Flux<Message> actual = (Flux<Message>) filterAllMessagesThenDeleteMethod.invoke(underTest, messageChannel);
+
+        // Assert
+        StepVerifier.create(actual)
+                .expectSubscription()
+                .verifyComplete();
+    }
+
+    @Test
+    void deleteMessageThenReturn_InvokesDeletionThenReturnsSameObject() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        // Arrange
+        Class<?> underTestClass = ClearExpiredCommand.class;
+        Method deleteMessageThenReturnMethod = underTestClass.getDeclaredMethod("deleteMessageThenReturn", Message.class);
+        deleteMessageThenReturnMethod.setAccessible(true);
+
+        Message messageMock = mock(Message.class);
+        when(messageMock.delete()).thenReturn(Mono.empty());
+
+        // Act
+        Mono<Message> actual = (Mono<Message>) deleteMessageThenReturnMethod.invoke(underTest, messageMock);
+
+        // Assert
+        StepVerifier.create(actual)
+                .expectSubscription()
+                .expectNext(messageMock)
+                .verifyComplete();
     }
 }

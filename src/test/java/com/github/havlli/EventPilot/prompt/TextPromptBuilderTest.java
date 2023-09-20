@@ -10,7 +10,10 @@ import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.core.object.component.ActionRow;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.channel.MessageChannel;
-import discord4j.core.spec.*;
+import discord4j.core.spec.InteractionCallbackSpecDeferEditMono;
+import discord4j.core.spec.InteractionCallbackSpecDeferReplyMono;
+import discord4j.core.spec.InteractionReplyEditSpec;
+import discord4j.core.spec.MessageCreateSpec;
 import discord4j.rest.interaction.InteractionResponse;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -21,6 +24,8 @@ import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
+import java.lang.reflect.InvocationTargetException;
+import java.lang.reflect.Method;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -632,6 +637,74 @@ class TextPromptBuilderTest {
                 .build())
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("%s not supported operation for %s".formatted(promptTypeDeleteOnResponse, messageCreateEventClass));
+    }
 
+    @Test
+    void handleErrorThenRepeatInteraction() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        // Arrange
+        Class<?> underTestClass = TextPromptBuilder.class;
+        Method handleErrorThenRepeatInteraction = underTestClass.getDeclaredMethod("handleErrorThenRepeatInteraction", Throwable.class);
+        handleErrorThenRepeatInteraction.setAccessible(true);
+
+        Class<MessageCreateEvent> eventClass = MessageCreateEvent.class;
+        PromptType promptType = PromptType.DEFAULT;
+
+        Message messageMock = mock(Message.class);
+        Mono<Message> messageMockMono = Mono.just(messageMock);
+        Mono<MessageChannel> messageChannelMonoMock = mock(Mono.class);
+        TextPromptBuilder<MessageCreateEvent> textPromptBuilder = new TextPromptBuilder.Builder<>(clientMock, eventClass)
+                .withPromptType(promptType)
+                .messageChannel(messageChannelMonoMock)
+                .messageCreateSpec(messageCreateSpec)
+                .withMessageCollector(messageCollectorMock)
+                .onErrorRepeat(RuntimeException.class, "errormessage")
+                .eventPredicate(event -> true)
+                .eventProcessor(event -> System.out.println("event processing..."))
+                .build();
+
+        TextPromptBuilder<MessageCreateEvent> underTestSpy = spy(textPromptBuilder);
+        doReturn(messageMockMono).when(messageChannelMonoMock).flatMap(any());
+        doReturn(Mono.empty()).when(underTestSpy).createMono();
+
+        // Act
+        Mono<MessageCreateEvent> actual = (Mono<MessageCreateEvent>) handleErrorThenRepeatInteraction.invoke(underTestSpy, new Exception());
+
+        // Assert
+        StepVerifier.create(actual)
+                .expectSubscription()
+                .verifyComplete();
+        verify(messageCollectorMock, only()).collect(messageMock);
+    }
+
+    @Test
+    void handleResponse_AppendsErrorHandler_WhenErrorMessageIsSet() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
+        // Arrange
+        Class<MessageCreateEvent> eventClass = MessageCreateEvent.class;
+        PromptType promptType = PromptType.DEFAULT;
+
+        Message messageMock = mock(Message.class);
+        Mono<Message> messageMockMono = Mono.just(messageMock);
+        Mono<MessageChannel> messageChannelMonoMock = mock(Mono.class);
+        TextPromptBuilder<MessageCreateEvent> textPromptBuilder = new TextPromptBuilder.Builder<>(clientMock, eventClass)
+                .withPromptType(promptType)
+                .messageChannel(messageChannelMonoMock)
+                .messageCreateSpec(messageCreateSpec)
+                .withMessageCollector(messageCollectorMock)
+                .onErrorRepeat(RuntimeException.class, "errormessage")
+                .eventPredicate(event -> true)
+                .eventProcessor(event -> System.out.println("event processing..."))
+                .build();
+
+        TextPromptBuilder<MessageCreateEvent> underTestSpy = spy(textPromptBuilder);
+        doReturn(Mono.empty()).when(underTestSpy).subscribeEventAndCreateResponse();
+        doReturn(Mono.empty()).when(underTestSpy).handleErrorThenRepeatInteraction(any());
+
+        // Act
+        Mono<MessageCreateEvent> actual = underTestSpy.handleResponse(messageMock);
+
+        // Assert
+        StepVerifier.create(actual)
+                .expectSubscription()
+                .verifyComplete();
     }
 }

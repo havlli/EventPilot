@@ -8,9 +8,11 @@ import discord4j.core.event.domain.interaction.ChatInputInteractionEvent;
 import discord4j.core.object.component.SelectMenu;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.User;
+import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.spec.InteractionCallbackSpecDeferReplyMono;
 import discord4j.rest.util.Permission;
 import org.springframework.stereotype.Component;
+import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
@@ -58,37 +60,12 @@ public class ClearExpiredCommand implements SlashCommand {
                 .then(validatePermissions(interactionEvent));
     }
 
-    private Mono<Message> validatePermissions(ChatInputInteractionEvent interactionEvent) {
-        return permissionChecker.followupWith(interactionEvent, Permission.MANAGE_CHANNELS, followupResponse(interactionEvent));
+    private boolean isValidEvent(ChatInputInteractionEvent event) {
+        return event.getCommandName().equals(EVENT_NAME);
     }
 
-    private Mono<Message> followupResponse(ChatInputInteractionEvent event) {
-        return event.getInteraction()
-                .getChannel()
-                .flatMapMany(messageChannel -> messageChannel.getMessagesAfter(Snowflake.of(0))
-                        .filter(filterBotMessages())
-                        .filter(filterExpired())
-                        .flatMap(message -> message.delete()
-                                .thenReturn(message))
-                )
-                .collectList()
-                .flatMap(handleResponse(event));
-    }
-
-    private Function<List<Message>, Mono<? extends Message>> handleResponse(ChatInputInteractionEvent event) {
-        return messages -> {
-            String response = formatResponseMessage(messages.size());
-            return sendResponse(event, response);
-        };
-    }
-
-    private String formatResponseMessage(int count) {
-        if (count == 0) {
-            return  "No expired events found in this channel.";
-        } else {
-            String messagePlural = count == 1 ? "event" : "events";
-            return String.format("Deleted %d %s in this channel.", count, messagePlural);
-        }
+    private Mono<Object> terminateInteraction() {
+        return Mono.empty();
     }
 
     private InteractionCallbackSpecDeferReplyMono deferInteractionWithEphemeralResponse(ChatInputInteractionEvent interactionEvent) {
@@ -96,16 +73,30 @@ public class ClearExpiredCommand implements SlashCommand {
                 .withEphemeral(true);
     }
 
-    private Mono<Object> terminateInteraction() {
-        return Mono.empty();
+    private Mono<Message> validatePermissions(ChatInputInteractionEvent interactionEvent) {
+        return permissionChecker.followupWith(interactionEvent, Permission.MANAGE_CHANNELS, followupResponse(interactionEvent));
     }
 
-    private boolean isValidEvent(ChatInputInteractionEvent event) {
-        return event.getCommandName().equals(EVENT_NAME);
+    private Mono<Message> followupResponse(ChatInputInteractionEvent event) {
+        return event.getInteraction()
+                .getChannel()
+                .flatMapMany(this::filterAllMessagesThenDelete)
+                .collectList()
+                .flatMap(handleResponse(event));
     }
 
-    public Mono<Message> sendResponse(ChatInputInteractionEvent event, String response) {
-        return event.createFollowup(response);
+    private Flux<Message> filterAllMessagesThenDelete(MessageChannel messageChannel) {
+        return messageChannel.getMessagesAfter(Snowflake.of(0))
+                .filter(filterBotMessages())
+                .filter(filterExpired())
+                .flatMap(this::deleteMessageThenReturn);
+    }
+
+    private Function<List<Message>, Mono<? extends Message>> handleResponse(ChatInputInteractionEvent event) {
+        return messages -> {
+            String response = formatResponseMessage(messages.size());
+            return sendResponse(event, response);
+        };
     }
 
     public Predicate<Message> filterBotMessages() {
@@ -119,5 +110,23 @@ public class ClearExpiredCommand implements SlashCommand {
                 .filter(messageComponent -> messageComponent instanceof SelectMenu)
                 .map(messageComponent -> (SelectMenu) messageComponent)
                 .anyMatch(selectMenu -> selectMenu.getCustomId().equals(expiredCustomTag));
+    }
+
+    private Mono<Message> deleteMessageThenReturn(Message message) {
+        return message.delete()
+                .thenReturn(message);
+    }
+
+    private String formatResponseMessage(int count) {
+        if (count == 0) {
+            return  "No expired events found in this channel.";
+        } else {
+            String messagePlural = count == 1 ? "event" : "events";
+            return String.format("Deleted %d %s in this channel.", count, messagePlural);
+        }
+    }
+
+    public Mono<Message> sendResponse(ChatInputInteractionEvent event, String response) {
+        return event.createFollowup(response);
     }
 }

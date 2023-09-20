@@ -8,7 +8,10 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockitoAnnotations;
+import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.Mockito.*;
 
@@ -56,5 +59,32 @@ class TestCommandTest {
         verify(event, times(1)).reply();
         verify(event.reply(), times(1)).withEphemeral(true);
         verify(event.reply().withEphemeral(true), times(1)).withContent(anyString());
+    }
+
+    @Test
+    void handle_ShouldTerminate() {
+        // Arrange
+        ChatInputInteractionEvent event = mock(ChatInputInteractionEvent.class);
+        when(event.getCommandName()).thenReturn("not-test");
+
+        // Act
+        Mono<?> handle = underTest.handle(event);
+
+        // Assert
+        StepVerifier.create(handle)
+                .expectSubscription()
+                .verifyComplete();
+    }
+
+    @Test
+    void canSetEventType() {
+        // Arrange
+        TestCommand underTest = new TestCommand();
+
+        // Act
+        underTest.setEventType(ChatInputInteractionEvent.class);
+
+        // Assert
+        assertThat(underTest.getEventType()).isEqualTo(ChatInputInteractionEvent.class);
     }
 }

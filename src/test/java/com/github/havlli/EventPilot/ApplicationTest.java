@@ -7,11 +7,10 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ApplicationContext;
 
-@SpringBootTest
+@SpringBootTest(classes = Application.class)
 class ApplicationTest {
 
     private static final Logger LOG = LoggerFactory.getLogger(ApplicationTest.class);
-    
     @Autowired
     private ApplicationContext applicationContext;
 
