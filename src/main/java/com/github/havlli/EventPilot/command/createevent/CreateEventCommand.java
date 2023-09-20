@@ -72,7 +72,7 @@ public class CreateEventCommand implements SlashCommand {
     }
 
     private Function<Message, Mono<Message>> invokeFinalInteraction(ChatInputInteractionEvent event) {
-        return ignored -> createEventInteraction.start(event);
+        return ignored -> createEventInteraction.initiateOn(event);
     }
 
     private boolean isValidEvent(ChatInputInteractionEvent event) {

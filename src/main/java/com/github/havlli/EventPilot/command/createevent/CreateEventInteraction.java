@@ -29,6 +29,8 @@ import discord4j.core.spec.MessageCreateSpec;
 import discord4j.core.spec.MessageEditSpec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.ObjectFactory;
+import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -42,6 +44,7 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 @Component
+@Scope("prototype")
 public class CreateEventInteraction {
 
     private final static Logger LOG = LoggerFactory.getLogger(CreateEventInteraction.class);
@@ -55,11 +58,11 @@ public class CreateEventInteraction {
     private final GuildService guildService;
     private final EmbedTypeService embedTypeService;
     private final TimeService timeService;
+    private final ObjectFactory<CreateEventInteraction> provider;
     private ChatInputInteractionEvent initialEvent;
     private User user;
     private Mono<PrivateChannel> privateChannelMono;
     private Event.Builder eventBuilder;
-
 
     public CreateEventInteraction(
             GatewayDiscordClient client,
@@ -71,8 +74,8 @@ public class CreateEventInteraction {
             EventService eventService,
             GuildService guildService,
             EmbedTypeService embedTypeService,
-            TimeService timeService
-    ) {
+            TimeService timeService,
+            ObjectFactory<CreateEventInteraction> provider) {
         this.client = client;
         this.messageCollector = messageCollector;
         this.promptFormatter = promptFormatter;
@@ -83,6 +86,7 @@ public class CreateEventInteraction {
         this.guildService = guildService;
         this.embedTypeService = embedTypeService;
         this.timeService = timeService;
+        this.provider = provider;
     }
 
     private void initializeEventBuilder() {
@@ -91,6 +95,14 @@ public class CreateEventInteraction {
         this.eventBuilder = Event.builder();
         eventBuilder.withAuthor(user.getUsername());
         eventBuilder.withGuild(guild);
+    }
+
+    public Mono<Message> initiateOn(ChatInputInteractionEvent event) {
+        return createNewInstance().start(event);
+    }
+
+    public CreateEventInteraction createNewInstance() {
+        return provider.getObject();
     }
 
     public Mono<Message> start(ChatInputInteractionEvent event) {
@@ -163,10 +175,7 @@ public class CreateEventInteraction {
     }
 
     private Consumer<MessageCreateEvent> processNameInput() {
-        return event -> {
-            eventBuilder.withName(event.getMessage().getContent());
-            System.out.println(event.getMessage().getContent());
-        };
+        return event -> eventBuilder.withName(event.getMessage().getContent());
     }
 
     public Mono<MessageCreateEvent> promptDescription() {
@@ -185,10 +194,7 @@ public class CreateEventInteraction {
     }
 
     private Consumer<MessageCreateEvent> processDescriptionInput() {
-        return event -> {
-            eventBuilder.withDescription(event.getMessage().getContent());
-            System.out.println(event.getMessage().getContent());
-        };
+        return event -> eventBuilder.withDescription(event.getMessage().getContent());
     }
 
     public Mono<MessageCreateEvent> promptDateTime() {
@@ -221,7 +227,6 @@ public class CreateEventInteraction {
         return e -> privateChannelMono
                 .flatMap(channel -> channel.createMessage("Date and time of the event has to be in future!"))
                 .flatMap(message -> {
-                    System.out.println(InvalidDateTimeException.class.getCanonicalName() + " triggered");
                     messageCollector.collect(message);
                     return promptDateTime();
                 });

@@ -9,7 +9,7 @@
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <groupId>com.github.havlli</groupId>
-    <artifactId>EventPilot</artifactId>
+    <artifactId>eventpilot</artifactId>
     <version>0.0.1-SNAPSHOT</version>
     <name>EventPilot</name>
     <description>Discord Bot for handling and managing events</description>
