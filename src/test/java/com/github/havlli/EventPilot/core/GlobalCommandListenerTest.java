@@ -52,7 +52,7 @@ class GlobalCommandListenerTest {
         when(client.on(any(), any())).thenReturn(Flux.just("test"));
 
         // Act
-        Flux<?> actual = underTest.constructListeners();
+        Flux<?> actual = underTest.createListeners();
 
         // Assert
         StepVerifier.create(actual)
@@ -76,7 +76,7 @@ class GlobalCommandListenerTest {
         when(client.on(any(), any())).thenReturn(Flux.just("test"));
 
         // Act
-        Flux<?> actual = underTest.constructListeners();
+        Flux<?> actual = underTest.createListeners();
 
         // Assert
         StepVerifier.create(actual)
@@ -100,7 +100,7 @@ class GlobalCommandListenerTest {
         when(client.on(any(), any())).thenReturn(Flux.just("test"));
 
         // Act
-        Flux<?> actual = underTest.constructListeners();
+        Flux<?> actual = underTest.createListeners();
 
         // Assert
         StepVerifier.create(actual)
@@ -113,7 +113,7 @@ class GlobalCommandListenerTest {
     @Test
     void constructListeners_WithNoMatchingCommand_ShouldNotInvoke() {
         // Act
-        Flux<?> actual = underTest.constructListeners();
+        Flux<?> actual = underTest.createListeners();
 
         // Assert
         StepVerifier.create(actual)
@@ -132,7 +132,7 @@ class GlobalCommandListenerTest {
         slashCommands.add(errorCommand);
 
         // Act
-        Flux<?> actual = underTest.constructListeners();
+        Flux<?> actual = underTest.createListeners();
 
         // Assert
         StepVerifier.create(actual)

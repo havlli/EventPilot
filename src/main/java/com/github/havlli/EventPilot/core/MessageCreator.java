@@ -9,22 +9,17 @@ import reactor.core.publisher.Mono;
 public class MessageCreator {
 
     public Mono<Message> permissionsNotValid(ChatInputInteractionEvent interactionEvent) {
-        return createFollowupEphemeral(
-                interactionEvent,
-                "You do not have permission to use this command."
-        );
+        String message = "You do not have permission to use this command.";
+        return createFollowupEphemeral(interactionEvent, message);
     }
 
     public Mono<Message> notValidMember(ChatInputInteractionEvent interactionEvent) {
-        return createFollowupEphemeral(
-                interactionEvent,
-                "You are not valid member of this guild!"
-        );
+        String message = "You are not valid member of this guild!";
+        return createFollowupEphemeral(interactionEvent, message);
     }
 
     private Mono<Message> createFollowupEphemeral(ChatInputInteractionEvent interactionEvent, String message) {
-        return interactionEvent
-                .createFollowup(message)
+        return interactionEvent.createFollowup(message)
                 .withEphemeral(true);
     }
 }

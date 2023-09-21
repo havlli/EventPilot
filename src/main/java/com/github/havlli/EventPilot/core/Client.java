@@ -18,10 +18,10 @@ public class Client {
     }
 
     @Bean
-    public GatewayDiscordClient discordClient() {
+    public GatewayDiscordClient createDiscordClient() {
         return DiscordClient.create(token)
                 .gateway()
-                .setInitialPresence(ignore -> ClientPresence.online(ClientActivity.listening("to /commands")))
+                .setInitialPresence(__ -> ClientPresence.online(ClientActivity.listening("to /commands")))
                 .login()
                 .block();
     }

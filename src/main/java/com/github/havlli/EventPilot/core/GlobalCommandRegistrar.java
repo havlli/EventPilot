@@ -39,23 +39,23 @@ public class GlobalCommandRegistrar implements ApplicationRunner {
 
     @Override
     public void run(ApplicationArguments args) throws IOException{
-        final JacksonResources d4jMapper = JacksonResources.create();
-        final ApplicationService applicationService = getApplicationService();
+        final JacksonResources mapper = JacksonResources.create();
+        final ApplicationService service = getApplicationService();
         final long applicationId = getApplicationId();
 
-        List<ApplicationCommandRequest> commands = extractApplicationCommandRequstList(d4jMapper);
-        overwriteGlobalApplicationCommands(applicationService, applicationId, commands);
+        List<ApplicationCommandRequest> commands = extractApplicationCommandRequstList(mapper);
+        overwriteGlobalApplicationCommands(service, applicationId, commands);
     }
 
     private String getLocationPattern() {
         return parentFolder + "/*.json";
     }
 
-    private List<ApplicationCommandRequest> extractApplicationCommandRequstList(JacksonResources d4jMapper) throws IOException {
+    private List<ApplicationCommandRequest> extractApplicationCommandRequstList(JacksonResources jacksonResources) throws IOException {
         List<ApplicationCommandRequest> commands = new ArrayList<>();
         try {
             for (Resource resource : pathMatcher.getResources(getLocationPattern())) {
-                ApplicationCommandRequest request = d4jMapper.getObjectMapper()
+                ApplicationCommandRequest request = jacksonResources.getObjectMapper()
                         .readValue(resource.getInputStream(), ApplicationCommandRequest.class);
                 commands.add(request);
             }

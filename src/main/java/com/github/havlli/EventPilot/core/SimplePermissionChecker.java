@@ -33,8 +33,11 @@ public class SimplePermissionChecker {
 
     private Function<PermissionSet, Mono<? extends Message>> validatePermissions(ChatInputInteractionEvent interactionEvent, Permission permission, Mono<Message> followupMono) {
         return permissions -> {
-            if (permissions.contains(permission)) return followupMono;
-            else return sendNotValidPermissionsMessage(interactionEvent);
+            if (permissions.contains(permission)) {
+                return followupMono;
+            } else {
+                return sendNotValidPermissionsMessage(interactionEvent);
+            }
         };
     }
 

@@ -21,7 +21,7 @@ class ClientTest extends DiscordBotTestConfig {
     @Test
     public void discordClient_ConnectsToTestBot() {
         // Act
-        GatewayDiscordClient gatewayDiscordClient = underTest.discordClient();
+        GatewayDiscordClient gatewayDiscordClient = underTest.createDiscordClient();
 
         // Assert
         assertThat(gatewayDiscordClient.getSelfId()).isEqualTo(Snowflake.of(1142488932903309383L));
@@ -30,7 +30,7 @@ class ClientTest extends DiscordBotTestConfig {
     @Test
     public void restClient_ReturnsRestClient() {
         // Arrange
-        GatewayDiscordClient gatewayDiscordClient = underTest.discordClient();
+        GatewayDiscordClient gatewayDiscordClient = underTest.createDiscordClient();
 
         // Act
         RestClient restClient = underTest.restClient(gatewayDiscordClient);

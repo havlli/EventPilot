@@ -30,12 +30,12 @@ public class GlobalCommandListener {
 
     @PostConstruct
     private void registerListeners() {
-        constructListeners().subscribe();
+        createListeners().subscribe();
     }
 
-    public Flux<?> constructListeners() {
+    public Flux<?> createListeners() {
         commands.sort(typeComparator);
         return Flux.fromIterable(commands)
-                .flatMap(slashCommand -> client.on(slashCommand.getEventType(), slashCommand::handle));
+                .flatMap(command -> client.on(command.getEventType(), command::handle));
     }
 }
