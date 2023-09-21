@@ -42,13 +42,14 @@ public class CreateEventCommand implements SlashCommand {
 
     @Override
     public Mono<?> handle(Event event) {
-        ChatInputInteractionEvent interactionEvent = (ChatInputInteractionEvent) event;
-        if (!isValidEvent(interactionEvent)) {
+        ChatInputInteractionEvent chatEvent = (ChatInputInteractionEvent) event;
+
+        if (!isValidEvent(chatEvent)) {
             return terminateInteraction();
         }
 
-        return deferInteractionWithEphemeralResponse(interactionEvent)
-                .then(validatePermissions(interactionEvent));
+        return deferInteractionWithEphemeralResponse(chatEvent)
+                .then(validatePermissions(chatEvent));
     }
 
     private InteractionCallbackSpecDeferReplyMono deferInteractionWithEphemeralResponse(ChatInputInteractionEvent event) {
@@ -57,14 +58,12 @@ public class CreateEventCommand implements SlashCommand {
     }
 
     private Mono<Message> validatePermissions(ChatInputInteractionEvent event) {
-        return permissionChecker.followupWith(
-                event,
-                Permission.MANAGE_CHANNELS,
-                followupMessage(event)
-        );
+        Permission requiredPermission = Permission.MANAGE_CHANNELS;
+
+        return permissionChecker.followupWith(event, requiredPermission, createFollowupMessage(event));
     }
 
-    private Mono<Message> followupMessage(ChatInputInteractionEvent event) {
+    private Mono<Message> createFollowupMessage(ChatInputInteractionEvent event) {
         String prompt = "Initiated process of creating event in your DMs, please continue there!";
         return event.createFollowup(prompt)
                 .withEphemeral(true)
@@ -72,11 +71,13 @@ public class CreateEventCommand implements SlashCommand {
     }
 
     private Function<Message, Mono<Message>> invokeFinalInteraction(ChatInputInteractionEvent event) {
-        return ignored -> createEventInteraction.initiateOn(event);
+        return __ -> createEventInteraction.initiateOn(event);
     }
 
     private boolean isValidEvent(ChatInputInteractionEvent event) {
-        return event.getCommandName().equals(this.getName());
+        String commandName = event.getCommandName();
+        String thisName = this.getName();
+        return commandName.equals(thisName);
     }
 
     private Mono<Message> terminateInteraction() {

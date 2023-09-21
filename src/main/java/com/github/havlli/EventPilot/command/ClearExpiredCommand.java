@@ -50,7 +50,7 @@ public class ClearExpiredCommand implements SlashCommand {
 
     @Override
     public Mono<?> handle(Event event) {
-        ChatInputInteractionEvent interactionEvent = ((ChatInputInteractionEvent) event);
+        ChatInputInteractionEvent interactionEvent = (ChatInputInteractionEvent) event;
 
         if (!isValidEvent(interactionEvent)) {
             return terminateInteraction();

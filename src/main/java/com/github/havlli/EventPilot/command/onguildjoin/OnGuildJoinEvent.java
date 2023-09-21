@@ -35,22 +35,22 @@ public class OnGuildJoinEvent implements SlashCommand {
     @Override
     public Mono<?> handle(Event event) {
         GuildCreateEvent guildCreateEvent = (GuildCreateEvent) event;
-        String guildName = getGuildName(guildCreateEvent);
-        String guildId = getGuildId(guildCreateEvent);
-        return createGuildIfNotExists(guildName, guildId);
+        String name = extractGuildName(guildCreateEvent);
+        String id = extractGuildId(guildCreateEvent);
+        return createGuildIfNotExists(name, id);
     }
 
-    private Mono<Void> createGuildIfNotExists(String guildName, String guildId) {
-        guildService.createGuildIfNotExists(guildId, guildName);
+    private Mono<Void> createGuildIfNotExists(String name, String id) {
+        guildService.createGuildIfNotExists(id, name);
         return Mono.empty();
     }
 
-    private static String getGuildId(GuildCreateEvent guildCreateEvent) {
-        return guildCreateEvent.getGuild().getId().asString();
+    private static String extractGuildId(GuildCreateEvent event) {
+        return event.getGuild().getId().asString();
     }
 
-    private static String getGuildName(GuildCreateEvent guildCreateEvent) {
-        return guildCreateEvent.getGuild().getName();
+    private static String extractGuildName(GuildCreateEvent event) {
+        return event.getGuild().getName();
     }
 
 

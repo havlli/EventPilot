@@ -43,11 +43,12 @@ public class StartupTask {
     }
 
     public Flux<Guild> handleNewGuilds() {
-        return client.getGuilds().flatMap(guild -> {
-            String id = guild.getId().asString();
-            String name = guild.getName();
-            guildService.createGuildIfNotExists(id, name);
-            return Mono.just(guild);
-        });
+        return client.getGuilds()
+                .flatMap(guild -> {
+                    String id = guild.getId().asString();
+                    String name = guild.getName();
+                    guildService.createGuildIfNotExists(id, name);
+                    return Mono.just(guild);
+                });
     }
 }

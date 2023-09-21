@@ -44,7 +44,8 @@ public class OnReadyEvent implements SlashCommand {
     }
 
     private Mono<Void> subscribeSchedulers() {
-        return scheduledTask.getSchedulersFlux().then();
+        return scheduledTask.getSchedulersFlux()
+                .then();
     }
 
     private Mono<Void> subscribeExistingInteractions() {

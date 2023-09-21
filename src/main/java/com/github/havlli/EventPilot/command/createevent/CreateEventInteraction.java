@@ -89,14 +89,6 @@ public class CreateEventInteraction {
         this.provider = provider;
     }
 
-    private void initializeEventBuilder() {
-        Snowflake guildId = promptService.fetchGuildId(initialEvent);
-        Guild guild = guildService.getGuildById(guildId.asString());
-        this.eventBuilder = Event.builder();
-        eventBuilder.withAuthor(user.getUsername());
-        eventBuilder.withGuild(guild);
-    }
-
     public Mono<Message> initiateOn(ChatInputInteractionEvent event) {
         return createNewInstance().start(event);
     }
@@ -106,10 +98,7 @@ public class CreateEventInteraction {
     }
 
     public Mono<Message> start(ChatInputInteractionEvent event) {
-        this.initialEvent = event;
-        this.user = initialEvent.getInteraction().getUser();
-        this.privateChannelMono = user.getPrivateChannel();
-        initializeEventBuilder();
+        initializeInteraction(event);
 
         return promptName()
                 .flatMap(ignored -> promptDescription())
@@ -120,17 +109,31 @@ public class CreateEventInteraction {
                 .flatMap(ignored -> promptDestinationChannel())
                 .flatMap(ignored -> promptConfirmationAndDeferReply())
                 .flatMap(this::handleConfirmationResponse)
-                .doFinally(sequenceChecker())
+                .doFinally(this::sequenceChecker)
                 .then(Mono.empty());
     }
 
-    private Consumer<SignalType> sequenceChecker() {
-        return signalType -> {
-            switch (signalType) {
-                case ON_COMPLETE -> LOG.info("Sequence completed successfully");
-                case ON_ERROR -> LOG.info("Sequence completed with an error");
-            }
-        };
+    private void initializeInteraction(ChatInputInteractionEvent event) {
+        this.initialEvent = event;
+        this.user = initialEvent.getInteraction().getUser();
+        this.privateChannelMono = user.getPrivateChannel();
+        this.eventBuilder = initializeEventBuilder(initialEvent);
+    }
+
+    private Event.Builder initializeEventBuilder(ChatInputInteractionEvent initialEvent) {
+        Snowflake guildId = promptService.fetchGuildId(initialEvent);
+        Guild guild = guildService.getGuildById(guildId.asString());
+
+        return Event.builder()
+                .withAuthor(user.getUsername())
+                .withGuild(guild);
+    }
+
+    private void sequenceChecker(SignalType signalType) {
+        switch (signalType) {
+            case ON_COMPLETE -> LOG.info("Sequence completed successfully");
+            case ON_ERROR -> LOG.info("Sequence completed with an error");
+        }
     }
 
     private Mono<?> handleConfirmationResponse(ButtonInteractionEvent event) {
@@ -234,7 +237,7 @@ public class CreateEventInteraction {
 
     public Mono<SelectMenuInteractionEvent> promptEmbedType() {
         String promptMessage = "**Step 4**\nChoose type of the event";
-        Map<Integer,String> embedTypeMap = embedTypeService.getAllEmbedTypes()
+        Map<Integer, String> embedTypeMap = embedTypeService.getAllEmbedTypes()
                 .stream()
                 .collect(Collectors.toMap(EmbedType::getId, EmbedType::getName));
         CustomSelectMenu embedTypeCustomMenu = new CustomSelectMenu(
@@ -361,7 +364,8 @@ public class CreateEventInteraction {
                 .messageCreateSpec(prompt)
                 .withMessageCollector(messageCollector)
                 .eventPredicate(promptFilter.buttonInteractionEvent(buttonRow, user))
-                .eventProcessor(event -> { })
+                .eventProcessor(event -> {
+                })
                 .build()
                 .createMono();
     }

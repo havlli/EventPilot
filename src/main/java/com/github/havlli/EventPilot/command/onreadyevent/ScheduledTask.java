@@ -3,8 +3,6 @@ package com.github.havlli.EventPilot.command.onreadyevent;
 import com.github.havlli.EventPilot.core.DiscordService;
 import com.github.havlli.EventPilot.entity.event.Event;
 import com.github.havlli.EventPilot.entity.event.EventService;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
@@ -18,7 +16,6 @@ import java.util.List;
 @Component
 public class ScheduledTask {
 
-    private static final Logger LOG = LoggerFactory.getLogger(ScheduledTask.class);
     private final Integer intervalSeconds;
     private final EventService eventService;
     private final DiscordService discordService;
@@ -35,7 +32,6 @@ public class ScheduledTask {
 
     public Flux<Void> getSchedulersFlux() {
         Scheduler scheduler = Schedulers.newSingle("MainScheduler");
-        LOG.info("Scheduler {} registered!", scheduler);
 
         return handleExpiredEvents()
                 .delaySubscription(Duration.ofSeconds(intervalSeconds))
