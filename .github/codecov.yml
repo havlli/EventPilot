@@ -1,0 +1,7 @@
+coverage:
+  precision: 1
+  round: up
+  range: "70...100"
+parsers:
+  jacoco:
+    partials_as_hits: true
