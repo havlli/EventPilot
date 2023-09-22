@@ -33,9 +33,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.slf4j.Logger;
 import org.springframework.beans.factory.ObjectFactory;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.publisher.SignalType;
 import reactor.test.StepVerifier;
 
 import java.lang.reflect.InvocationTargetException;
@@ -304,12 +306,15 @@ class CreateEventInteractionTest {
         when(userMock.getUsername()).thenReturn("username");
         EmbedType embedTypeMock = mock(EmbedType.class);
         when(embedTypeServiceMock.getEmbedTypeById(1)).thenReturn(embedTypeMock);
+        Predicate<MessageCreateEvent> predicate = event -> false;
+        when(filterMock.isMessageAuthor(any())).thenReturn(predicate);
 
         CreateEventInteraction underTestSpy = spy(underTest);
         MessageCreateEvent messageCreateEventMock = mock(MessageCreateEvent.class);
         Mono<MessageCreateEvent> messageCreateEventMono = Mono.just(messageCreateEventMock);
         doReturn(messageCreateEventMono).when(underTestSpy).promptName();
         doReturn(messageCreateEventMono).when(underTestSpy).promptDescription();
+        doReturn(messageCreateEventMono).when(underTestSpy).promptEmbedType();
         doReturn(Mono.error(RuntimeException::new)).when(underTestSpy).promptDateTime();
 
         // Act
@@ -699,5 +704,35 @@ class CreateEventInteractionTest {
                 .expectSubscription()
                 .verifyComplete();
         verify(collectorMock, times(1)).collect(any());
+    }
+
+    @Test
+    void sequenceChecker_LogsSequenceComplete_OnSequenceCompleteSignal() {
+        // Arrange
+        CreateEventInteraction underTestSpy = spy(underTest);
+        Logger loggerMock = mock(Logger.class);
+        CreateEventInteraction.LOG = loggerMock;
+        SignalType givenSignalType = SignalType.ON_COMPLETE;
+
+        // Act
+        underTestSpy.sequenceChecker(givenSignalType);
+
+        // Assert
+        verify(loggerMock, times(1)).info("Sequence completed successfully");
+    }
+
+    @Test
+    void sequenceChecker_LogsSequenceError_OnSequenceError() {
+        // Arrange
+        CreateEventInteraction underTestSpy = spy(underTest);
+        Logger loggerMock = mock(Logger.class);
+        CreateEventInteraction.LOG = loggerMock;
+        SignalType givenSignalType = SignalType.ON_ERROR;
+
+        // Act
+        underTestSpy.sequenceChecker(givenSignalType);
+
+        // Assert
+        verify(loggerMock, times(1)).info("Sequence completed with an error");
     }
 }
