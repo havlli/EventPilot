@@ -735,4 +735,19 @@ class CreateEventInteractionTest {
         // Assert
         verify(loggerMock, times(1)).info("Sequence completed with an error");
     }
+
+    @Test
+    void sequenceChecker_DoesNothing_WhenNotSpecifiedSignalType() {
+        // Arrange
+        CreateEventInteraction underTestSpy = spy(underTest);
+        Logger loggerMock = mock(Logger.class);
+        CreateEventInteraction.LOG = loggerMock;
+        SignalType givenSignalType = SignalType.CANCEL;
+
+        // Act
+        underTestSpy.sequenceChecker(givenSignalType);
+
+        // Assert
+        verifyNoMoreInteractions(loggerMock);
+    }
 }
