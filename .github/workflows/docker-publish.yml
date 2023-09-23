@@ -57,7 +57,7 @@ jobs:
       - name: Build and Publish Docker Image
         env:
           BUILD_NUMBER: ${{ github.run_number }}
-          FINAL_VERSION: ${{ steps.version.outputs.version }}-${{ env.BUILD_NUMBER }}
+          FINAL_VERSION: ${{ steps.version.outputs.version }}-${{ github.env.BUILD_NUMBER }}
 
         run: |
           echo "VERSION: $VERSION"
