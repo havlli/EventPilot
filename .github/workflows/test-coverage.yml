@@ -1,4 +1,4 @@
-name: CI - Test Coverage & Build
+name: Test Coverage & Build
 
 on:
   push:
