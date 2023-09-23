@@ -48,11 +48,16 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_ACCESS_TOKEN }}
 
+      - name: Get version from pom.xml
+        id: version
+        run: |
+          version=$(grep -o '<application.version>[^<]</application.version>' pom.xml | sed 's/<application.version>\(.*\)<\/application.version>/\1/')
+          echo "version=$version" >> $GITHUB_OUTPUT
+
       - name: Build and Publish Docker Image
         env:
-          VERSION: $(grep -o '<application.version>[^<]</application.version>' pom.xml | sed 's/<application.version>\(.*\)<\/application.version>/\1/')
           BUILD_NUMBER: ${{ github.run_number }}
-          FINAL_VERSION: ${{ env.VERSION }}-${{ env.BUILD_NUMBER }}
+          FINAL_VERSION: ${{ steps.version.outputs.version }}-${{ env.BUILD_NUMBER }}
 
         run: |
           echo "VERSION: $VERSION"
