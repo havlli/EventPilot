@@ -1,23 +1,27 @@
-name: event-pilot
+name: eventpilot-test
 services:
+  spring-boot-app:
+    container_name: eventpilot-app
+    image: eventpilot-test
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:postgresql://database:5432/postgres
+      DISCORD_TOKEN:
+    ports:
+      - 8080:8080
+    depends_on:
+      - database
   database:
-    container_name: event-pilot-postgres
+    container_name: postgres
     image: postgres:15-alpine
     environment:
       POSTGRES_USER: havlli
       POSTGRES_PASSWORD: password
       PGDATA: /data/postgres
     volumes:
-      - postgres:/data/postgres
+      - database:/data/postgres
     ports:
-      - 5555:5432
-    networks:
-      - postgres
+      - 5554:5432
     restart: unless-stopped
 
-networks:
-  postgres:
-    driver: bridge
-
 volumes:
-  postgres:
+  database:
