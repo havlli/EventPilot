@@ -61,4 +61,4 @@ jobs:
         run: |
           echo "FINAL_VERSION: $FINAL_VERSION"
           mvn spring-boot:build-image -Dbuild.number=${{ env.FINAL_VERSION }}
-          docker ps
+          docker ps -a
