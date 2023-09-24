@@ -1,11 +1,11 @@
 name: eventpilot-test
 services:
   spring-boot-app:
-    container_name: eventpilot-app
-    image: eventpilot-test
+    container_name: eventpilot
+    image: havlli/eventpilot:latest
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://database:5432/postgres
-      DISCORD_TOKEN:
+      DISCORD_TOKEN: MTA3NTg4Nzc5MzkyODE1NTI0Nw.G3JvqC.LUCCkAIcrGfmYTZUnwiCiGnO7mfeZ_mrsC9Q4Q
     ports:
       - 8080:8080
     depends_on:

@@ -30,6 +30,7 @@ class EmbedTypeRepositoryTest extends TestDatabaseContainer {
 
     @BeforeEach
     void setUp() {
+        underTest.deleteAll();
         LOG.info("Number of beans initialized { {} }", applicationContext.getBeanDefinitionCount());
     }
 
