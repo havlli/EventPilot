@@ -1,4 +1,4 @@
-name: Build Docker Image & Publish
+name: Build & Publish Docker Image
 
 on:
   workflow_run:
@@ -56,10 +56,9 @@ jobs:
 
       - name: Build and Publish Docker Image
         env:
-          BUILD_NUMBER: ${{ github.run_number }}
-          FINAL_VERSION: ${{ steps.version.outputs.version }}-${{ github.env.BUILD_NUMBER }}
+          FINAL_VERSION: ${{ steps.version.outputs.version }}.${{ github.run_number }}
 
         run: |
-          echo "VERSION: $VERSION"
-          echo "BUILD_NUMBER: $BUILD_NUMBER"
           echo "FINAL_VERSION: $FINAL_VERSION"
+          mvn spring-boot:build-image -Dbuild.number=${{ env.FINAL_VERSION }}
+          docker ps
