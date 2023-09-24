@@ -63,4 +63,4 @@ jobs:
         run: |
           echo "FINAL_VERSION: $FINAL_VERSION"
           mvn spring-boot:build-image -DskipTests -Dspring-boot.build-image.imageName=havlli/eventpilot:$FINAL_VERSION
-          docker image ls
+          docker push havlli/eventpilot:$FINAL_VERSION
