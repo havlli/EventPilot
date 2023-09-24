@@ -63,3 +63,4 @@ jobs:
           mvn spring-boot:build-image -DskipTests -Dspring-boot.build-image.imageName=havlli/eventpilot:$FINAL_VERSION
           docker tag havlli/eventpilot:$FINAL_VERSION havlli/eventpilot:latest
           docker push havlli/eventpilot:latest
+          docker push havlli/eventpilot:$FINAL_VERSION
