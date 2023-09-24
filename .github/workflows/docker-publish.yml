@@ -1,6 +1,8 @@
 name: Build & Publish Docker Image
 
 on:
+  workflow_dispatch:
+
   workflow_run:
     types:
       - completed
