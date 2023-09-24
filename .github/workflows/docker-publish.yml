@@ -4,14 +4,13 @@ on:
   workflow_dispatch:
 
   workflow_run:
-    types:
-      - completed
-    workflows:
-      - Test Coverage & Build
+    workflows: [Test Coverage & Build]
+    types: [completed]
 
 jobs:
-  build:
+  build-image-on-test-success:
     runs-on: ubuntu-latest
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     services:
       postgres:
         image: postgres:15-alpine
