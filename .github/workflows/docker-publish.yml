@@ -3,7 +3,7 @@ name: Build & Publish OCI Image
 on:
   workflow_dispatch:
   workflow_run:
-    workflows: [Test Coverage & Build]
+    workflows: [Test Coverage]
     types: [completed]
 
 jobs:
