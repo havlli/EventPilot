@@ -1,10 +1,10 @@
-name: eventpilot-test
+name: eventpilot
 services:
   spring-boot-app:
     container_name: eventpilot
     image: havlli/eventpilot:latest
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://database:5432/postgres
+      SPRING_DATASOURCE_URL: jdbc:postgresql://database:5432/eventpilot
       DISCORD_TOKEN: your-discord-bot-token
     ports:
       - 8080:8080
@@ -14,9 +14,9 @@ services:
     container_name: postgres
     image: postgres:15-alpine
     environment:
+      POSTGRES_DB: eventpilot
       POSTGRES_USER: havlli
       POSTGRES_PASSWORD: password
-      PGDATA: /data/postgres
     volumes:
       - database:/data/postgres
     ports:

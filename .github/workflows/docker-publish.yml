@@ -1,4 +1,4 @@
-name: Build & Publish Docker Image
+name: Build & Publish OCI Image
 
 on:
   workflow_dispatch:
@@ -34,13 +34,6 @@ jobs:
           distribution: 'corretto'
           java-version: '17'
           cache: 'maven'
-
-      - name: Generate .env File
-        run: |
-          echo "DISCORD_BOT_TOKEN=${{ secrets.DISCORD_BOT_TOKEN }}" > .env
-          echo "TEST_DISCORD_BOT_TOKEN=${{ secrets.TEST_DISCORD_BOT_TOKEN }}" >> .env
-          echo "Generated .env file:"
-          cat .env
 
       - name: Login to Docker Hub
         uses: docker/login-action@v3

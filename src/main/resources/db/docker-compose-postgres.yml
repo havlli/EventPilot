@@ -1,0 +1,23 @@
+name: event-pilot
+services:
+  database:
+    container_name: eventpilot-postgres
+    image: postgres:15-alpine
+    environment:
+      POSTGRES_USER: havlli
+      POSTGRES_PASSWORD: password
+      POSTGRES_DB: eventpilot
+    volumes:
+      - postgres:/data/postgres
+    ports:
+      - 5555:5432
+    networks:
+      - postgres
+    restart: unless-stopped
+
+networks:
+  postgres:
+    driver: bridge
+
+volumes:
+  postgres:
