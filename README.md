@@ -101,26 +101,31 @@ Once you set your `DISCORD_TOKEN` variable simply run in same directory:
 ```shell
 docker compose up -d
 ```
+After docker successfully creates and runs both containers your bot should appear online in your server and fully functional.
+
+_Note: If your bot is not present in the server you have to first invite the bot. [FAQ: How to invite newly created bot to my Discord server](#how-to-invite-newly-created-bot-to-my-discord-server)_
 
 ### Setup Development Environment
-1. CD to your project folder and clone repository.
+CD to your project folder and clone repository.
 ```shell
 cd projectdirectory
 git clone https://github.com/havlli/EventPilot.git
 ```
-2. Rename `.env.example` file to `.env` and set the environmental variables, no need to export environmental variables into your system since `spring-dotenv` manages importing env variables from `.env` file.
+Rename `.env.example` file to `.env` and set the environmental variables, no need to export environmental variables into your system since `spring-dotenv` manages importing env variables from `.env` file.
 ```dotenv
 DISCORD_BOT_TOKEN=YOUR_DISCORD_BOT_TOKEN
 TEST_DISCORD_BOT_TOKEN=ANOTHER_DISCORD_BOT_TOKEN_FOR_TESTING
 ```
 _Note: You can use same token for the test token, you should be running the development environment on testing discord bot instance. In case you're running dev environment on "live" discord server you can use different token for testing Discord4J and Discord API calls._
-3. In terminal navigate to `docker-compose-postgres.yml` and compose postgresql container in detach mode.
+
+In terminal navigate to `docker-compose-postgres.yml` and compose postgresql container in detach mode.
 ```shell
 cd src/main/resources/db
 docker compose -f docker-compose-postgres.yml up -d
 ```
-If you make any changes to postgres container make sure the changes reflects in application properties `application.yml` as well.
-4. Done! You're up and ready to start coding!
+_Note: If you make any changes to postgres container make sure the changes reflects in application properties `application.yml` as well._
+
+Done! You're up and ready to start coding!
 
 ## FAQ
 ### How to acquire Discord Bot Token
