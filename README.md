@@ -3,14 +3,17 @@
 [![License](https://img.shields.io/badge/License-Apache_2.0-blue.svg)](https://opensource.org/licenses/Apache-2.0)
 [![codecov](https://codecov.io/gh/havlli/EventPilot/graph/badge.svg?token=T39ORJEZSP)](https://codecov.io/gh/havlli/EventPilot)
 [![CodeFactor](https://www.codefactor.io/repository/github/havlli/eventpilot/badge)](https://www.codefactor.io/repository/github/havlli/eventpilot)
-[![Test Coverage & Build](https://github.com/havlli/EventPilot/actions/workflows/test-coverage.yml/badge.svg)](https://github.com/havlli/EventPilot/actions/workflows/test-coverage.yml)
-[![Build & Publish Docker Image](https://github.com/havlli/EventPilot/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/havlli/EventPilot/actions/workflows/docker-publish.yml)
+[![Test Coverage](https://github.com/havlli/EventPilot/actions/workflows/test-coverage.yml/badge.svg)](https://github.com/havlli/EventPilot/actions/workflows/test-coverage.yml)
+[![Build & Publish OCI Image](https://github.com/havlli/EventPilot/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/havlli/EventPilot/actions/workflows/docker-publish.yml)
 
-EventPilot is a Discord bot written in Java using the Reactor and Discord4J library. Its primary functionality is to help users create and manage events, allowing other Discord members to sign up for these events. Whether you're organizing gaming sessions, study groups, or any other kind of event, EventPilot simplifies the process by providing a user-friendly interface within your Discord server.
+EventPilot is a Discord bot written in Java using the Spring Boot, Project Reactor and Discord4J library. Its primary functionality is to help users create and manage events, allowing other Discord members to sign up for these events. Whether you're organizing gaming sessions, study groups, or any other kind of event, EventPilot simplifies the process by providing a user-friendly interface within your Discord server.
 
 ## Table of Contents
 
 - [Features](#features)
+- [About Project](#about-project)
+    - [Technologies Used](#technologies-used)
+    - [Lessons Learned](#lessons-learned)
 - [Getting Started](#getting-started)
     - [Prerequisites](#prerequisites)
     - [Run Application Locally](#run-application-locally-in-docker)
@@ -20,14 +23,32 @@ EventPilot is a Discord bot written in Java using the Reactor and Discord4J libr
 - [Contributing](#contributing)
 - [FAQ](#faq)
 - [License](#license)
-
 ## Features
 
 - Create and manage events within your Discord server.
 - Allow members to sign up for events with a simple command.
 - Display event details, including the organizer, date, time, and available slots.
 - Automatic event reminders to keep participants informed.
-- Customizable bot prefix and settings.
+
+## About Project
+  This project began as a personal hobby, driven by my interest in reactive programming and experimentation with the Reactor library. Initially, it was intended for personal use within my Discord server among friends. However, over time, it evolved into a robust application with its own database, asynchronous operations, and a CI pipeline.
+
+### Technologies Used
+  _The project leverages the following technologies:_
+- [**Java 17**](https://www.oracle.com/java/technologies/downloads/) - The programming language used to develop the bot.
+- [**Project Reactor**](https://projectreactor.io) - Library for reactive programming in Java, utilized to handle asynchronous operations.
+- [**Discord4J**](https://discord4j.com) - Discord API wrapper for Java, enabling seamless integration with the Discord platform.
+- [**Spring Boot**](https://spring.io/projects/spring-boot) - Framework used for building Java applications, providing features such as web development, data persistence, and logging.
+- [**PostgreSQL**](https://www.postgresql.org) - An open-source relational database management system, used to store and manage event-related data.
+- [**Flyway**](https://flywaydb.org) - Database migration tool that ensures the consistency and integrity of the database schema.
+- [**JUnit 5**](https://junit.org/junit5/) - Testing framework for Java, utilized for writing unit tests.
+- [**Mockito**](https://site.mockito.org) - Mocking framework used for testing, providing flexibility in creating and verifying mock objects.
+- [**Testcontainers**](https://testcontainers.com) - A Java library that simplifies the use of Docker containers for integration testing.
+- [**Reactor Test**](https://projectreactor.io/docs/core/release/reference/index.html#testing) - Testing module for the Reactor library, facilitating the testing of reactive code.
+- [**Buildpacks**](https://buildpacks.io) - Used to build OCI-compliant images for streamlined deployment and scalability.
+### Lessons Learned
+Throughout the development, I have gained valuable knowledge and experience in several areas. This includes working with the Discord API and Discord4J library, implementing reactive programming using Project Reactor, managing a PostgreSQL database, setting up a CI/CD pipeline, conducting comprehensive testing with JUnit 5 and Mockito, leveraging Docker containers for integration testing using Testcontainers, and utilizing buildpacks for building OCI-compliant images. This project has provided me with practical hands-on experience in building a robust Discord bot and honing my skills in various Java technologies and frameworks, as well as modern deployment practices.
+
 
 ## Getting Started
 
@@ -93,7 +114,7 @@ DISCORD_BOT_TOKEN=YOUR_DISCORD_BOT_TOKEN
 TEST_DISCORD_BOT_TOKEN=ANOTHER_DISCORD_BOT_TOKEN_FOR_TESTING
 ```
 _Note: You can use same token for the test token, you should be running the development environment on testing discord bot instance. In case you're running dev environment on "live" discord server you can use different token for testing Discord4J and Discord API calls._
-3. In terminal navigate to `docker-compose-postgres.yml` and compose docker container in detach mode.
+3. In terminal navigate to `docker-compose-postgres.yml` and compose postgresql container in detach mode.
 ```shell
 cd src/main/resources/db
 docker compose -f docker-compose-postgres.yml up -d
