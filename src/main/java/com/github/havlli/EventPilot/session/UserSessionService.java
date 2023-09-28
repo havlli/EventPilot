@@ -6,10 +6,10 @@ import org.springframework.stereotype.Component;
 import java.util.Optional;
 
 @Component
-public class SessionService {
+public class UserSessionService {
     private final SessionStorage sessionRepository;
 
-    public SessionService(SessionStorage sessionRepository) {
+    public UserSessionService(SessionStorage sessionRepository) {
         this.sessionRepository = sessionRepository;
     }
 

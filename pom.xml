@@ -97,6 +97,12 @@
             <version>1.18.3</version>
             <scope>test</scope>
         </dependency>
+        <dependency>
+            <groupId>com.redis.testcontainers</groupId>
+            <artifactId>testcontainers-redis-junit</artifactId>
+            <version>1.6.4</version>
+            <scope>test</scope>
+        </dependency>
         <!--	Reactor Test	-->
         <dependency>
             <groupId>io.projectreactor</groupId>
