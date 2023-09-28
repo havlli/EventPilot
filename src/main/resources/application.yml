@@ -19,6 +19,13 @@ spring:
         dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
     show-sql: false
+  session:
+    redis:
+      repository-type: default
+  data:
+    redis:
+      host: localhost
+      port: 6379
 
 discord:
   token: ${DISCORD_BOT_TOKEN}

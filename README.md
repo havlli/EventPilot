@@ -180,8 +180,8 @@ token for testing Discord4J and Discord API calls._
    mode.
 
 ```shell
-cd src/main/resources/db
-docker compose -f docker-compose-postgres.yml up -d
+cd src/main/resources
+docker compose -f docker-compose-services.yml up -d
 ```
 
 _Note: If you make any changes to postgres container make sure the changes reflects in application
