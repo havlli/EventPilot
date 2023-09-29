@@ -1,7 +1,7 @@
 package com.github.havlli.EventPilot.command;
 
 import com.github.havlli.EventPilot.component.SelectMenuComponent;
-import com.github.havlli.EventPilot.core.SimplePermissionChecker;
+import com.github.havlli.EventPilot.core.SimplePermissionValidator;
 import discord4j.common.util.Snowflake;
 import discord4j.core.event.domain.Event;
 import discord4j.core.event.domain.interaction.ChatInputInteractionEvent;
@@ -25,10 +25,10 @@ public class ClearExpiredCommand implements SlashCommand {
     private static final String EVENT_NAME = "clear-expired";
     private Class<? extends Event> eventType = ChatInputInteractionEvent.class;
 
-    private final SimplePermissionChecker permissionChecker;
+    private final SimplePermissionValidator permissionChecker;
     private final SelectMenuComponent expiredSelectMenu;
 
-    public ClearExpiredCommand(SimplePermissionChecker permissionChecker, SelectMenuComponent expiredSelectMenu) {
+    public ClearExpiredCommand(SimplePermissionValidator permissionChecker, SelectMenuComponent expiredSelectMenu) {
         this.permissionChecker = permissionChecker;
         this.expiredSelectMenu = expiredSelectMenu;
     }

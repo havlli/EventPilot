@@ -18,6 +18,11 @@ public class MessageCreator {
         return createFollowupEphemeral(interactionEvent, message);
     }
 
+    public Mono<Message> sessionAlreadyActive(ChatInputInteractionEvent interactionEvent) {
+        String message = "You have already one active interaction, finish previous interaction to continue!";
+        return createFollowupEphemeral(interactionEvent, message);
+    }
+
     private Mono<Message> createFollowupEphemeral(ChatInputInteractionEvent interactionEvent, String message) {
         return interactionEvent.createFollowup(message)
                 .withEphemeral(true);

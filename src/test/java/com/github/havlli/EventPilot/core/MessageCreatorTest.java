@@ -59,4 +59,19 @@ class MessageCreatorTest {
                 .createFollowup("You are not valid member of this guild!");
         verify(followupCreateMono, times(1)).withEphemeral(true);
     }
+
+    @Test
+    public void sessionAlreadyActive() {
+        // Arrange
+        InteractionFollowupCreateMono followupCreateMono = mock(InteractionFollowupCreateMono.class);
+        when(interactionEvent.createFollowup(anyString())).thenReturn(followupCreateMono);
+
+        // Act
+        underTest.sessionAlreadyActive(interactionEvent);
+
+        // Assert
+        verify(interactionEvent, times(1))
+                .createFollowup("You have already one active interaction, finish previous interaction to continue!");
+        verify(followupCreateMono, times(1)).withEphemeral(true);
+    }
 }

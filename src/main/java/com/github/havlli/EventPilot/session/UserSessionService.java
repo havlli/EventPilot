@@ -1,32 +1,32 @@
 package com.github.havlli.EventPilot.session;
 
 import jakarta.annotation.PostConstruct;
-import org.springframework.stereotype.Component;
+import org.springframework.stereotype.Service;
 
 import java.util.Optional;
 
-@Component
+@Service
 public class UserSessionService {
-    private final SessionStorage sessionRepository;
+    private final SessionStorage sessionStorage;
 
-    public UserSessionService(SessionStorage sessionRepository) {
-        this.sessionRepository = sessionRepository;
+    public UserSessionService(SessionStorage sessionStorage) {
+        this.sessionStorage = sessionStorage;
     }
 
     @PostConstruct
-    public void clearDatabaseOnInitialization() {
-        sessionRepository.clear();
+    protected void clearDatabaseOnInitialization() {
+        sessionStorage.clear();
     }
 
     public Optional<UserSession> createUserSession(String userId, String username) {
-        if (sessionRepository.exists(userId)) {
+        if (sessionStorage.exists(userId)) {
             return Optional.empty();
         }
-        sessionRepository.save(userId, username);
+        sessionStorage.save(userId, username);
         return Optional.of(new UserSession(userId, username));
     }
 
-    public void terminateUserSession(UserSession userSession) {
-        sessionRepository.remove(userSession.userId());
+    public void terminateUserSession(String userId) {
+        sessionStorage.remove(userId);
     }
 }

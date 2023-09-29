@@ -1,6 +1,6 @@
 package com.github.havlli.EventPilot.command;
 
-import com.github.havlli.EventPilot.core.SimplePermissionChecker;
+import com.github.havlli.EventPilot.core.SimplePermissionValidator;
 import discord4j.common.util.Snowflake;
 import discord4j.core.GatewayDiscordClient;
 import discord4j.core.event.domain.Event;
@@ -33,7 +33,7 @@ class DeleteEventCommandTest {
     private AutoCloseable autoCloseable;
     private DeleteEventCommand underTest;
     @Mock
-    private SimplePermissionChecker permissionChecker;
+    private SimplePermissionValidator permissionChecker;
     @Mock
     private ChatInputInteractionEvent interactionEvent;
     @Mock

@@ -9,6 +9,7 @@ import com.github.havlli.EventPilot.entity.guild.GuildService;
 import com.github.havlli.EventPilot.exception.InvalidDateTimeException;
 import com.github.havlli.EventPilot.generator.EmbedGenerator;
 import com.github.havlli.EventPilot.prompt.*;
+import com.github.havlli.EventPilot.session.UserSessionValidator;
 import discord4j.common.util.Snowflake;
 import discord4j.core.GatewayDiscordClient;
 import discord4j.core.event.EventDispatcher;
@@ -75,6 +76,8 @@ class CreateEventInteractionTest {
     @Mock
     private TimeService timeServiceMock;
     @Mock
+    private UserSessionValidator sessionValidatorMock;
+    @Mock
     private ObjectFactory<CreateEventInteraction> provider;
 
     @BeforeEach
@@ -91,6 +94,7 @@ class CreateEventInteractionTest {
                 guildServiceMock,
                 embedTypeServiceMock,
                 timeServiceMock,
+                sessionValidatorMock,
                 provider
         );
     }
@@ -710,6 +714,9 @@ class CreateEventInteractionTest {
     void sequenceChecker_LogsSequenceComplete_OnSequenceCompleteSignal() {
         // Arrange
         CreateEventInteraction underTestSpy = spy(underTest);
+        User userMock = mock(User.class);
+        underTestSpy.setUser(userMock);
+        when(userMock.getId()).thenReturn(Snowflake.of(1234));
         Logger loggerMock = mock(Logger.class);
         CreateEventInteraction.LOG = loggerMock;
         SignalType givenSignalType = SignalType.ON_COMPLETE;
@@ -719,12 +726,16 @@ class CreateEventInteractionTest {
 
         // Assert
         verify(loggerMock, times(1)).info("Sequence completed successfully");
+        verify(sessionValidatorMock, times(1)).terminate(userMock.getId().asString());
     }
 
     @Test
     void sequenceChecker_LogsSequenceError_OnSequenceError() {
         // Arrange
         CreateEventInteraction underTestSpy = spy(underTest);
+        User userMock = mock(User.class);
+        underTestSpy.setUser(userMock);
+        when(userMock.getId()).thenReturn(Snowflake.of(1234));
         Logger loggerMock = mock(Logger.class);
         CreateEventInteraction.LOG = loggerMock;
         SignalType givenSignalType = SignalType.ON_ERROR;
@@ -734,12 +745,16 @@ class CreateEventInteractionTest {
 
         // Assert
         verify(loggerMock, times(1)).info("Sequence completed with an error");
+        verify(sessionValidatorMock, times(1)).terminate(userMock.getId().asString());
     }
 
     @Test
     void sequenceChecker_DoesNothing_WhenNotSpecifiedSignalType() {
         // Arrange
         CreateEventInteraction underTestSpy = spy(underTest);
+        User userMock = mock(User.class);
+        underTestSpy.setUser(userMock);
+        when(userMock.getId()).thenReturn(Snowflake.of(1234));
         Logger loggerMock = mock(Logger.class);
         CreateEventInteraction.LOG = loggerMock;
         SignalType givenSignalType = SignalType.CANCEL;
@@ -749,5 +764,6 @@ class CreateEventInteractionTest {
 
         // Assert
         verifyNoMoreInteractions(loggerMock);
+        verify(sessionValidatorMock, times(1)).terminate(userMock.getId().asString());
     }
 }
