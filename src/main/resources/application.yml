@@ -20,6 +20,11 @@ spring:
         format_sql: true
     show-sql: false
 
+cache:
+  redis:
+    host: localhost
+    port: 6379
+
 discord:
   token: ${DISCORD_BOT_TOKEN}
   commands:

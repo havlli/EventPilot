@@ -18,7 +18,7 @@ public class PerformanceTest {
             5, "Support"
     ));
 
-    public static void main(String[] args) throws JsonProcessingException {
+    public void testDeserialization() throws JsonProcessingException {
         // Sample HashMap<Integer, String>
         HashMap<Integer, String> hashMap = new HashMap<>();
         hashMap.put(1, "Group 1");
@@ -117,26 +117,28 @@ public class PerformanceTest {
         ObjectMapper objectMapper = new ObjectMapper();
         return objectMapper.readValue(json, HashMap.class);
     }
+
+    class Entity {
+        private int key;
+        private String value;
+
+        public Entity(int key, String value) {
+            this.key = key;
+            this.value = value;
+        }
+
+        public int getKey() {
+            return key;
+        }
+
+        @Override
+        public String toString() {
+            return "Entity{" +
+                    "key=" + key +
+                    ", value='" + value + '\'' +
+                    '}';
+        }
+    }
 }
 
-class Entity {
-    private int key;
-    private String value;
 
-    public Entity(int key, String value) {
-        this.key = key;
-        this.value = value;
-    }
-
-    public int getKey() {
-        return key;
-    }
-
-    @Override
-    public String toString() {
-        return "Entity{" +
-                "key=" + key +
-                ", value='" + value + '\'' +
-                '}';
-    }
-}

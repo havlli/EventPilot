@@ -1,7 +1,8 @@
 package com.github.havlli.EventPilot.command.createevent;
 
 import com.github.havlli.EventPilot.command.SlashCommand;
-import com.github.havlli.EventPilot.core.SimplePermissionChecker;
+import com.github.havlli.EventPilot.core.SimplePermissionValidator;
+import com.github.havlli.EventPilot.session.UserSessionValidator;
 import discord4j.core.event.domain.Event;
 import discord4j.core.event.domain.interaction.ChatInputInteractionEvent;
 import discord4j.core.object.entity.Message;
@@ -17,12 +18,14 @@ public class CreateEventCommand implements SlashCommand {
 
     private static final String EVENT_NAME = "create-event";
     private final CreateEventInteraction createEventInteraction;
-    private final SimplePermissionChecker permissionChecker;
+    private final SimplePermissionValidator permissionChecker;
+    private final UserSessionValidator userSessionValidator;
     private Class<? extends Event> eventType = ChatInputInteractionEvent.class;
 
-    public CreateEventCommand(CreateEventInteraction createEventInteraction, SimplePermissionChecker permissionChecker) {
+    public CreateEventCommand(CreateEventInteraction createEventInteraction, SimplePermissionValidator permissionChecker, UserSessionValidator userSessionValidator) {
         this.createEventInteraction = createEventInteraction;
         this.permissionChecker = permissionChecker;
+        this.userSessionValidator = userSessionValidator;
     }
 
     @Override
@@ -60,7 +63,11 @@ public class CreateEventCommand implements SlashCommand {
     private Mono<Message> validatePermissions(ChatInputInteractionEvent event) {
         Permission requiredPermission = Permission.MANAGE_CHANNELS;
 
-        return permissionChecker.followupWith(event, requiredPermission, createFollowupMessage(event));
+        return permissionChecker.followupWith(event, requiredPermission, validateSession(event));
+    }
+
+    private Mono<Message> validateSession(ChatInputInteractionEvent event) {
+        return userSessionValidator.validate(createFollowupMessage(event), event);
     }
 
     private Mono<Message> createFollowupMessage(ChatInputInteractionEvent event) {

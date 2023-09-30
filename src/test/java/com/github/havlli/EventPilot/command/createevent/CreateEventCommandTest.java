@@ -1,6 +1,7 @@
 package com.github.havlli.EventPilot.command.createevent;
 
-import com.github.havlli.EventPilot.core.SimplePermissionChecker;
+import com.github.havlli.EventPilot.core.SimplePermissionValidator;
+import com.github.havlli.EventPilot.session.UserSessionValidator;
 import discord4j.core.event.domain.Event;
 import discord4j.core.event.domain.interaction.ChatInputInteractionEvent;
 import discord4j.core.event.domain.interaction.InteractionCreateEvent;
@@ -24,12 +25,14 @@ class CreateEventCommandTest {
     @Mock
     private CreateEventInteraction eventInteraction;
     @Mock
-    private SimplePermissionChecker simplePermissionChecker;
+    private SimplePermissionValidator simplePermissionValidator;
+    @Mock
+    private UserSessionValidator userSessionValidator;
 
     @BeforeEach
     public void setUp() {
         autoCloseable = MockitoAnnotations.openMocks(this);
-        underTest = new CreateEventCommand(eventInteraction, simplePermissionChecker);
+        underTest = new CreateEventCommand(eventInteraction, simplePermissionValidator, userSessionValidator);
     }
 
     @AfterEach

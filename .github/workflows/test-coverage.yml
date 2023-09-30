@@ -1,6 +1,7 @@
 name: Test Coverage
 
 on:
+  workflow_dispatch:
   push:
     branches:
       - main
@@ -24,6 +25,11 @@ jobs:
           --health-interval 10s
           --health-timeout 5s
           --health-retries 5
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: --restart always
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4.1.0

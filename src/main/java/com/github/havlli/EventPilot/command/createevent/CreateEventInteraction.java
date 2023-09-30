@@ -16,6 +16,7 @@ import com.github.havlli.EventPilot.entity.guild.GuildService;
 import com.github.havlli.EventPilot.exception.InvalidDateTimeException;
 import com.github.havlli.EventPilot.generator.EmbedGenerator;
 import com.github.havlli.EventPilot.prompt.*;
+import com.github.havlli.EventPilot.session.UserSessionValidator;
 import discord4j.common.util.Snowflake;
 import discord4j.core.GatewayDiscordClient;
 import discord4j.core.event.domain.interaction.ButtonInteractionEvent;
@@ -59,6 +60,7 @@ public class CreateEventInteraction {
     private final GuildService guildService;
     private final EmbedTypeService embedTypeService;
     private final TimeService timeService;
+    private final UserSessionValidator sessionValidator;
     private final ObjectFactory<CreateEventInteraction> provider;
     private ChatInputInteractionEvent initialEvent;
     private User user;
@@ -76,7 +78,7 @@ public class CreateEventInteraction {
             GuildService guildService,
             EmbedTypeService embedTypeService,
             TimeService timeService,
-            ObjectFactory<CreateEventInteraction> provider) {
+            UserSessionValidator sessionValidator, ObjectFactory<CreateEventInteraction> provider) {
         this.client = client;
         this.messageCollector = messageCollector;
         this.promptFormatter = promptFormatter;
@@ -87,6 +89,7 @@ public class CreateEventInteraction {
         this.guildService = guildService;
         this.embedTypeService = embedTypeService;
         this.timeService = timeService;
+        this.sessionValidator = sessionValidator;
         this.provider = provider;
     }
 
@@ -202,6 +205,7 @@ public class CreateEventInteraction {
     }
 
     protected void sequenceChecker(SignalType signalType) {
+        sessionValidator.terminate(user.getId().asString());
         switch (signalType) {
             case ON_COMPLETE -> LOG.info("Sequence completed successfully");
             case ON_ERROR -> LOG.info("Sequence completed with an error");
@@ -430,15 +434,19 @@ public class CreateEventInteraction {
         eventService.saveEvent(event);
     }
 
-    public void setPrivateChannel(Mono<PrivateChannel> privateChannel) {
+    protected void setPrivateChannel(Mono<PrivateChannel> privateChannel) {
         this.privateChannelMono = privateChannel;
     }
 
-    public void setInitialEvent(ChatInputInteractionEvent initialEvent) {
+    protected void setInitialEvent(ChatInputInteractionEvent initialEvent) {
         this.initialEvent = initialEvent;
     }
 
-    public void setEventBuilder(Event.Builder builder) {
+    protected void setEventBuilder(Event.Builder builder) {
         this.eventBuilder = builder;
+    }
+
+    protected void setUser(User user) {
+        this.user = user;
     }
 }

@@ -1,7 +1,7 @@
 package com.github.havlli.EventPilot.command;
 
 import com.github.havlli.EventPilot.component.SelectMenuComponent;
-import com.github.havlli.EventPilot.core.SimplePermissionChecker;
+import com.github.havlli.EventPilot.core.SimplePermissionValidator;
 import discord4j.common.util.Snowflake;
 import discord4j.core.event.domain.Event;
 import discord4j.core.event.domain.interaction.ChatInputInteractionEvent;
@@ -43,7 +43,7 @@ class ClearExpiredCommandTest {
     private ClearExpiredCommand underTest;
 
     @Mock
-    private SimplePermissionChecker permissionCheckerMock;
+    private SimplePermissionValidator permissionCheckerMock;
     @Mock
     private SelectMenuComponent selectMenuComponentMock;
     @Mock

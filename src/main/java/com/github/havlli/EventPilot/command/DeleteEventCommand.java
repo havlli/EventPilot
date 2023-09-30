@@ -1,6 +1,6 @@
 package com.github.havlli.EventPilot.command;
 
-import com.github.havlli.EventPilot.core.SimplePermissionChecker;
+import com.github.havlli.EventPilot.core.SimplePermissionValidator;
 import discord4j.common.util.Snowflake;
 import discord4j.core.event.domain.Event;
 import discord4j.core.event.domain.interaction.ChatInputInteractionEvent;
@@ -21,9 +21,9 @@ public class DeleteEventCommand implements SlashCommand {
     private static final String EVENT_NAME = "delete-event";
     private static final String OPTION_MESSAGE_ID = "message-id";
     private Class<? extends Event> eventType = ChatInputInteractionEvent.class;
-    private final SimplePermissionChecker permissionChecker;
+    private final SimplePermissionValidator permissionChecker;
 
-    public DeleteEventCommand(SimplePermissionChecker permissionChecker) {
+    public DeleteEventCommand(SimplePermissionValidator permissionChecker) {
         this.permissionChecker = permissionChecker;
     }
 

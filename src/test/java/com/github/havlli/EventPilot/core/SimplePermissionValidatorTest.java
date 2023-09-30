@@ -19,7 +19,7 @@ import java.util.Optional;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
-class SimplePermissionCheckerTest {
+class SimplePermissionValidatorTest {
 
     private AutoCloseable autoCloseable;
     @Mock
@@ -32,12 +32,12 @@ class SimplePermissionCheckerTest {
     private MessageCreator messageCreator;
     @Mock
     private Message messageMock;
-    private SimplePermissionChecker underTest;
+    private SimplePermissionValidator underTest;
 
     @BeforeEach
     public void setUp() {
         autoCloseable = MockitoAnnotations.openMocks(this);
-        underTest = new SimplePermissionChecker(messageCreator);
+        underTest = new SimplePermissionValidator(messageCreator);
     }
 
     @AfterEach

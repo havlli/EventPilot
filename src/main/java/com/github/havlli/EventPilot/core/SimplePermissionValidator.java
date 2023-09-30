@@ -12,11 +12,11 @@ import java.util.Optional;
 import java.util.function.Function;
 
 @Component
-public class SimplePermissionChecker {
+public class SimplePermissionValidator {
 
     private final MessageCreator messageCreator;
 
-    public SimplePermissionChecker(MessageCreator messageCreator) {
+    public SimplePermissionValidator(MessageCreator messageCreator) {
         this.messageCreator = messageCreator;
     }
 
