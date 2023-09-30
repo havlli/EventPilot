@@ -1,17 +1,19 @@
 name: eventpilot
 services:
-  spring-boot-app:
-    container_name: eventpilot
-    image: havlli/eventpilot:latest
+  eventpilot:
+    container_name: eventpilot-app
+    image: eventpilot:latest
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://database:5432/eventpilot
+      CACHE_REDIS_HOST: cache
       DISCORD_TOKEN: your-discord-bot-token
     ports:
       - 8080:8080
     depends_on:
       - database
+      - cache
   database:
-    container_name: postgres
+    container_name: eventpilot-postgres
     image: postgres:15-alpine
     environment:
       POSTGRES_DB: eventpilot
@@ -21,6 +23,13 @@ services:
       - database:/data/postgres
     ports:
       - 5554:5432
+    restart: unless-stopped
+  cache:
+    container_name: eventpilot-redis
+    image: redis:7-alpine
+    hostname: cache
+    ports:
+      - 6378:6379
     restart: unless-stopped
 
 volumes:
