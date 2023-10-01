@@ -40,7 +40,7 @@ your Discord server.
 This project began as a personal hobby, driven by my interest in reactive programming and
 experimentation with the Project Reactor library. Initially, it was intended for personal use
 within my Discord server among friends. However, over time, it evolved into a robust application
-with its own database, asynchronous operations, and a CI pipeline.
+with its own database, asynchronous operations, CI pipeline and much more.
 
 ### Technologies Used
 
@@ -58,6 +58,10 @@ _The project leverages the following technologies:_
   system, used to store and manage event-related data.
 - [**Flyway**](https://flywaydb.org) - Database migration tool that ensures the consistency and
   integrity of the database schema.
+- [**Spring Data Redis**](https://spring.io/projects/spring-data-redis) - Library for integrating
+  Redis with Spring Boot applications, used for handling custom user sessions.
+- [**Redis**](https://redis.io) - In-memory data store used as a database and cache for efficient
+  data storage and retrieval.
 - [**JUnit 5**](https://junit.org/junit5/) - Testing framework for Java, utilized for writing unit
   tests.
 - [**Mockito**](https://site.mockito.org) - Mocking framework used for testing, providing
@@ -72,13 +76,13 @@ _The project leverages the following technologies:_
 ### Lessons Learned
 
 Throughout the development, I have gained valuable knowledge and experience in several areas. This
-includes working with the Discord API and Discord4J library, implementing reactive programming
-using Project Reactor, managing a PostgreSQL database, setting up a CI/CD pipeline, conducting
-comprehensive testing with JUnit 5 and Mockito, leveraging Docker containers for integration
-testing using Testcontainers, and utilizing buildpacks for building OCI-compliant images. This
-project has provided me with practical hands-on experience in building a robust Discord bot and
-honing my skills in various Java technologies and frameworks, as well as modern deployment
-practices.
+includes working with the Discord API and Discord4J library, implementing reactive programming using
+Project Reactor, managing a PostgreSQL database, setting up a CI/CD pipeline, conducting
+comprehensive testing with JUnit 5 and Mockito, leveraging Docker containers for integration testing
+using Testcontainers, utilizing buildpacks for building OCI-compliant images, as well as integrating
+Spring Data Redis and Redis for handling custom user sessions. This project has provided me with
+practical hands-on experience in building a robust Discord bot and honing my skills in various Java
+technologies and frameworks, as well as modern deployment practices.
 
 ## Getting Started
 
@@ -108,18 +112,20 @@ from this repository.
 ```yaml
 name: eventpilot
 services:
-  spring-boot-app:
-    container_name: eventpilot
-    image: havlli/eventpilot:latest
+  eventpilot:
+    container_name: eventpilot-app
+    image: eventpilot:latest
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://database:5432/eventpilot
+      CACHE_REDIS_HOST: cache
       DISCORD_TOKEN: your-discord-bot-token
     ports:
       - 8080:8080
     depends_on:
       - database
+      - cache
   database:
-    container_name: postgres
+    container_name: eventpilot-postgres
     image: postgres:15-alpine
     environment:
       POSTGRES_DB: eventpilot
@@ -129,6 +135,13 @@ services:
       - database:/data/postgres
     ports:
       - 5554:5432
+    restart: unless-stopped
+  cache:
+    container_name: eventpilot-redis
+    image: redis:7-alpine
+    hostname: cache
+    ports:
+      - 6378:6379
     restart: unless-stopped
 
 volumes:
@@ -168,7 +181,7 @@ git clone https://github.com/havlli/EventPilot.git
 
 ```dotenv
 DISCORD_BOT_TOKEN=YOUR_DISCORD_BOT_TOKEN
-TEST_DISCORD_BOT_TOKEN=ANOTHER_DISCORD_BOT_TOKEN_FOR_TESTING
+TEST_DISCORD_BOT_TOKEN=DISCORD_BOT_TOKEN_FOR_TESTING
 ```
 
 _Note: You can use same token for the test token, you should be running the development environment
@@ -176,7 +189,7 @@ on testing discord bot instance. In case you're running dev environment on "live
 can use different
 token for testing Discord4J and Discord API calls._
 
-3. In terminal navigate to `docker-compose-postgres.yml` and compose postgresql container in detach
+3. In terminal navigate to `docker-compose-services.yml` and compose postgresql container in detach
    mode.
 
 ```shell
