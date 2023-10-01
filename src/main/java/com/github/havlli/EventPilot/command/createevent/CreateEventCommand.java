@@ -63,7 +63,7 @@ public class CreateEventCommand implements SlashCommand {
     private Mono<Message> validatePermissions(ChatInputInteractionEvent event) {
         Permission requiredPermission = Permission.MANAGE_CHANNELS;
 
-        return permissionChecker.followupWith(event, requiredPermission, validateSession(event));
+        return permissionChecker.followupWith(validateSession(event), event, requiredPermission);
     }
 
     private Mono<Message> validateSession(ChatInputInteractionEvent event) {

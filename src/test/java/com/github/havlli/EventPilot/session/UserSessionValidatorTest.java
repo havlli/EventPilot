@@ -83,12 +83,17 @@ class UserSessionValidatorTest {
     @Test
     void terminate() {
         // Arrange
-        String userId = "1234";
+        ChatInputInteractionEvent eventMock = mock(ChatInputInteractionEvent.class);
+        Interaction interactionMock = mock(Interaction.class);
+        when(eventMock.getInteraction()).thenReturn(interactionMock);
+        User userMock = mock(User.class);
+        when(interactionMock.getUser()).thenReturn(userMock);
+        when(userMock.getId()).thenReturn(Snowflake.of(1234));
 
         // Act
-        underTest.terminate(userId);
+        underTest.terminate(eventMock);
 
         // Assert
-        verify(userSessionServiceMock, only()).terminateUserSession(userId);
+        verify(userSessionServiceMock, only()).terminateUserSession("1234");
     }
 }

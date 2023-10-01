@@ -714,6 +714,8 @@ class CreateEventInteractionTest {
     void sequenceChecker_LogsSequenceComplete_OnSequenceCompleteSignal() {
         // Arrange
         CreateEventInteraction underTestSpy = spy(underTest);
+        ChatInputInteractionEvent eventMock = mock(ChatInputInteractionEvent.class);
+        underTestSpy.setInitialEvent(eventMock);
         User userMock = mock(User.class);
         underTestSpy.setUser(userMock);
         when(userMock.getId()).thenReturn(Snowflake.of(1234));
@@ -726,13 +728,15 @@ class CreateEventInteractionTest {
 
         // Assert
         verify(loggerMock, times(1)).info("Sequence completed successfully");
-        verify(sessionValidatorMock, times(1)).terminate(userMock.getId().asString());
+        verify(sessionValidatorMock, times(1)).terminate(eventMock);
     }
 
     @Test
     void sequenceChecker_LogsSequenceError_OnSequenceError() {
         // Arrange
         CreateEventInteraction underTestSpy = spy(underTest);
+        ChatInputInteractionEvent eventMock = mock(ChatInputInteractionEvent.class);
+        underTestSpy.setInitialEvent(eventMock);
         User userMock = mock(User.class);
         underTestSpy.setUser(userMock);
         when(userMock.getId()).thenReturn(Snowflake.of(1234));
@@ -745,13 +749,15 @@ class CreateEventInteractionTest {
 
         // Assert
         verify(loggerMock, times(1)).info("Sequence completed with an error");
-        verify(sessionValidatorMock, times(1)).terminate(userMock.getId().asString());
+        verify(sessionValidatorMock, times(1)).terminate(eventMock);
     }
 
     @Test
     void sequenceChecker_DoesNothing_WhenNotSpecifiedSignalType() {
         // Arrange
         CreateEventInteraction underTestSpy = spy(underTest);
+        ChatInputInteractionEvent eventMock = mock(ChatInputInteractionEvent.class);
+        underTestSpy.setInitialEvent(eventMock);
         User userMock = mock(User.class);
         underTestSpy.setUser(userMock);
         when(userMock.getId()).thenReturn(Snowflake.of(1234));
@@ -764,6 +770,6 @@ class CreateEventInteractionTest {
 
         // Assert
         verifyNoMoreInteractions(loggerMock);
-        verify(sessionValidatorMock, times(1)).terminate(userMock.getId().asString());
+        verify(sessionValidatorMock, times(1)).terminate(eventMock);
     }
 }

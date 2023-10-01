@@ -2,6 +2,7 @@ package com.github.havlli.EventPilot.command;
 
 import com.github.havlli.EventPilot.component.SelectMenuComponent;
 import com.github.havlli.EventPilot.core.SimplePermissionValidator;
+import com.github.havlli.EventPilot.session.UserSessionValidator;
 import discord4j.common.util.Snowflake;
 import discord4j.core.event.domain.Event;
 import discord4j.core.event.domain.interaction.ChatInputInteractionEvent;
@@ -27,10 +28,16 @@ public class ClearExpiredCommand implements SlashCommand {
 
     private final SimplePermissionValidator permissionChecker;
     private final SelectMenuComponent expiredSelectMenu;
+    private final UserSessionValidator userSessionValidator;
 
-    public ClearExpiredCommand(SimplePermissionValidator permissionChecker, SelectMenuComponent expiredSelectMenu) {
+    public ClearExpiredCommand(
+            SimplePermissionValidator permissionChecker,
+            SelectMenuComponent expiredSelectMenu,
+            UserSessionValidator userSessionValidator
+    ) {
         this.permissionChecker = permissionChecker;
         this.expiredSelectMenu = expiredSelectMenu;
+        this.userSessionValidator = userSessionValidator;
     }
 
     @Override
@@ -57,7 +64,8 @@ public class ClearExpiredCommand implements SlashCommand {
         }
 
         return deferInteractionWithEphemeralResponse(interactionEvent)
-                .then(validatePermissions(interactionEvent));
+                .then(validatePermissions(interactionEvent))
+                .doFinally(__ -> deleteSession(interactionEvent));
     }
 
     private boolean isValidEvent(ChatInputInteractionEvent event) {
@@ -73,8 +81,16 @@ public class ClearExpiredCommand implements SlashCommand {
                 .withEphemeral(true);
     }
 
-    private Mono<Message> validatePermissions(ChatInputInteractionEvent interactionEvent) {
-        return permissionChecker.followupWith(interactionEvent, Permission.MANAGE_CHANNELS, followupResponse(interactionEvent));
+    private Mono<Message> validatePermissions(ChatInputInteractionEvent event) {
+        return permissionChecker.followupWith(validateSessions(event), event, Permission.MANAGE_CHANNELS);
+    }
+
+    private void deleteSession(ChatInputInteractionEvent event) {
+        userSessionValidator.terminate(event);
+    }
+
+    private Mono<Message> validateSessions(ChatInputInteractionEvent event) {
+        return userSessionValidator.validate(followupResponse(event), event);
     }
 
     private Mono<Message> followupResponse(ChatInputInteractionEvent event) {

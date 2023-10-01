@@ -205,7 +205,7 @@ public class CreateEventInteraction {
     }
 
     protected void sequenceChecker(SignalType signalType) {
-        sessionValidator.terminate(user.getId().asString());
+        sessionValidator.terminate(initialEvent);
         switch (signalType) {
             case ON_COMPLETE -> LOG.info("Sequence completed successfully");
             case ON_ERROR -> LOG.info("Sequence completed with an error");

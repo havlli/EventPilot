@@ -2,6 +2,7 @@ package com.github.havlli.EventPilot.command;
 
 import com.github.havlli.EventPilot.component.SelectMenuComponent;
 import com.github.havlli.EventPilot.core.SimplePermissionValidator;
+import com.github.havlli.EventPilot.session.UserSessionValidator;
 import discord4j.common.util.Snowflake;
 import discord4j.core.event.domain.Event;
 import discord4j.core.event.domain.interaction.ChatInputInteractionEvent;
@@ -52,11 +53,13 @@ class ClearExpiredCommandTest {
     private Interaction interaction;
     @Mock
     private MessageChannel messageChannel;
+    @Mock
+    private UserSessionValidator sessionValidatorMock;
 
     @BeforeEach
     void setUp() {
         autoCloseable = MockitoAnnotations.openMocks(this);
-        underTest = new ClearExpiredCommand(permissionCheckerMock, selectMenuComponentMock);
+        underTest = new ClearExpiredCommand(permissionCheckerMock, selectMenuComponentMock, sessionValidatorMock);
     }
 
     @AfterEach
@@ -78,29 +81,32 @@ class ClearExpiredCommandTest {
     }
 
     @Test
-    void handle_ReturnsEventMono_WhenCommandNamesAreEquals() {
+    void handle_ReturnsEventMonoAndDeletesSession_WhenCommandNamesAreEquals() {
         // Arrange
         when(interactionEvent.getCommandName()).thenReturn("clear-expired");
         InteractionCallbackSpecDeferReplyMono deferReplyMono = mock(InteractionCallbackSpecDeferReplyMono.class);
         when(interactionEvent.deferReply()).thenReturn(deferReplyMono);
         when(deferReplyMono.withEphemeral(true)).thenReturn(deferReplyMono);
-        when(permissionCheckerMock.followupWith(
-                eq(interactionEvent),
-                eq(Permission.MANAGE_CHANNELS),
-                any()
-        )).thenReturn(Mono.empty());
+        Message messageMock = mock(Message.class);
+        when(deferReplyMono.then(any())).thenReturn(Mono.just(messageMock));
+
+        when(sessionValidatorMock.validate(any(), eq(interactionEvent))).thenReturn(Mono.just(messageMock));
 
         when(interactionEvent.getInteraction()).thenReturn(interaction);
         when(interaction.getChannel()).thenReturn(Mono.just(messageChannel));
-        Message messageMock = mock(Message.class);
         when(messageChannel.getMessagesAfter(Snowflake.of(0))).thenReturn(Flux.just(messageMock));
 
         // Act
-        underTest.handle(interactionEvent);
+        Mono<Message> actual = underTest.handle(interactionEvent)
+                .cast(Message.class);
 
         // Assert
+        StepVerifier.create(actual)
+                .expectNext(messageMock)
+                .verifyComplete();
+        verify(sessionValidatorMock, times(1)).terminate(eq(interactionEvent));
         verify(permissionCheckerMock, times(1))
-                .followupWith(eq(interactionEvent), eq(Permission.MANAGE_CHANNELS), any());
+                .followupWith(any(), eq(interactionEvent), eq(Permission.MANAGE_CHANNELS));
     }
 
     @Test

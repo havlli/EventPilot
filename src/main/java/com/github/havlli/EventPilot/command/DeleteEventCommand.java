@@ -1,6 +1,7 @@
 package com.github.havlli.EventPilot.command;
 
 import com.github.havlli.EventPilot.core.SimplePermissionValidator;
+import com.github.havlli.EventPilot.session.UserSessionValidator;
 import discord4j.common.util.Snowflake;
 import discord4j.core.event.domain.Event;
 import discord4j.core.event.domain.interaction.ChatInputInteractionEvent;
@@ -22,9 +23,11 @@ public class DeleteEventCommand implements SlashCommand {
     private static final String OPTION_MESSAGE_ID = "message-id";
     private Class<? extends Event> eventType = ChatInputInteractionEvent.class;
     private final SimplePermissionValidator permissionChecker;
+    private final UserSessionValidator userSessionValidator;
 
-    public DeleteEventCommand(SimplePermissionValidator permissionChecker) {
+    public DeleteEventCommand(SimplePermissionValidator permissionChecker, UserSessionValidator userSessionValidator) {
         this.permissionChecker = permissionChecker;
+        this.userSessionValidator = userSessionValidator;
     }
 
     @Override
@@ -50,11 +53,16 @@ public class DeleteEventCommand implements SlashCommand {
         }
 
         return deferInteractionWithEphemeralResponse(interactionEvent)
-                .then(validatePermissions(interactionEvent));
+                .then(validatePermissions(interactionEvent))
+                .doFinally(__ -> deleteSession(interactionEvent));
     }
 
-    private Mono<Message> validatePermissions(ChatInputInteractionEvent event) {
-        return permissionChecker.followupWith(event, Permission.MANAGE_CHANNELS, deleteEventInteraction(event));
+    private boolean isValidEvent(ChatInputInteractionEvent interactionEvent) {
+        return interactionEvent.getCommandName().equals(EVENT_NAME);
+    }
+
+    private Mono<Object> terminateInteraction() {
+        return Mono.empty();
     }
 
     private InteractionCallbackSpecDeferReplyMono deferInteractionWithEphemeralResponse(ChatInputInteractionEvent interactionEvent) {
@@ -62,12 +70,16 @@ public class DeleteEventCommand implements SlashCommand {
                 .withEphemeral(true);
     }
 
-    private Mono<Object> terminateInteraction() {
-        return Mono.empty();
+    private Mono<Message> validatePermissions(ChatInputInteractionEvent event) {
+        return permissionChecker.followupWith(validateSession(event), event, Permission.MANAGE_CHANNELS);
     }
 
-    private boolean isValidEvent(ChatInputInteractionEvent interactionEvent) {
-        return interactionEvent.getCommandName().equals(EVENT_NAME);
+    private void deleteSession(ChatInputInteractionEvent event) {
+        userSessionValidator.terminate(event);
+    }
+
+    private Mono<Message> validateSession(ChatInputInteractionEvent event) {
+        return userSessionValidator.validate(deleteEventInteraction(event), event);
     }
 
     public Mono<Message> deleteEventInteraction(ChatInputInteractionEvent event) {

@@ -1,6 +1,7 @@
 package com.github.havlli.EventPilot.command;
 
 import com.github.havlli.EventPilot.core.SimplePermissionValidator;
+import com.github.havlli.EventPilot.session.UserSessionValidator;
 import discord4j.common.util.Snowflake;
 import discord4j.core.GatewayDiscordClient;
 import discord4j.core.event.domain.Event;
@@ -40,11 +41,13 @@ class DeleteEventCommandTest {
     private Interaction interaction;
     @Mock
     private MessageChannel messageChannel;
+    @Mock
+    private UserSessionValidator sessionValidatorMock;
 
     @BeforeEach
     void setUp() {
         autoCloseable = MockitoAnnotations.openMocks(this);
-        underTest = new DeleteEventCommand(permissionChecker);
+        underTest = new DeleteEventCommand(permissionChecker, sessionValidatorMock);
     }
 
     @AfterEach
@@ -67,26 +70,31 @@ class DeleteEventCommandTest {
     }
 
     @Test
-    void handle_ReturnsEventMono_WhenCommandNamesAreEqual() {
+    void handle_ReturnsEventMonoAndCallsValidators_WhenCommandNamesAreEqual() {
         // Arrange
         when(interactionEvent.getCommandName()).thenReturn("delete-event");
         InteractionCallbackSpecDeferReplyMono deferReplyMono = mock(InteractionCallbackSpecDeferReplyMono.class);
         when(interactionEvent.deferReply()).thenReturn(deferReplyMono);
         when(deferReplyMono.withEphemeral(true)).thenReturn(deferReplyMono);
-        when(permissionChecker.followupWith(
-                eq(interactionEvent),
-                eq(Permission.MANAGE_CHANNELS),
-                any()
-        )).thenReturn(Mono.empty());
+        Message messageMock = mock(Message.class);
+        when(deferReplyMono.then(any())).thenReturn(Mono.just(messageMock));
+        when(sessionValidatorMock.validate(any(), eq(interactionEvent))).thenReturn(Mono.just(messageMock));
+
         when(interactionEvent.getInteraction()).thenReturn(interaction);
         when(interaction.getChannel()).thenReturn(Mono.just(messageChannel));
 
         // Act
-        underTest.handle(interactionEvent);
+        Mono<Message> actual = underTest.handle(interactionEvent)
+                .cast(Message.class);
 
         // Assert
+        StepVerifier.create(actual)
+                .expectNext(messageMock)
+                .verifyComplete();
+        verify(sessionValidatorMock, times(1)).validate(any(), eq(interactionEvent));
+        verify(sessionValidatorMock, times(1)).terminate(eq(interactionEvent));
         verify(permissionChecker, times(1))
-                .followupWith(eq(interactionEvent), eq(Permission.MANAGE_CHANNELS), any());
+                .followupWith(any(), eq(interactionEvent), eq(Permission.MANAGE_CHANNELS));
     }
 
     @Test

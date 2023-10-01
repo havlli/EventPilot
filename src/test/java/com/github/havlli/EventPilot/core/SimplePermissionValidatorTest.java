@@ -57,9 +57,8 @@ class SimplePermissionValidatorTest {
 
         // Act
         Mono<Message> actual = underTest.followupWith(
-                interactionEvent,
-                Permission.MANAGE_CHANNELS,
-                Mono.empty()
+                Mono.empty(), interactionEvent,
+                Permission.MANAGE_CHANNELS
         );
 
         // Assert
@@ -85,9 +84,8 @@ class SimplePermissionValidatorTest {
 
         // Act
         Mono<Message> actualMono = underTest.followupWith(
-                interactionEvent,
-                currentPermission,
-                expectedMono
+                expectedMono, interactionEvent,
+                currentPermission
         );
 
         // Assert
@@ -113,9 +111,8 @@ class SimplePermissionValidatorTest {
 
         // Act
         Mono<Message> actualMono = underTest.followupWith(
-                interactionEvent,
-                Permission.MANAGE_CHANNELS,
-                Mono.empty()
+                Mono.empty(), interactionEvent,
+                Permission.MANAGE_CHANNELS
         );
 
         // Assert

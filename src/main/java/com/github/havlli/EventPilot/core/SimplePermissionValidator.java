@@ -20,15 +20,15 @@ public class SimplePermissionValidator {
         this.messageCreator = messageCreator;
     }
 
-    public Mono<Message> followupWith(ChatInputInteractionEvent interactionEvent, Permission permission, Mono<Message> followupMono) {
-        Optional<Member> optionalMember = interactionEvent.getInteraction().getMember();
+    public Mono<Message> followupWith(Mono<Message> followupMessage, ChatInputInteractionEvent event, Permission permission) {
+        Optional<Member> optionalMember = event.getInteraction().getMember();
         if (optionalMember.isEmpty()) {
-            return sendNotValidMemberMessage(interactionEvent);
+            return sendNotValidMemberMessage(event);
         }
 
         return optionalMember.orElseThrow()
                 .getBasePermissions()
-                .flatMap(validatePermissions(interactionEvent, permission, followupMono));
+                .flatMap(validatePermissions(event, permission, followupMessage));
     }
 
     private Function<PermissionSet, Mono<? extends Message>> validatePermissions(ChatInputInteractionEvent interactionEvent, Permission permission, Mono<Message> followupMono) {

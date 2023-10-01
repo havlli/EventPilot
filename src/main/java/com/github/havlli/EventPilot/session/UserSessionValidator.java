@@ -29,7 +29,8 @@ public class UserSessionValidator {
         return followupMessage;
     }
 
-    public void terminate(String userId) {
+    public void terminate(ChatInputInteractionEvent event) {
+        String userId = extractUserId(event);
         userSessionService.terminateUserSession(userId);
     }
 
