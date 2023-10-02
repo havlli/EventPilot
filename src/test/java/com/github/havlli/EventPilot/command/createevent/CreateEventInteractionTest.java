@@ -1,5 +1,6 @@
 package com.github.havlli.EventPilot.command.createevent;
 
+import com.github.havlli.EventPilot.core.GuildEventCreator;
 import com.github.havlli.EventPilot.entity.embedtype.EmbedType;
 import com.github.havlli.EventPilot.entity.embedtype.EmbedTypeService;
 import com.github.havlli.EventPilot.entity.event.Event;
@@ -78,6 +79,8 @@ class CreateEventInteractionTest {
     @Mock
     private UserSessionValidator sessionValidatorMock;
     @Mock
+    private GuildEventCreator guildEventCreatorMock;
+    @Mock
     private ObjectFactory<CreateEventInteraction> provider;
 
     @BeforeEach
@@ -95,6 +98,7 @@ class CreateEventInteractionTest {
                 embedTypeServiceMock,
                 timeServiceMock,
                 sessionValidatorMock,
+                guildEventCreatorMock,
                 provider
         );
     }
@@ -607,6 +611,7 @@ class CreateEventInteractionTest {
         doNothing().when(eventServiceMock).saveEvent(eventMock);
 
         when(messageMock.edit(any(MessageEditSpec.class))).thenReturn(Mono.empty());
+        when(guildEventCreatorMock.createScheduledEvent(any())).thenReturn(Mono.empty());
 
         // Act
         Mono<Message> actual = underTest.finalizeProcess();

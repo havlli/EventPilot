@@ -1,5 +1,7 @@
 package com.github.havlli.EventPilot.prompt;
 
+import com.github.havlli.EventPilot.entity.event.Event;
+import com.github.havlli.EventPilot.entity.guild.Guild;
 import discord4j.common.util.Snowflake;
 import discord4j.core.event.domain.interaction.SelectMenuInteractionEvent;
 import org.junit.jupiter.api.AfterEach;
@@ -7,12 +9,12 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockitoAnnotations;
 
+import java.time.Instant;
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
+import static org.mockito.Mockito.*;
 
 class PromptFormatterTest {
 
@@ -103,5 +105,27 @@ class PromptFormatterTest {
         // Assert
         assertThatThrownBy(() -> underTest.channelUrl(null, null))
                 .isInstanceOf(NullPointerException.class);
+    }
+
+    @Test
+    void messageUrl_ReturnsMessageUrl_WithCorrectData() {
+        // Arrange
+        Guild guild = new Guild("1234", "test-guild");
+        Event event = Event.builder()
+                .withGuild(guild)
+                .withName("test-event")
+                .withDescription("Test")
+                .withDestinationChannel("1111")
+                .withDateTime(Instant.now())
+                .withAuthor("test")
+                .withEventId("2222")
+                .build();
+        String expected = "https://discord.com/channels/1234/1111/2222";
+
+        // Act
+        String actual = underTest.messageUrl(event);
+
+        // Assert
+        assertThat(actual).isEqualTo(expected);
     }
 }

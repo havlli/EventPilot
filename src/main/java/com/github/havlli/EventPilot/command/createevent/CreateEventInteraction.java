@@ -7,6 +7,7 @@ import com.github.havlli.EventPilot.component.selectmenu.ChannelSelectMenu;
 import com.github.havlli.EventPilot.component.selectmenu.CustomSelectMenu;
 import com.github.havlli.EventPilot.component.selectmenu.MemberSizeSelectMenu;
 import com.github.havlli.EventPilot.component.selectmenu.RaidSelectMenu;
+import com.github.havlli.EventPilot.core.GuildEventCreator;
 import com.github.havlli.EventPilot.entity.embedtype.EmbedType;
 import com.github.havlli.EventPilot.entity.embedtype.EmbedTypeService;
 import com.github.havlli.EventPilot.entity.event.Event;
@@ -61,6 +62,7 @@ public class CreateEventInteraction {
     private final EmbedTypeService embedTypeService;
     private final TimeService timeService;
     private final UserSessionValidator sessionValidator;
+    private final GuildEventCreator guildEventCreator;
     private final ObjectFactory<CreateEventInteraction> provider;
     private ChatInputInteractionEvent initialEvent;
     private User user;
@@ -78,7 +80,9 @@ public class CreateEventInteraction {
             GuildService guildService,
             EmbedTypeService embedTypeService,
             TimeService timeService,
-            UserSessionValidator sessionValidator, ObjectFactory<CreateEventInteraction> provider) {
+            UserSessionValidator sessionValidator,
+            GuildEventCreator guildEventCreator, ObjectFactory<CreateEventInteraction> provider
+    ) {
         this.client = client;
         this.messageCollector = messageCollector;
         this.promptFormatter = promptFormatter;
@@ -90,6 +94,7 @@ public class CreateEventInteraction {
         this.embedTypeService = embedTypeService;
         this.timeService = timeService;
         this.sessionValidator = sessionValidator;
+        this.guildEventCreator = guildEventCreator;
         this.provider = provider;
     }
 
@@ -402,6 +407,7 @@ public class CreateEventInteraction {
             Mono<Message> finalMessage = getFinalMessage("Event created in " + messageUrl);
             MessageEditSpec finalEmbed = getFinalEmbed(event);
             return message.edit(finalEmbed)
+                    .then(guildEventCreator.createScheduledEvent(event))
                     .then(finalMessage);
         };
     }
