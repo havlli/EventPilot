@@ -54,7 +54,7 @@ public class DiscordService {
 
     private Function<ClientException, Mono<? extends Message>> handleMessageNotFound(Snowflake messageId, Snowflake channelId) {
         return e -> {
-            LOG.error("Message {} was not found in channel {}", messageId.asString(), channelId.asString(), e);
+            LOG.error("Message {} was not found in channel {}", messageId.asString(), channelId.asString());
             return completeSignal();
         };
     }
@@ -71,10 +71,10 @@ public class DiscordService {
     }
 
     private Mono<Message> deactivateEventMessage(Message message) {
-        return message.edit(getMessageWithDeactivatedComponents());
+        return message.edit(editMessageWithDeactivatedComponent());
     }
 
-    private MessageEditSpec getMessageWithDeactivatedComponents() {
+    private MessageEditSpec editMessageWithDeactivatedComponent() {
         ActionRow expiredComponentRow = EXPIRED_COMPONENT.getActionRow();
         return MessageEditSpec.builder()
                 .addComponent(expiredComponentRow)
