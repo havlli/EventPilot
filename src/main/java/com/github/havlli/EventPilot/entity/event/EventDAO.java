@@ -6,6 +6,7 @@ public interface EventDAO {
     void saveEvent(Event event);
     List<Event> getEvents();
     void deleteEvent(Event event);
+    void deleteById(String id);
     void deleteAllEvents(List<Event> events);
     List<Event> getExpiredEvents();
 }

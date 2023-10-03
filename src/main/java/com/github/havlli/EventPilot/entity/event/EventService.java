@@ -29,6 +29,10 @@ public class EventService {
         eventDAO.deleteAllEvents(events);
     }
 
+    public void deleteEventById(String id) {
+        eventDAO.deleteById(id);
+    }
+
     public List<Event> getExpiredEvents() {
         return eventDAO.getExpiredEvents();
     }

@@ -84,4 +84,16 @@ class EventServiceTest {
         // Assert
         verify(eventDAO, times(1)).getExpiredEvents();
     }
+
+    @Test
+    void deleteEventById() {
+        // Arrange
+        var eventId = "1";
+
+        // Act
+        underTest.deleteEventById(eventId);
+
+        // Assert
+        verify(eventDAO, times(1)).deleteById(eventId);
+    }
 }

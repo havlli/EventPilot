@@ -1,6 +1,7 @@
 package com.github.havlli.EventPilot.core;
 
 import com.github.havlli.EventPilot.entity.event.Event;
+import com.github.havlli.EventPilot.entity.event.EventService;
 import discord4j.common.util.Snowflake;
 import discord4j.core.GatewayDiscordClient;
 import discord4j.core.object.component.LayoutComponent;
@@ -30,11 +31,13 @@ class DiscordServiceTest {
     private DiscordService underTest;
     @Mock
     private GatewayDiscordClient clientMock;
+    @Mock
+    private EventService eventServiceMock;
 
     @BeforeEach
     void setUp() {
         autoCloseable = MockitoAnnotations.openMocks(this);
-        underTest = new DiscordService(clientMock);
+        underTest = new DiscordService(clientMock, eventServiceMock);
     }
 
     @AfterEach
@@ -70,6 +73,7 @@ class DiscordServiceTest {
         StepVerifier.create(actual)
                 .expectSubscription()
                 .verifyComplete();
+        verifyNoInteractions(eventServiceMock);
     }
 
     @Test
@@ -94,6 +98,7 @@ class DiscordServiceTest {
 
         when(clientMock.getMessageById(Snowflake.of(eventOneChannel), Snowflake.of(eventOneId)))
                 .thenReturn(Mono.just(messageOneMock));
+        when(messageOneMock.getId()).thenReturn(Snowflake.of(1234L));
 
         // Act
         Flux<Message> actual = underTest.deactivateEvents(List.of(eventOneMock));
@@ -103,6 +108,7 @@ class DiscordServiceTest {
                 .expectSubscription()
                 .expectNext(messageOneMock)
                 .verifyComplete();
+        verify(eventServiceMock, times(1)).deleteEventById(anyString());
     }
 
     @Test
@@ -138,6 +144,8 @@ class DiscordServiceTest {
                 .thenReturn(Mono.just(messageOneMock));
         when(clientMock.getMessageById(Snowflake.of(eventTwoChannel), Snowflake.of(eventTwoId)))
                 .thenReturn(Mono.just(messageTwoMock));
+        when(messageOneMock.getId()).thenReturn(Snowflake.of(1234L));
+        when(messageTwoMock.getId()).thenReturn(Snowflake.of(2345L));
 
         // Act
         Flux<Message> actual = underTest.deactivateEvents(List.of(eventOneMock, eventTwoMock));
@@ -147,6 +155,7 @@ class DiscordServiceTest {
                 .expectSubscription()
                 .expectNext(messageOneMock, messageTwoMock)
                 .verifyComplete();
+        verify(eventServiceMock, times(2)).deleteEventById(anyString());
     }
 
     @Test
@@ -189,6 +198,8 @@ class DiscordServiceTest {
                 .thenReturn(Mono.just(messageOneMock));
         when(clientMock.getMessageById(Snowflake.of(eventTwoChannel), Snowflake.of(eventTwoId)))
                 .thenReturn(Mono.just(messageTwoMock));
+        when(messageOneMock.getId()).thenReturn(Snowflake.of(1234L));
+        when(messageTwoMock.getId()).thenReturn(Snowflake.of(2345L));
 
         // Act
         Flux<Message> actual = underTest.deactivateEvents(List.of(eventOneMock, eventTwoMock));
@@ -198,6 +209,7 @@ class DiscordServiceTest {
                 .expectSubscription()
                 .expectNext(messageOneMock)
                 .verifyComplete();
+        verify(eventServiceMock, times(1)).deleteEventById(anyString());
     }
 
     @Test
@@ -222,14 +234,16 @@ class DiscordServiceTest {
 
         when(clientMock.getMessageById(Snowflake.of(eventOneChannel), Snowflake.of(eventOneId)))
                 .thenReturn(Mono.just(messageOneMock));
+        when(messageOneMock.getId()).thenReturn(Snowflake.of(1234L));
 
         // Act
-        DiscordService discordService = spy(new DiscordService(clientMock));
+        DiscordService discordService = spy(new DiscordService(clientMock, eventServiceMock));
         Flux<Message> actual = discordService.deactivateEvents(List.of(eventOneMock));
 
         // Assert
         StepVerifier.create(actual)
                 .expectSubscription()
                 .verifyComplete();
+        verifyNoInteractions(eventServiceMock);
     }
 }

@@ -802,6 +802,109 @@ class EventRepositoryTest extends TestDatabaseContainer {
                 .isEqualTo(expectedEvents);
     }
 
+    @Test
+    public void deleteById_DeletesNothing_WhenEventsNotExists() {
+        Guild guild = new Guild("1", "guild");
+        saveGuildToDatabase(guild);
+
+        List<Event> events = new ArrayList<>();
+        EmbedType embedType = new EmbedType(
+                1,
+                "test",
+                "{\"-1\":\"Absence\",\"-2\":\"Late\",\"1\":\"Tank\",\"-3\":\"Tentative\",\"2\":\"Melee\",\"3\":\"Ranged\",\"4\":\"Healer\",\"5\":\"Support\"}",
+                events
+        );
+        saveEmbedTypeToDatabase(embedType);
+
+        Event existingEvent1 = new Event(
+                "123",
+                "existing",
+                "description",
+                "12345",
+                Instant.now(),
+                "123456",
+                null,
+                "15",
+                new ArrayList<>(),
+                guild,
+                embedType);
+        underTest.save(existingEvent1);
+
+        Event existingEvent2 = new Event(
+                "456",
+                "not-existing-1",
+                "description",
+                "12345",
+                Instant.now(),
+                "123456",
+                null,
+                "15",
+                new ArrayList<>(),
+                guild,
+                embedType);
+        underTest.save(existingEvent2);
+        long countBeforeExecuting = underTest.findAll().size();
+
+        // Act
+        underTest.deleteById("223");
+
+        // Assert
+        long countAfterExecuting = underTest.findAll().size();
+        assertThat(countAfterExecuting).isEqualTo(countBeforeExecuting);
+    }
+
+    @Test
+    public void deleteById_DeletesEvent_WhenEventExists() {
+        Guild guild = new Guild("1", "guild");
+        saveGuildToDatabase(guild);
+
+        List<Event> events = new ArrayList<>();
+        EmbedType embedType = new EmbedType(
+                1,
+                "test",
+                "{\"-1\":\"Absence\",\"-2\":\"Late\",\"1\":\"Tank\",\"-3\":\"Tentative\",\"2\":\"Melee\",\"3\":\"Ranged\",\"4\":\"Healer\",\"5\":\"Support\"}",
+                events
+        );
+        saveEmbedTypeToDatabase(embedType);
+
+        Event existingEvent1 = new Event(
+                "123",
+                "existing",
+                "description",
+                "12345",
+                Instant.now(),
+                "123456",
+                null,
+                "15",
+                new ArrayList<>(),
+                guild,
+                embedType);
+        underTest.save(existingEvent1);
+
+        Event existingEvent2 = new Event(
+                "456",
+                "not-existing-1",
+                "description",
+                "12345",
+                Instant.now(),
+                "123456",
+                null,
+                "15",
+                new ArrayList<>(),
+                guild,
+                embedType);
+        underTest.save(existingEvent2);
+        long countBeforeExecuting = underTest.findAll().size();
+        long expectedCount = countBeforeExecuting - 1;
+
+        // Act
+        underTest.deleteById("123");
+
+        // Assert
+        long actualCount = underTest.findAll().size();
+        assertThat(actualCount).isEqualTo(expectedCount);
+    }
+
     // Helper methods
     public void saveGuildToDatabase(Guild guild) {
         guildRepository.save(guild);

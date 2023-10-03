@@ -84,4 +84,16 @@ class EventJPADataAccessServiceTest {
         // Assert
         verify(eventRepository, times(1)).findAllWithDatetimeBeforeCurrentTime();
     }
+
+    @Test
+    void deleteById() {
+        // Arrange
+        String eventId = "1234";
+
+        // Act
+        underTest.deleteById(eventId);
+
+        // Assert
+        verify(eventRepository, times(1)).deleteById(eventId);
+    }
 }

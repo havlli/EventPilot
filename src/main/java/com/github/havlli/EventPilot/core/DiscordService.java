@@ -3,6 +3,7 @@ package com.github.havlli.EventPilot.core;
 import com.github.havlli.EventPilot.component.SelectMenuComponent;
 import com.github.havlli.EventPilot.component.selectmenu.ExpiredSelectMenu;
 import com.github.havlli.EventPilot.entity.event.Event;
+import com.github.havlli.EventPilot.entity.event.EventService;
 import discord4j.common.util.Snowflake;
 import discord4j.core.GatewayDiscordClient;
 import discord4j.core.object.component.ActionRow;
@@ -24,9 +25,11 @@ public class DiscordService {
     private static final Logger LOG = LoggerFactory.getLogger(DiscordService.class);
     private static final SelectMenuComponent EXPIRED_COMPONENT = new ExpiredSelectMenu();
     private final GatewayDiscordClient client;
+    private final EventService eventService;
 
-    public DiscordService(GatewayDiscordClient client) {
+    public DiscordService(GatewayDiscordClient client, EventService eventService) {
         this.client = client;
+        this.eventService = eventService;
     }
 
     public Flux<Message> deactivateEvents(List<Event> events) {
@@ -71,7 +74,12 @@ public class DiscordService {
     }
 
     private Mono<Message> deactivateEventMessage(Message message) {
-        return message.edit(editMessageWithDeactivatedComponent());
+        return message.edit(editMessageWithDeactivatedComponent())
+                .doOnSuccess(this::deleteEventFromDatabase);
+    }
+
+    private void deleteEventFromDatabase(Message message) {
+        eventService.deleteEventById(message.getId().asString());
     }
 
     private MessageEditSpec editMessageWithDeactivatedComponent() {

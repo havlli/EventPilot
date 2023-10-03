@@ -29,6 +29,11 @@ public class EventJPADataAccessService implements EventDAO {
     }
 
     @Override
+    public void deleteById(String id) {
+        eventRepository.deleteById(id);
+    }
+
+    @Override
     public void deleteAllEvents(List<Event> events) {
         eventRepository.deleteAll(events);
     }
