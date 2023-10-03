@@ -202,6 +202,25 @@ properties `application.yml` as well._
 
 4. Done! You're up and ready to start coding!
 
+## Contributing
+
+Thank you for considering contributing to this project! Contributions from everyone are welcome.
+
+**To contribute to this project, please follow these steps:**
+
+1. Fork the repository and create a new branch for your contribution.
+2. Make the necessary changes or improvements in your branch.
+3. Test your changes thoroughly to ensure they do not introduce any regressions.
+4. Commit your changes and push them to your forked repository.
+5. Submit a pull request (PR) to the main repository. Please provide a clear and descriptive title for
+your PR, along with a detailed description of the changes you have made.
+6. Your PR will be reviewed by the project maintainers. They may provide feedback or request further
+changes.
+7. Once your changes have been reviewed and approved, they will be merged into the main repository.
+
+## Usage
+TBA
+
 ## FAQ
 
 ### How to acquire Discord Bot Token
@@ -232,6 +251,13 @@ have an account with the necessary permissions on the Discord server where you w
    bot and authorize it.
 7. Complete any additional verification steps if prompted.
 8. The bot will now be added to your Discord server.
+
+## License
+This project is licensed under the **Apache License 2.0**.
+
+The Apache License 2.0 is an open source license that allows you to use, modify, and distribute this software, both for commercial and non-commercial purposes. It provides patent and trademark protection, and requires that you include the original license notice in any derivative works.
+
+For more details, please refer to the full text of the [Apache License 2.0](https://github.com/havlli/EventPilot/blob/main/LICENSE.txt).
 
 <!-- Repository -->
 
