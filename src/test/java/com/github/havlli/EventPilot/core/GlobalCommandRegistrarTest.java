@@ -67,7 +67,7 @@ class GlobalCommandRegistrarTest {
                 .bulkOverwriteGlobalApplicationCommand(eq(123L), anyList());
 
         List<ApplicationCommandRequest> capturedCommands = commandsCaptor.getValue();
-        assertThat(capturedCommands.size()).isEqualTo(5);
+        assertThat(capturedCommands.size()).isEqualTo(6);
     }
 
     @Test
