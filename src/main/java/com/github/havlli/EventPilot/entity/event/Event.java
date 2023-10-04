@@ -20,7 +20,6 @@ public class Event {
     private String name;
     @Column(name = "description", nullable = false)
     private String description;
-
     @Column(name = "author", nullable = false)
     private String author;
     @Column(name = "date_time", nullable = false)

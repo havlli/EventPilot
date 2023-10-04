@@ -6,7 +6,6 @@ import com.github.havlli.EventPilot.component.SelectMenuComponent;
 import com.github.havlli.EventPilot.component.selectmenu.ChannelSelectMenu;
 import com.github.havlli.EventPilot.component.selectmenu.CustomSelectMenu;
 import com.github.havlli.EventPilot.component.selectmenu.MemberSizeSelectMenu;
-import com.github.havlli.EventPilot.component.selectmenu.RaidSelectMenu;
 import com.github.havlli.EventPilot.core.GuildEventCreator;
 import com.github.havlli.EventPilot.entity.embedtype.EmbedType;
 import com.github.havlli.EventPilot.entity.embedtype.EmbedTypeService;
@@ -113,7 +112,6 @@ public class CreateEventInteraction {
                 .flatMap(__ -> promptDescription())
                 .flatMap(__ -> promptDateTime())
                 .flatMap(__ -> promptEmbedType())
-                .flatMap(__ -> promptRaidSelect())
                 .flatMap(__ -> promptMemberSize())
                 .flatMap(__ -> promptDestinationChannel())
                 .flatMap(__ -> promptConfirmationAndDeferReply())
@@ -163,14 +161,6 @@ public class CreateEventInteraction {
         MessageCreateSpec messageCreateSpec = createMessageSpec(promptMessage, embedTypeCustomMenu);
 
         return createSelectMenuPrompt(messageCreateSpec, embedTypeCustomMenu, processEmbedTypeInput());
-    }
-
-    protected Mono<SelectMenuInteractionEvent> promptRaidSelect() {
-        String promptMessage = "**Step 4**\nChoose which raids is this signup for:\nRequired 1 selection, maximum 3";
-        RaidSelectMenu raidSelectMenu = new RaidSelectMenu();
-        MessageCreateSpec prompt = createMessageSpec(promptMessage, raidSelectMenu);
-
-        return createSelectMenuPrompt(prompt, raidSelectMenu, processRaidSelectInput());
     }
 
     protected Mono<SelectMenuInteractionEvent> promptMemberSize() {
@@ -376,10 +366,6 @@ public class CreateEventInteraction {
             EmbedType embedType = embedTypeService.getEmbedTypeById(Integer.parseInt(result));
             eventBuilder.withEmbedType(embedType);
         };
-    }
-
-    private Consumer<SelectMenuInteractionEvent> processRaidSelectInput() {
-        return event -> eventBuilder.withInstances(event.getValues());
     }
 
     private Consumer<SelectMenuInteractionEvent> processMemberSizeInput(String defaultSize) {

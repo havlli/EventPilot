@@ -165,7 +165,6 @@ class CreateEventInteractionTest {
         SelectMenuInteractionEvent selectMenuInteractionEventMock = mock(SelectMenuInteractionEvent.class);
         Mono<SelectMenuInteractionEvent> selectMenuInteractionEventMono = Mono.just(selectMenuInteractionEventMock);
         doReturn(selectMenuInteractionEventMono).when(underTestSpy).promptEmbedType();
-        doReturn(selectMenuInteractionEventMono).when(underTestSpy).promptRaidSelect();
         doReturn(selectMenuInteractionEventMono).when(underTestSpy).promptMemberSize();
         doReturn(selectMenuInteractionEventMono).when(underTestSpy).promptDestinationChannel();
 
@@ -217,7 +216,6 @@ class CreateEventInteractionTest {
         SelectMenuInteractionEvent selectMenuInteractionEventMock = mock(SelectMenuInteractionEvent.class);
         Mono<SelectMenuInteractionEvent> selectMenuInteractionEventMono = Mono.just(selectMenuInteractionEventMock);
         doReturn(selectMenuInteractionEventMono).when(underTestSpy).promptEmbedType();
-        doReturn(selectMenuInteractionEventMono).when(underTestSpy).promptRaidSelect();
         doReturn(selectMenuInteractionEventMono).when(underTestSpy).promptMemberSize();
         doReturn(selectMenuInteractionEventMono).when(underTestSpy).promptDestinationChannel();
 
@@ -272,7 +270,6 @@ class CreateEventInteractionTest {
         SelectMenuInteractionEvent selectMenuInteractionEventMock = mock(SelectMenuInteractionEvent.class);
         Mono<SelectMenuInteractionEvent> selectMenuInteractionEventMono = Mono.just(selectMenuInteractionEventMock);
         doReturn(selectMenuInteractionEventMono).when(underTestSpy).promptEmbedType();
-        doReturn(selectMenuInteractionEventMono).when(underTestSpy).promptRaidSelect();
         doReturn(selectMenuInteractionEventMono).when(underTestSpy).promptMemberSize();
         doReturn(selectMenuInteractionEventMono).when(underTestSpy).promptDestinationChannel();
 
@@ -440,34 +437,6 @@ class CreateEventInteractionTest {
         // Act
         underTest.setPrivateChannel(messageChannelMono);
         Mono<SelectMenuInteractionEvent> actual = underTest.promptEmbedType();
-
-        // Assert
-        StepVerifier.create(actual)
-                .expectSubscription()
-                .verifyComplete();
-    }
-
-    @Test
-    void promptRaidSelect() {
-        // Arrange
-        PrivateChannel messageChannelMock = mock(PrivateChannel.class);
-        Mono<PrivateChannel> messageChannelMono = Mono.just(messageChannelMock);
-
-        Message messageMock = mock(Message.class);
-        Mono<Message> messageMono = Mono.just(messageMock);
-        when(messageChannelMock.createMessage(any(MessageCreateSpec.class))).thenReturn(messageMono);
-        doNothing().when(collectorMock).collect(messageMock);
-
-        EventDispatcher eventDispatcherMock = mock(EventDispatcher.class);
-        when(clientMock.getEventDispatcher()).thenReturn(eventDispatcherMock);
-        when(eventDispatcherMock.on(SelectMenuInteractionEvent.class)).thenReturn(Flux.empty());
-
-        Predicate<SelectMenuInteractionEvent> predicate = event -> false;
-        when(filterMock.selectInteractionEvent(any(), any())).thenReturn(predicate);
-
-        // Act
-        underTest.setPrivateChannel(messageChannelMono);
-        Mono<SelectMenuInteractionEvent> actual = underTest.promptRaidSelect();
 
         // Assert
         StepVerifier.create(actual)
@@ -654,10 +623,6 @@ class CreateEventInteractionTest {
         Consumer<SelectMenuInteractionEvent> processEmbedTypeInputConsumer = (Consumer<SelectMenuInteractionEvent>) processEmbedTypeInput.invoke(underTest);
         when(embedTypeServiceMock.getEmbedTypeById(any())).thenReturn(mock(EmbedType.class));
 
-        Method processRaidSelectInput = underTestClass.getDeclaredMethod("processRaidSelectInput");
-        processRaidSelectInput.setAccessible(true);
-        Consumer<SelectMenuInteractionEvent> processRaidSelectInputConsumer = (Consumer<SelectMenuInteractionEvent>) processRaidSelectInput.invoke(underTest);
-
         Method processMemberSizeInput = underTestClass.getDeclaredMethod("processMemberSizeInput", String.class);
         processMemberSizeInput.setAccessible(true);
         Consumer<SelectMenuInteractionEvent> processMemberSizeInputConsumer = (Consumer<SelectMenuInteractionEvent>) processMemberSizeInput.invoke(underTest, "25");
@@ -671,7 +636,6 @@ class CreateEventInteractionTest {
         processDescriptionInputConsumer.accept(messageCreateEventMock);
         processDateTimeInputConsumer.accept(messageCreateEventMock);
         processEmbedTypeInputConsumer.accept(selectMenuInteractionEventMock);
-        processRaidSelectInputConsumer.accept(selectMenuInteractionEventMock);
         processMemberSizeInputConsumer.accept(selectMenuInteractionEventMock);
         processDestinationChannelInputConsumer.accept(selectMenuInteractionEventMock);
 
@@ -680,7 +644,6 @@ class CreateEventInteractionTest {
         verify(builderMock, times(1)).withDescription("test");
         verify(builderMock, times(1)).withDateTime(any(Instant.class));
         verify(builderMock, times(1)).withEmbedType(any());
-        verify(builderMock, times(1)).withInstances(any());
         verify(builderMock, times(1)).withMemberSize(any());
         verify(builderMock, times(1)).withDestinationChannel(any());
     }
