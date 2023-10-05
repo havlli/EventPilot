@@ -38,4 +38,12 @@ public class EmbedTypeService {
     public boolean existsEmbedEventById(Long id) {
         return embedTypeDAO.existsEmbedTypeById(id);
     }
+
+    public void validateJsonOrThrow(String json, RuntimeException jsonProcessingException) {
+        try {
+            serialization.deserializeMap(json);
+        } catch (JsonProcessingException e) {
+            throw jsonProcessingException;
+        }
+    }
 }

@@ -3,6 +3,7 @@ package com.github.havlli.EventPilot.entity.embedtype;
 import com.github.havlli.EventPilot.entity.event.Event;
 import jakarta.persistence.*;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
 
@@ -70,5 +71,44 @@ public class EmbedType {
                 ", name='" + name + '\'' +
                 ", structure='" + structure + '\'' +
                 '}';
+    }
+
+    public static EmbedType.Builder builder() {
+        return new EmbedType.Builder();
+    }
+
+    public static class Builder {
+        private String name;
+        private String structure;
+        private EmbedType embedType;
+
+        private Builder() {
+        }
+
+        public Builder withName(String name) {
+            this.name = name;
+            return this;
+        }
+
+        public Builder withStructure(String structure) {
+            this.structure = structure;
+            return this;
+        }
+
+        public EmbedType build() {
+            validateRequiredFields();
+            this.embedType = new EmbedType(name, structure, new ArrayList<>());
+            return embedType;
+        }
+
+        public EmbedType getEmbedType() {
+            if (embedType == null) throw new IllegalStateException("Cannot retrieve event that was not built yet!");
+            return embedType;
+        }
+
+        private void validateRequiredFields() {
+            Objects.requireNonNull(name, "name is required");
+            Objects.requireNonNull(structure, "structure is required");
+        }
     }
 }

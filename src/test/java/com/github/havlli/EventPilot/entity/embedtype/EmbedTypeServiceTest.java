@@ -105,4 +105,32 @@ class EmbedTypeServiceTest {
         // Assert
         verify(serializationMock, only()).deserializeMap(structure);
     }
+
+    @Test
+    void validateJsonOrThrow_ValidatesAndDoesntThrow_WhenJsonBlobIsValid() throws JsonProcessingException {
+        // Arrange
+        String validJson = """
+                {"-1":"Absence","-2":"Late","1":"Tank","-3":"Tentative","2":"Melee","3":"Ranged","4":"Healer","5":"Support"}
+                """;
+
+        // Act
+        underTest.validateJsonOrThrow(validJson, new RuntimeException());
+
+        // Assert
+        verify(serializationMock, only()).deserializeMap(validJson);
+    }
+
+    @Test
+    void validateJsonOrThrow_ValidatesAndThrows_WhenJsonBlobIsInvalid() throws JsonProcessingException {
+        // Arrange
+        String json = "";
+        when(serializationMock.deserializeMap(json)).thenThrow(mock(JsonProcessingException.class));
+
+        // Act
+        assertThatThrownBy(() -> underTest.validateJsonOrThrow(json, new RuntimeException()))
+                .isInstanceOf(RuntimeException.class);
+
+        //
+        verify(serializationMock, only()).deserializeMap(json);
+    }
 }
