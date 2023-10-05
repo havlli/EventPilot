@@ -153,7 +153,7 @@ class CreateEventInteractionTest {
         when(guildServiceMock.getGuildById(guildId.asString())).thenReturn(guildMock);
         when(userMock.getUsername()).thenReturn("username");
         EmbedType embedTypeMock = mock(EmbedType.class);
-        when(embedTypeServiceMock.getEmbedTypeById(1)).thenReturn(embedTypeMock);
+        when(embedTypeServiceMock.getEmbedTypeById(1L)).thenReturn(embedTypeMock);
 
         CreateEventInteraction underTestSpy = spy(underTest);
         MessageCreateEvent messageCreateEventMock = mock(MessageCreateEvent.class);
@@ -204,7 +204,7 @@ class CreateEventInteractionTest {
         when(guildServiceMock.getGuildById(guildId.asString())).thenReturn(guildMock);
         when(userMock.getUsername()).thenReturn("username");
         EmbedType embedTypeMock = mock(EmbedType.class);
-        when(embedTypeServiceMock.getEmbedTypeById(1)).thenReturn(embedTypeMock);
+        when(embedTypeServiceMock.getEmbedTypeById(1L)).thenReturn(embedTypeMock);
 
         CreateEventInteraction underTestSpy = spy(underTest);
         MessageCreateEvent messageCreateEventMock = mock(MessageCreateEvent.class);
@@ -258,7 +258,7 @@ class CreateEventInteractionTest {
         when(guildServiceMock.getGuildById(guildId.asString())).thenReturn(guildMock);
         when(userMock.getUsername()).thenReturn("username");
         EmbedType embedTypeMock = mock(EmbedType.class);
-        when(embedTypeServiceMock.getEmbedTypeById(1)).thenReturn(embedTypeMock);
+        when(embedTypeServiceMock.getEmbedTypeById(1L)).thenReturn(embedTypeMock);
 
         CreateEventInteraction underTestSpy = spy(underTest);
         MessageCreateEvent messageCreateEventMock = mock(MessageCreateEvent.class);
@@ -310,7 +310,7 @@ class CreateEventInteractionTest {
         when(guildServiceMock.getGuildById(guildId.asString())).thenReturn(guildMock);
         when(userMock.getUsername()).thenReturn("username");
         EmbedType embedTypeMock = mock(EmbedType.class);
-        when(embedTypeServiceMock.getEmbedTypeById(1)).thenReturn(embedTypeMock);
+        when(embedTypeServiceMock.getEmbedTypeById(1L)).thenReturn(embedTypeMock);
         Predicate<MessageCreateEvent> predicate = event -> false;
         when(filterMock.isMessageAuthor(any())).thenReturn(predicate);
 

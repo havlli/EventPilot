@@ -26,7 +26,7 @@ public class EmbedTypeService {
         embedTypeDAO.saveEmbedType(embedType);
     }
 
-    public EmbedType getEmbedTypeById(Integer id) {
+    public EmbedType getEmbedTypeById(Long id) {
         return embedTypeDAO.getEmbedTypeById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("EmbedType with id {%s} was not found!".formatted(id)));
     }
@@ -35,7 +35,7 @@ public class EmbedTypeService {
         return serialization.deserializeMap(embedType.getStructure());
     }
 
-    public boolean existsEmbedEventById(Integer id) {
+    public boolean existsEmbedEventById(Long id) {
         return embedTypeDAO.existsEmbedTypeById(id);
     }
 }

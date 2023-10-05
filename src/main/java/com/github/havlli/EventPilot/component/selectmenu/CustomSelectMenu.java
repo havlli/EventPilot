@@ -11,9 +11,9 @@ import java.util.stream.Collectors;
 public class CustomSelectMenu implements SelectMenuComponent {
     private final String customId;
     private final String placeholder;
-    private final Map<Integer, String> map;
+    private final Map<Long, String> map;
 
-    public CustomSelectMenu(String customId, String placeholder, Map<Integer, String> map) {
+    public CustomSelectMenu(String customId, String placeholder, Map<Long, String> map) {
         this.customId = customId;
         this.placeholder = placeholder;
         this.map = map;

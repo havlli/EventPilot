@@ -20,7 +20,7 @@ public class EmbedTypeJPADataAccessService implements EmbedTypeDAO {
     }
 
     @Override
-    public Optional<EmbedType> getEmbedTypeById(Integer id) {
+    public Optional<EmbedType> getEmbedTypeById(Long id) {
         return embedTypeRepository.findById(id);
     }
 
@@ -30,7 +30,7 @@ public class EmbedTypeJPADataAccessService implements EmbedTypeDAO {
     }
 
     @Override
-    public boolean existsEmbedTypeById(Integer id) {
+    public boolean existsEmbedTypeById(Long id) {
         return embedTypeRepository.existsById(id);
     }
 }

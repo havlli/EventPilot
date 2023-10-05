@@ -13,9 +13,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 class CustomSelectMenuTest {
 
     private CustomSelectMenu underTest;
-    private static final Map<Integer,String> givenMap = Map.of(
-            1, "first",
-            2, "second"
+    private static final Map<Long,String> givenMap = Map.of(
+            1L, "first",
+            2L, "second"
     );
     private static final String givenCustomId = "customId";
     private static final String givenPlaceholder = "placeholder";

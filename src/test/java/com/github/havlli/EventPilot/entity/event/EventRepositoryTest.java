@@ -88,7 +88,7 @@ class EventRepositoryTest extends TestDatabaseContainer {
 
         List<Event> events = new ArrayList<>();
         EmbedType embedType = new EmbedType(
-                1,
+                1L,
                 "test",
                 "{\"-1\":\"Absence\",\"-2\":\"Late\",\"1\":\"Tank\",\"-3\":\"Tentative\",\"2\":\"Melee\",\"3\":\"Ranged\",\"4\":\"Healer\",\"5\":\"Support\"}",
                 events
@@ -173,7 +173,7 @@ class EventRepositoryTest extends TestDatabaseContainer {
 
         List<Event> events = new ArrayList<>();
         EmbedType embedType = new EmbedType(
-                1,
+                1L,
                 "test",
                 "{\"-1\":\"Absence\",\"-2\":\"Late\",\"1\":\"Tank\",\"-3\":\"Tentative\",\"2\":\"Melee\",\"3\":\"Ranged\",\"4\":\"Healer\",\"5\":\"Support\"}",
                 events
@@ -266,7 +266,7 @@ class EventRepositoryTest extends TestDatabaseContainer {
 
         List<Event> events = new ArrayList<>();
         EmbedType embedType = new EmbedType(
-                1,
+                1L,
                 "test",
                 "{\"-1\":\"Absence\",\"-2\":\"Late\",\"1\":\"Tank\",\"-3\":\"Tentative\",\"2\":\"Melee\",\"3\":\"Ranged\",\"4\":\"Healer\",\"5\":\"Support\"}",
                 events
@@ -350,7 +350,7 @@ class EventRepositoryTest extends TestDatabaseContainer {
 
         List<Event> events = new ArrayList<>();
         EmbedType embedType = new EmbedType(
-                1,
+                1L,
                 "test",
                 "{\"-1\":\"Absence\",\"-2\":\"Late\",\"1\":\"Tank\",\"-3\":\"Tentative\",\"2\":\"Melee\",\"3\":\"Ranged\",\"4\":\"Healer\",\"5\":\"Support\"}",
                 events
@@ -388,7 +388,7 @@ class EventRepositoryTest extends TestDatabaseContainer {
 
         List<Event> events = new ArrayList<>();
         EmbedType embedType = new EmbedType(
-                1,
+                1L,
                 "test",
                 "{\"-1\":\"Absence\",\"-2\":\"Late\",\"1\":\"Tank\",\"-3\":\"Tentative\",\"2\":\"Melee\",\"3\":\"Ranged\",\"4\":\"Healer\",\"5\":\"Support\"}",
                 events
@@ -452,7 +452,7 @@ class EventRepositoryTest extends TestDatabaseContainer {
 
         List<Event> events = new ArrayList<>();
         EmbedType embedType = new EmbedType(
-                1,
+                1L,
                 "test",
                 "{\"-1\":\"Absence\",\"-2\":\"Late\",\"1\":\"Tank\",\"-3\":\"Tentative\",\"2\":\"Melee\",\"3\":\"Ranged\",\"4\":\"Healer\",\"5\":\"Support\"}",
                 events
@@ -491,7 +491,7 @@ class EventRepositoryTest extends TestDatabaseContainer {
 
         List<Event> events = new ArrayList<>();
         EmbedType embedType = new EmbedType(
-                1,
+                1L,
                 "test",
                 "{\"-1\":\"Absence\",\"-2\":\"Late\",\"1\":\"Tank\",\"-3\":\"Tentative\",\"2\":\"Melee\",\"3\":\"Ranged\",\"4\":\"Healer\",\"5\":\"Support\"}",
                 events
@@ -544,7 +544,7 @@ class EventRepositoryTest extends TestDatabaseContainer {
 
         List<Event> events = new ArrayList<>();
         EmbedType embedType = new EmbedType(
-                1,
+                1L,
                 "test",
                 "{\"-1\":\"Absence\",\"-2\":\"Late\",\"1\":\"Tank\",\"-3\":\"Tentative\",\"2\":\"Melee\",\"3\":\"Ranged\",\"4\":\"Healer\",\"5\":\"Support\"}",
                 events
@@ -598,7 +598,7 @@ class EventRepositoryTest extends TestDatabaseContainer {
 
         List<Event> events = new ArrayList<>();
         EmbedType embedType = new EmbedType(
-                1,
+                1L,
                 "test",
                 "{\"-1\":\"Absence\",\"-2\":\"Late\",\"1\":\"Tank\",\"-3\":\"Tentative\",\"2\":\"Melee\",\"3\":\"Ranged\",\"4\":\"Healer\",\"5\":\"Support\"}",
                 events
@@ -665,7 +665,7 @@ class EventRepositoryTest extends TestDatabaseContainer {
 
         List<Event> events = new ArrayList<>();
         EmbedType embedType = new EmbedType(
-                1,
+                1L,
                 "test",
                 "{\"-1\":\"Absence\",\"-2\":\"Late\",\"1\":\"Tank\",\"-3\":\"Tentative\",\"2\":\"Melee\",\"3\":\"Ranged\",\"4\":\"Healer\",\"5\":\"Support\"}",
                 events
@@ -737,7 +737,7 @@ class EventRepositoryTest extends TestDatabaseContainer {
 
         List<Event> events = new ArrayList<>();
         EmbedType embedType = new EmbedType(
-                1,
+                1L,
                 "test",
                 "{\"-1\":\"Absence\",\"-2\":\"Late\",\"1\":\"Tank\",\"-3\":\"Tentative\",\"2\":\"Melee\",\"3\":\"Ranged\",\"4\":\"Healer\",\"5\":\"Support\"}",
                 events
@@ -809,7 +809,7 @@ class EventRepositoryTest extends TestDatabaseContainer {
 
         List<Event> events = new ArrayList<>();
         EmbedType embedType = new EmbedType(
-                1,
+                1L,
                 "test",
                 "{\"-1\":\"Absence\",\"-2\":\"Late\",\"1\":\"Tank\",\"-3\":\"Tentative\",\"2\":\"Melee\",\"3\":\"Ranged\",\"4\":\"Healer\",\"5\":\"Support\"}",
                 events
@@ -860,7 +860,7 @@ class EventRepositoryTest extends TestDatabaseContainer {
 
         List<Event> events = new ArrayList<>();
         EmbedType embedType = new EmbedType(
-                1,
+                1L,
                 "test",
                 "{\"-1\":\"Absence\",\"-2\":\"Late\",\"1\":\"Tank\",\"-3\":\"Tentative\",\"2\":\"Melee\",\"3\":\"Ranged\",\"4\":\"Healer\",\"5\":\"Support\"}",
                 events

@@ -5,7 +5,7 @@ import java.util.Optional;
 
 public interface EmbedTypeDAO {
     List<EmbedType> getAllEmbedTypes();
-    Optional<EmbedType> getEmbedTypeById(Integer id);
+    Optional<EmbedType> getEmbedTypeById(Long id);
     void saveEmbedType(EmbedType embedType);
-    boolean existsEmbedTypeById(Integer id);
+    boolean existsEmbedTypeById(Long id);
 }

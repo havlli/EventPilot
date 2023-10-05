@@ -57,7 +57,7 @@ class EmbedTypeServiceTest {
     @Test
     void getEmbedTypeById_ReturnsEmbedType_WhenEmbedTypePresent() {
         // Arrange
-        Integer id = 1;
+        Long id = 1L;
         EmbedType embedTypeMock = mock(EmbedType.class);
         when(embedTypeDAO.getEmbedTypeById(id)).thenReturn(Optional.of(embedTypeMock));
 
@@ -71,7 +71,7 @@ class EmbedTypeServiceTest {
     @Test
     void getEmbedTypeById_ThrowsException_WhenEmbedTypeNotPresent() {
         // Arrange
-        Integer id = 1;
+        Long id = 1L;
 
         // Assert
         assertThatThrownBy(() -> underTest.getEmbedTypeById(id))
@@ -83,7 +83,7 @@ class EmbedTypeServiceTest {
     @Test
     void existsEmbedEventById() {
         // Arrange
-        Integer id = 1;
+        Long id = 1L;
 
         // Act
         underTest.existsEmbedEventById(id);

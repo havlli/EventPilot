@@ -38,25 +38,24 @@ class EmbedTypeRepositoryTest extends TestDatabaseContainer {
     void findAll() {
         // Arrange
         EmbedType embedType = new EmbedType(
-                1,
                 "test",
                 "{\"-1\":\"Absence\",\"-2\":\"Late\",\"1\":\"Tank\",\"-3\":\"Tentative\",\"2\":\"Melee\",\"3\":\"Ranged\",\"4\":\"Healer\",\"5\":\"Support\"}",
                 new ArrayList<>()
         );
         underTest.save(embedType);
+        List<EmbedType> expected = List.of(embedType);
 
         // Act
         List<EmbedType> actual = underTest.findAll();
 
         // Assert
-        assertThat(actual).containsOnly(embedType);
+        assertThat(actual).isEqualTo(expected);
     }
 
     @Test
     void findById_ReturnsOptionalEmbedType_WhenPresent() {
         // Arrange
         EmbedType embedType = new EmbedType(
-                1,
                 "test",
                 "{\"-1\":\"Absence\",\"-2\":\"Late\",\"1\":\"Tank\",\"-3\":\"Tentative\",\"2\":\"Melee\",\"3\":\"Ranged\",\"4\":\"Healer\",\"5\":\"Support\"}",
                 new ArrayList<>()
@@ -73,7 +72,7 @@ class EmbedTypeRepositoryTest extends TestDatabaseContainer {
     @Test
     void findById_ReturnsEmptyOptional_WhenNotPresent() {
         // Act
-        Optional<EmbedType> actual = underTest.findById(1);
+        Optional<EmbedType> actual = underTest.findById(1L);
 
         // Assert
         assertThat(actual).isEmpty();
@@ -83,7 +82,6 @@ class EmbedTypeRepositoryTest extends TestDatabaseContainer {
     void save() {
         // Arrange
         EmbedType embedType = new EmbedType(
-                1,
                 "test",
                 "{\"-1\":\"Absence\",\"-2\":\"Late\",\"1\":\"Tank\",\"-3\":\"Tentative\",\"2\":\"Melee\",\"3\":\"Ranged\",\"4\":\"Healer\",\"5\":\"Support\"}",
                 new ArrayList<>()
@@ -101,7 +99,6 @@ class EmbedTypeRepositoryTest extends TestDatabaseContainer {
     void existsEmbedTypeById_ReturnsTrue_WhenEmbedTypeExists() {
         // Arrange
         EmbedType embedType = new EmbedType(
-                1,
                 "test",
                 "{\"-1\":\"Absence\",\"-2\":\"Late\",\"1\":\"Tank\",\"-3\":\"Tentative\",\"2\":\"Melee\",\"3\":\"Ranged\",\"4\":\"Healer\",\"5\":\"Support\"}",
                 new ArrayList<>()
@@ -118,7 +115,7 @@ class EmbedTypeRepositoryTest extends TestDatabaseContainer {
     @Test
     void existsEmbedTypeById_ReturnsFalse_WhenEmbedTypeNotExists() {
         // Act
-        boolean actual = underTest.existsById(1);
+        boolean actual = underTest.existsById(1L);
 
         // Assert
         assertThat(actual).isFalse();

@@ -11,7 +11,8 @@ import java.util.Objects;
 public class EmbedType {
     @Id
     @Column(name = "id")
-    private Integer id;
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    private Long id;
     @Column(name = "name")
     private String name;
     @Column(name = "structure")
@@ -19,8 +20,12 @@ public class EmbedType {
     @OneToMany(mappedBy = "embedType", cascade = CascadeType.ALL, orphanRemoval = true)
     private List<Event> events;
 
-    public EmbedType(Integer id, String name, String structure, List<Event> events) {
+    public EmbedType(Long id, String name, String structure, List<Event> events) {
+        this(name, structure, events);
         this.id = id;
+    }
+
+    public EmbedType(String name, String structure, List<Event> events) {
         this.name = name;
         this.structure = structure;
         this.events = events;
@@ -29,7 +34,7 @@ public class EmbedType {
     public EmbedType() {
     }
 
-    public Integer getId() {
+    public Long getId() {
         return id;
     }
 

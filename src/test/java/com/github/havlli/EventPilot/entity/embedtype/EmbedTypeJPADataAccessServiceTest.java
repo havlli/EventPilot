@@ -38,7 +38,7 @@ class EmbedTypeJPADataAccessServiceTest {
     @Test
     void getEmbedTypeById() {
         // Arrange
-        Integer id = 1;
+        Long id = 1L;
 
         // Act
         underTest.getEmbedTypeById(id);
@@ -62,7 +62,7 @@ class EmbedTypeJPADataAccessServiceTest {
     @Test
     void existsEmbedTypeById() {
         // Arrange
-        Integer id = 1;
+        Long id = 1L;
 
         // Act
         underTest.existsEmbedTypeById(id);

@@ -2,15 +2,10 @@ package com.github.havlli.EventPilot.entity.embedtype;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.Mock;
-import org.mockito.MockitoAnnotations;
 
 import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
-import static org.mockito.Mockito.mock;
-import static org.mockito.Mockito.when;
-import static org.mockito.Mockito.spy;
 
 class EmbedTypeTest {
 
@@ -18,7 +13,7 @@ class EmbedTypeTest {
 
     @BeforeEach
     void setUp() {
-        underTest = new EmbedType(1,"test","placeholder", List.of());
+        underTest = new EmbedType(1L,"test","placeholder", List.of());
     }
 
     @Test

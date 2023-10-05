@@ -279,7 +279,7 @@ class ParticipantRepositoryTest extends TestDatabaseContainer {
     private final Guild dummyGuild = new Guild("1", "guild");
 
     private final EmbedType dummyEmbedType = new EmbedType(
-            1,
+            1L,
             "test",
             "{\"-1\":\"Absence\",\"-2\":\"Late\",\"1\":\"Tank\",\"-3\":\"Tentative\",\"2\":\"Melee\",\"3\":\"Ranged\",\"4\":\"Healer\",\"5\":\"Support\"}",
             new ArrayList<>()

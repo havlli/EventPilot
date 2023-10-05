@@ -150,7 +150,7 @@ public class CreateEventInteraction {
 
     protected Mono<SelectMenuInteractionEvent> promptEmbedType() {
         String promptMessage = "**Step 4**\nChoose type of the event";
-        Map<Integer, String> embedTypeMap = embedTypeService.getAllEmbedTypes()
+        Map<Long, String> embedTypeMap = embedTypeService.getAllEmbedTypes()
                 .stream()
                 .collect(Collectors.toMap(EmbedType::getId, EmbedType::getName));
         CustomSelectMenu embedTypeCustomMenu = new CustomSelectMenu(
@@ -363,7 +363,7 @@ public class CreateEventInteraction {
             String result = event.getValues().stream()
                     .findFirst()
                     .orElse("0");
-            EmbedType embedType = embedTypeService.getEmbedTypeById(Integer.parseInt(result));
+            EmbedType embedType = embedTypeService.getEmbedTypeById(Long.parseLong(result));
             eventBuilder.withEmbedType(embedType);
         };
     }
