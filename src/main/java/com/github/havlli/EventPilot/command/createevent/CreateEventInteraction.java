@@ -193,7 +193,7 @@ public class CreateEventInteraction {
                     .then(sendCompleteDeferredInteractionSignal(event));
             case "repeat" -> deleteAllSentMessages()
                     .then(sendCompleteDeferredInteractionSignal(event))
-                    .then(startOver());
+                    .then(repeatInteraction());
             default -> deleteAllSentMessages()
                     .then(sendCompleteDeferredInteractionSignal(event));
         };
@@ -328,7 +328,7 @@ public class CreateEventInteraction {
         return event.getInteractionResponse().deleteInitialResponse();
     }
 
-    private Mono<Message> startOver() {
+    private Mono<Message> repeatInteraction() {
         return start(initialEvent);
     }
 

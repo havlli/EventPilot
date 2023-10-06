@@ -19,6 +19,7 @@ import java.util.List;
 import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.*;
 import static org.mockito.Mockito.*;
 
@@ -280,6 +281,49 @@ class EmbedGeneratorTest {
 
         // Assert
         assertThat(actual.fields()).hasSize(6);
+    }
+
+    @Test
+    void generateEmbedTypePreview_ReturnsValidEmbedCreateSpec() throws JsonProcessingException {
+        // Arrange
+        EmbedType embedTypeMock = mock(EmbedType.class);
+        Map<Integer, String> integerStringMap = Map.of(
+                -1, "Absence",
+                -2, "Late",
+                -3, "Tentative",
+                1, "Tank",
+                2, "Melee",
+                3, "Ranged",
+                4, "Healer",
+                5, "Support"
+        );
+        when(embedTypeServiceMock.getDeserializedMap(embedTypeMock)).thenReturn(new HashMap<>(integerStringMap));
+        when(embedFormatterMock.leaderWithId(any(), any())).thenReturn("formatted leader");
+        when(embedFormatterMock.date(any(Instant.class))).thenReturn("date");
+        when(embedFormatterMock.time(any(Instant.class))).thenReturn("time");
+        when(embedFormatterMock.raidSize(anyInt(), anyString())).thenReturn("formatted raid size");
+        when(embedFormatterMock.createConcatField(anyString(),anyList(),anyBoolean())).thenReturn("concatField");
+
+        // Act
+        EmbedCreateSpec actual = underTest.generateEmbedTypePreview(embedTypeMock);
+
+        // Assert
+        long constructedFieldsCount = actual.fields().stream()
+                .filter(field -> field.name().equals("concatField") || field.value().equals("concatField"))
+                .count();
+
+        assertThat(constructedFieldsCount).isEqualTo(integerStringMap.size());
+    }
+
+    @Test
+    void generateEmbedTypePreview_ThrowsException_WhenStructureIsInvalid() throws JsonProcessingException {
+        // Arrange
+        EmbedType embedTypeMock = mock(EmbedType.class);
+        when(embedTypeServiceMock.getDeserializedMap(embedTypeMock)).thenThrow(JsonProcessingException.class);
+
+        // Assert
+        assertThatThrownBy(() -> underTest.generateEmbedTypePreview(embedTypeMock))
+                .isInstanceOf(RuntimeException.class);
     }
 
     @Test

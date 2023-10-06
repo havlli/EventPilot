@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.github.havlli.EventPilot.entity.embedtype.EmbedType;
 import com.github.havlli.EventPilot.entity.embedtype.EmbedTypeService;
 import com.github.havlli.EventPilot.entity.event.Event;
+import com.github.havlli.EventPilot.entity.guild.Guild;
 import com.github.havlli.EventPilot.entity.participant.Participant;
 import discord4j.core.object.component.LayoutComponent;
 import discord4j.core.spec.EmbedCreateFields;
@@ -12,10 +13,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
-import java.util.ArrayList;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Map;
+import java.time.Instant;
+import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
@@ -56,6 +56,51 @@ public class EmbedGenerator {
                 .addAllFields(fields)
                 .build();
     }
+
+    public EmbedCreateSpec generateEmbedTypePreview(EmbedType embedType) {
+        Event previewEvent = Event.builder()
+                .withEmbedType(embedType)
+                .withEventId("1234567890")
+                .withName("Preview name")
+                .withDescription("Preview description")
+                .withAuthor("Author")
+                .withDateTime(Instant.now())
+                .withGuild(new Guild("1", "guild"))
+                .withDestinationChannel("1234567890")
+                .withMemberSize("25")
+                .build();
+
+        return generateEmbed(populateWithRandomParticipants(previewEvent));
+    }
+
+    private Event populateWithRandomParticipants(Event event) {
+        try {
+            HashMap<Integer, String> deserializedMap = embedTypeService.getDeserializedMap(event.getEmbedType());
+            int position = 0;
+
+            for (Map.Entry<Integer, String> entry : deserializedMap.entrySet()) {
+                for (int i = 0; i < 5; i++) {
+                    position += 1;
+                    String randomId = String.valueOf(Math.abs(ThreadLocalRandom.current().nextInt()));
+                    Participant participant = new Participant(randomId, generateRandomName(), position, entry.getKey(), null);
+                    event.getParticipants().add(participant);
+                }
+            }
+
+            return event;
+        } catch (JsonProcessingException e) {
+            throw new RuntimeException(e);
+        }
+    }
+
+    private String generateRandomName() {
+        // Generate list of random usernames of size 30
+        List<String> randomUsernames = List.of("Avax", "Bee", "Casper", "Duck", "Elephant", "Ferret", "Giraffe", "Hippo", "Iguana", "Jaguar", "Kangaroo", "Lion", "Moose", "Octopus", "Ostrich", "Panda", "Penguin", "Rabbit", "Seal", "Tiger", "Unicorn", "Wolf", "Zebra", "Aardvark", "Ant");
+        Random random = new Random();
+        int randomIndex = random.nextInt(randomUsernames.size());
+        return randomUsernames.get(randomIndex);
+    }
+
 
     public EmbedCreateSpec generateEmbed(Event event) {
         String empty = "";
