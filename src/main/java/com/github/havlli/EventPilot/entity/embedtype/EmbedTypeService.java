@@ -39,9 +39,10 @@ public class EmbedTypeService {
         return embedTypeDAO.existsEmbedTypeById(id);
     }
 
-    public void validateJsonOrThrow(String json, RuntimeException jsonProcessingException) {
+    public String validateJsonOrThrow(String json, RuntimeException jsonProcessingException) {
         try {
             serialization.deserializeMap(json);
+            return json;
         } catch (JsonProcessingException e) {
             throw jsonProcessingException;
         }

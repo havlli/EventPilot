@@ -13,6 +13,7 @@ import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.Map;
 import java.util.function.Function;
@@ -113,6 +114,7 @@ public class EmbedGenerator {
             return embedTypeService.getDeserializedMap(embedType)
                     .entrySet()
                     .stream()
+                    .sorted(sortFieldKeys())
                     .filter(entry -> optimizedFilter(eventParticipants).test(entry))
                     .map(mapEntryToField(eventParticipants))
                     .collect(Collectors.toList());
@@ -121,6 +123,23 @@ public class EmbedGenerator {
         }
 
         return new ArrayList<>();
+    }
+
+    private static Comparator<Map.Entry<Integer, String>> sortFieldKeys() {
+        return (entry1, entry2) -> {
+            int value1 = entry1.getKey();
+            int value2 = entry2.getKey();
+
+            if (value1 > 0 && value2 > 0) {
+                return Integer.compare(value1, value2);
+            } else if (value1 <= 0 && value2 <= 0) {
+                return Integer.compare(value1, value2);
+            } else if (value1 > 0) {
+                return -1;
+            } else {
+                return 1;
+            }
+        };
     }
 
     private EmbedCreateFields.Field createEmbedField(String content, boolean isOneLineField) {
