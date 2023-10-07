@@ -3,6 +3,8 @@ package com.github.havlli.EventPilot.session;
 import com.github.havlli.EventPilot.core.MessageCreator;
 import discord4j.core.event.domain.interaction.ChatInputInteractionEvent;
 import discord4j.core.object.entity.Message;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
@@ -11,6 +13,7 @@ import java.util.Optional;
 @Component
 public class UserSessionValidator {
 
+    private final static Logger LOG = LoggerFactory.getLogger(UserSessionValidator.class);
     private final UserSessionService userSessionService;
     private final MessageCreator messageCreator;
 
@@ -28,7 +31,7 @@ public class UserSessionValidator {
         }
         return followupMessage
                 .doFinally(__ -> {
-                    System.out.println("Terminating user session " + event);
+                    LOG.info("Terminating user session - {}", event.getInteraction().getUser().getUsername());
                     terminate(event);
                 });
     }
