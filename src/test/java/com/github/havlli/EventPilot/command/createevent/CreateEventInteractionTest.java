@@ -10,7 +10,6 @@ import com.github.havlli.EventPilot.entity.guild.GuildService;
 import com.github.havlli.EventPilot.exception.InvalidDateTimeException;
 import com.github.havlli.EventPilot.generator.EmbedGenerator;
 import com.github.havlli.EventPilot.prompt.*;
-import com.github.havlli.EventPilot.session.UserSessionValidator;
 import discord4j.common.util.Snowflake;
 import discord4j.core.GatewayDiscordClient;
 import discord4j.core.event.EventDispatcher;
@@ -77,8 +76,6 @@ class CreateEventInteractionTest {
     @Mock
     private TimeService timeServiceMock;
     @Mock
-    private UserSessionValidator sessionValidatorMock;
-    @Mock
     private GuildEventCreator guildEventCreatorMock;
     @Mock
     private ObjectFactory<CreateEventInteraction> provider;
@@ -97,7 +94,6 @@ class CreateEventInteractionTest {
                 guildServiceMock,
                 embedTypeServiceMock,
                 timeServiceMock,
-                sessionValidatorMock,
                 guildEventCreatorMock,
                 provider
         );
@@ -696,7 +692,6 @@ class CreateEventInteractionTest {
 
         // Assert
         verify(loggerMock, times(1)).info("Sequence completed successfully");
-        verify(sessionValidatorMock, times(1)).terminate(eventMock);
     }
 
     @Test
@@ -717,7 +712,6 @@ class CreateEventInteractionTest {
 
         // Assert
         verify(loggerMock, times(1)).info("Sequence completed with an error");
-        verify(sessionValidatorMock, times(1)).terminate(eventMock);
     }
 
     @Test
@@ -738,6 +732,5 @@ class CreateEventInteractionTest {
 
         // Assert
         verifyNoMoreInteractions(loggerMock);
-        verify(sessionValidatorMock, times(1)).terminate(eventMock);
     }
 }

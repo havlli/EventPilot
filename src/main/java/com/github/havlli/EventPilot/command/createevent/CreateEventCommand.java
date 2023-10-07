@@ -67,7 +67,7 @@ public class CreateEventCommand implements SlashCommand {
     }
 
     private Mono<Message> validateSession(ChatInputInteractionEvent event) {
-        return userSessionValidator.validate(createFollowupMessage(event), event);
+        return userSessionValidator.validateThenWrap(createFollowupMessage(event), event);
     }
 
     private Mono<Message> createFollowupMessage(ChatInputInteractionEvent event) {

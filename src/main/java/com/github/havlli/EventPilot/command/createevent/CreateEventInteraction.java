@@ -16,7 +16,6 @@ import com.github.havlli.EventPilot.entity.guild.GuildService;
 import com.github.havlli.EventPilot.exception.InvalidDateTimeException;
 import com.github.havlli.EventPilot.generator.EmbedGenerator;
 import com.github.havlli.EventPilot.prompt.*;
-import com.github.havlli.EventPilot.session.UserSessionValidator;
 import discord4j.common.util.Snowflake;
 import discord4j.core.GatewayDiscordClient;
 import discord4j.core.event.domain.interaction.ButtonInteractionEvent;
@@ -60,7 +59,6 @@ public class CreateEventInteraction {
     private final GuildService guildService;
     private final EmbedTypeService embedTypeService;
     private final TimeService timeService;
-    private final UserSessionValidator sessionValidator;
     private final GuildEventCreator guildEventCreator;
     private final ObjectFactory<CreateEventInteraction> provider;
     private ChatInputInteractionEvent initialEvent;
@@ -79,7 +77,6 @@ public class CreateEventInteraction {
             GuildService guildService,
             EmbedTypeService embedTypeService,
             TimeService timeService,
-            UserSessionValidator sessionValidator,
             GuildEventCreator guildEventCreator, ObjectFactory<CreateEventInteraction> provider
     ) {
         this.client = client;
@@ -92,7 +89,6 @@ public class CreateEventInteraction {
         this.guildService = guildService;
         this.embedTypeService = embedTypeService;
         this.timeService = timeService;
-        this.sessionValidator = sessionValidator;
         this.guildEventCreator = guildEventCreator;
         this.provider = provider;
     }
@@ -200,7 +196,6 @@ public class CreateEventInteraction {
     }
 
     protected void sequenceChecker(SignalType signalType) {
-        sessionValidator.terminate(initialEvent);
         switch (signalType) {
             case ON_COMPLETE -> LOG.info("Sequence completed successfully");
             case ON_ERROR -> LOG.info("Sequence completed with an error");

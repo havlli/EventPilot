@@ -12,10 +12,10 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
 
 import java.util.Optional;
 
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
 class UserSessionValidatorTest {
@@ -39,9 +39,10 @@ class UserSessionValidatorTest {
     }
 
     @Test
-    void validate_ReturnsFollowupMessage_WhenUserSessionExists() {
+    void validate_WrapsMessageToSessionAndTerminatesSessionOnComplete_WhenUserSessionExists() {
         // Arrange
-        Mono<Message> followupMessageMock = mock(Mono.class);
+        Message messageMock = mock(Message.class);
+        Mono<Message> followupMessageMock = Mono.just(messageMock);
         ChatInputInteractionEvent eventMock = mock(ChatInputInteractionEvent.class);
         Interaction interactionMock = mock(Interaction.class);
         when(eventMock.getInteraction()).thenReturn(interactionMock);
@@ -51,12 +52,16 @@ class UserSessionValidatorTest {
         when(userMock.getUsername()).thenReturn("test");
 
         when(userSessionServiceMock.createUserSession("1234", "test")).thenReturn(Optional.of(new UserSession("1234", "test")));
+        UserSessionValidator underTestSpy = spy(underTest);
 
         // Act
-        Mono<Message> actual = underTest.validate(followupMessageMock, eventMock);
+        Mono<Message> actual = underTestSpy.validateThenWrap(followupMessageMock, eventMock);
 
         // Assert
-        assertThat(actual).isEqualTo(followupMessageMock);
+        StepVerifier.create(actual)
+                .expectNext(messageMock)
+                .verifyComplete();
+        verify(underTestSpy, times(1)).terminate(eventMock);
     }
 
     @Test
@@ -74,7 +79,7 @@ class UserSessionValidatorTest {
         when(userSessionServiceMock.createUserSession("1234", "test")).thenReturn(Optional.empty());
 
         // Act
-        underTest.validate(followupMessageMock, eventMock);
+        underTest.validateThenWrap(followupMessageMock, eventMock);
 
         // Assert
         verify(messageCreatorMock, times(1)).sessionAlreadyActive(eventMock);

@@ -53,8 +53,7 @@ public class DeleteEventCommand implements SlashCommand {
         }
 
         return deferInteractionWithEphemeralResponse(interactionEvent)
-                .then(validatePermissions(interactionEvent))
-                .doFinally(__ -> deleteSession(interactionEvent));
+                .then(validatePermissions(interactionEvent));
     }
 
     private boolean isValidEvent(ChatInputInteractionEvent interactionEvent) {
@@ -74,12 +73,8 @@ public class DeleteEventCommand implements SlashCommand {
         return permissionChecker.followupWith(validateSession(event), event, Permission.MANAGE_CHANNELS);
     }
 
-    private void deleteSession(ChatInputInteractionEvent event) {
-        userSessionValidator.terminate(event);
-    }
-
     private Mono<Message> validateSession(ChatInputInteractionEvent event) {
-        return userSessionValidator.validate(deleteEventInteraction(event), event);
+        return userSessionValidator.validateThenWrap(deleteEventInteraction(event), event);
     }
 
     public Mono<Message> deleteEventInteraction(ChatInputInteractionEvent event) {

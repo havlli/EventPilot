@@ -64,8 +64,7 @@ public class ClearExpiredCommand implements SlashCommand {
         }
 
         return deferInteractionWithEphemeralResponse(interactionEvent)
-                .then(validatePermissions(interactionEvent))
-                .doFinally(__ -> deleteSession(interactionEvent));
+                .then(validatePermissions(interactionEvent));
     }
 
     private boolean isValidEvent(ChatInputInteractionEvent event) {
@@ -85,12 +84,8 @@ public class ClearExpiredCommand implements SlashCommand {
         return permissionChecker.followupWith(validateSessions(event), event, Permission.MANAGE_CHANNELS);
     }
 
-    private void deleteSession(ChatInputInteractionEvent event) {
-        userSessionValidator.terminate(event);
-    }
-
     private Mono<Message> validateSessions(ChatInputInteractionEvent event) {
-        return userSessionValidator.validate(followupResponse(event), event);
+        return userSessionValidator.validateThenWrap(followupResponse(event), event);
     }
 
     private Mono<Message> followupResponse(ChatInputInteractionEvent event) {

@@ -78,7 +78,7 @@ class DeleteEventCommandTest {
         when(deferReplyMono.withEphemeral(true)).thenReturn(deferReplyMono);
         Message messageMock = mock(Message.class);
         when(deferReplyMono.then(any())).thenReturn(Mono.just(messageMock));
-        when(sessionValidatorMock.validate(any(), eq(interactionEvent))).thenReturn(Mono.just(messageMock));
+        when(sessionValidatorMock.validateThenWrap(any(), eq(interactionEvent))).thenReturn(Mono.just(messageMock));
 
         when(interactionEvent.getInteraction()).thenReturn(interaction);
         when(interaction.getChannel()).thenReturn(Mono.just(messageChannel));
@@ -91,8 +91,7 @@ class DeleteEventCommandTest {
         StepVerifier.create(actual)
                 .expectNext(messageMock)
                 .verifyComplete();
-        verify(sessionValidatorMock, times(1)).validate(any(), eq(interactionEvent));
-        verify(sessionValidatorMock, times(1)).terminate(eq(interactionEvent));
+        verify(sessionValidatorMock, times(1)).validateThenWrap(any(), eq(interactionEvent));
         verify(permissionChecker, times(1))
                 .followupWith(any(), eq(interactionEvent), eq(Permission.MANAGE_CHANNELS));
     }

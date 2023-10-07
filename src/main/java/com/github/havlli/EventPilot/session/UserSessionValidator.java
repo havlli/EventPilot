@@ -19,14 +19,18 @@ public class UserSessionValidator {
         this.messageCreator = messageCreator;
     }
 
-    public Mono<Message> validate(Mono<Message> followupMessage, ChatInputInteractionEvent event) {
+    public Mono<Message> validateThenWrap(Mono<Message> followupMessage, ChatInputInteractionEvent event) {
         String userId = extractUserId(event);
         String username = extractUsername(event);
         Optional<UserSession> userSession = userSessionService.createUserSession(userId, username);
         if (userSession.isEmpty()) {
             return sessionAlreadyActiveMessage(event);
         }
-        return followupMessage;
+        return followupMessage
+                .doFinally(__ -> {
+                    System.out.println("Terminating user session " + event);
+                    terminate(event);
+                });
     }
 
     public void terminate(ChatInputInteractionEvent event) {
