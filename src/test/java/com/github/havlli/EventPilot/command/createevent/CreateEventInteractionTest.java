@@ -1,6 +1,11 @@
 package com.github.havlli.EventPilot.command.createevent;
 
+import com.github.havlli.EventPilot.component.ButtonRow;
+import com.github.havlli.EventPilot.component.CustomComponentFactory;
 import com.github.havlli.EventPilot.component.SelectMenuComponent;
+import com.github.havlli.EventPilot.component.selectmenu.ChannelSelectMenu;
+import com.github.havlli.EventPilot.component.selectmenu.CustomSelectMenu;
+import com.github.havlli.EventPilot.component.selectmenu.MemberSizeSelectMenu;
 import com.github.havlli.EventPilot.core.GuildEventCreator;
 import com.github.havlli.EventPilot.entity.embedtype.EmbedType;
 import com.github.havlli.EventPilot.entity.embedtype.EmbedTypeService;
@@ -44,6 +49,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -77,6 +83,8 @@ class CreateEventInteractionTest {
     @Mock
     private TextPromptBuilderFactory promptBuilderFactory;
     @Mock
+    private CustomComponentFactory componentFactory;
+    @Mock
     private ObjectFactory<CreateEventInteraction> provider;
 
     @BeforeEach
@@ -93,6 +101,7 @@ class CreateEventInteractionTest {
                 timeServiceMock,
                 guildEventCreatorMock,
                 promptBuilderFactory,
+                componentFactory,
                 provider
         );
     }
@@ -409,6 +418,8 @@ class CreateEventInteractionTest {
         when(promptBuilderMock.build()).thenReturn(promptMock);
         when(promptMock.createMono()).thenReturn(Mono.just(mock(SelectMenuInteractionEvent.class)));
 
+        when(componentFactory.getCustomSelectMenu(anyString(), anyString(), any())).thenReturn(new CustomSelectMenu("test", "test", Map.of()));
+
         // Act
         Mono<SelectMenuInteractionEvent> actual = underTest.promptEmbedType();
 
@@ -431,6 +442,8 @@ class CreateEventInteractionTest {
         when(promptBuilderMock.build()).thenReturn(promptMock);
         when(promptMock.createMono()).thenReturn(Mono.just(mock(SelectMenuInteractionEvent.class)));
 
+        when(componentFactory.getDefaultSelectMenu(CustomComponentFactory.SelectMenuType.MEMBER_SIZE_SELECT_MENU)).thenReturn(new MemberSizeSelectMenu());
+
         // Act
         Mono<SelectMenuInteractionEvent> actual = underTest.promptMemberSize();
 
@@ -449,6 +462,7 @@ class CreateEventInteractionTest {
         when(promptBuilderMock.withMessageCollector(collectorMock)).thenReturn(promptBuilderMock);
         when(promptBuilderMock.eventProcessor(any())).thenReturn(promptBuilderMock);
 
+
         TextPromptBuilder<SelectMenuInteractionEvent> promptMock = mock(TextPromptBuilder.class);
         when(promptBuilderMock.build()).thenReturn(promptMock);
         when(promptMock.createMono()).thenReturn(Mono.just(mock(SelectMenuInteractionEvent.class)));
@@ -463,6 +477,9 @@ class CreateEventInteractionTest {
         when(textChannelMock.getName()).thenReturn("textChannel");
         when(textChannelMock.getId()).thenReturn(Snowflake.of("123456"));
         when(promptServiceMock.fetchGuildTextChannels(initialEventMock)).thenReturn(Flux.just(textChannelMock));
+
+        when(componentFactory.getChannelSelectMenu(anyList())).thenReturn(new ChannelSelectMenu(List.of(textChannelMock)));
+
 
 
         // Act
@@ -485,6 +502,12 @@ class CreateEventInteractionTest {
         TextPromptBuilder<ButtonInteractionEvent> promptMock = mock(TextPromptBuilder.class);
         when(promptBuilderMock.build()).thenReturn(promptMock);
         when(promptMock.createMono()).thenReturn(Mono.just(mock(ButtonInteractionEvent.class)));
+
+        when(componentFactory.getConfirmationButtonRow()).thenReturn(ButtonRow.builder()
+                .addButton("confirm", "Confirm", ButtonRow.Builder.ButtonType.PRIMARY)
+                .addButton("cancel", "Cancel", ButtonRow.Builder.ButtonType.DANGER)
+                .addButton("repeat", "Start Again!", ButtonRow.Builder.ButtonType.SECONDARY)
+                .build());
 
 
         // Act

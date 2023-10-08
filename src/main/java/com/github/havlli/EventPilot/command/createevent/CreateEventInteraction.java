@@ -1,10 +1,8 @@
 package com.github.havlli.EventPilot.command.createevent;
 
-import com.github.havlli.EventPilot.component.ButtonRow;
+import com.github.havlli.EventPilot.component.ButtonRowComponent;
+import com.github.havlli.EventPilot.component.CustomComponentFactory;
 import com.github.havlli.EventPilot.component.SelectMenuComponent;
-import com.github.havlli.EventPilot.component.selectmenu.ChannelSelectMenu;
-import com.github.havlli.EventPilot.component.selectmenu.CustomSelectMenu;
-import com.github.havlli.EventPilot.component.selectmenu.MemberSizeSelectMenu;
 import com.github.havlli.EventPilot.core.GuildEventCreator;
 import com.github.havlli.EventPilot.entity.embedtype.EmbedType;
 import com.github.havlli.EventPilot.entity.embedtype.EmbedTypeService;
@@ -42,6 +40,8 @@ import java.util.function.Consumer;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static com.github.havlli.EventPilot.component.CustomComponentFactory.SelectMenuType;
+
 @Component
 @Scope("prototype")
 public class CreateEventInteraction {
@@ -57,6 +57,7 @@ public class CreateEventInteraction {
     private final TimeService timeService;
     private final GuildEventCreator guildEventCreator;
     private final TextPromptBuilderFactory promptBuilderFactory;
+    private final CustomComponentFactory componentFactory;
     private final ObjectFactory<CreateEventInteraction> provider;
     private ChatInputInteractionEvent initialEvent;
     private User user;
@@ -74,6 +75,7 @@ public class CreateEventInteraction {
             TimeService timeService,
             GuildEventCreator guildEventCreator,
             TextPromptBuilderFactory promptBuilderFactory,
+            CustomComponentFactory componentFactory,
             ObjectFactory<CreateEventInteraction> provider
     ) {
         this.messageCollector = messageCollector;
@@ -86,6 +88,7 @@ public class CreateEventInteraction {
         this.timeService = timeService;
         this.guildEventCreator = guildEventCreator;
         this.promptBuilderFactory = promptBuilderFactory;
+        this.componentFactory = componentFactory;
         this.provider = provider;
     }
 
@@ -148,7 +151,7 @@ public class CreateEventInteraction {
     }
 
     protected Mono<SelectMenuInteractionEvent> promptMemberSize() {
-        MemberSizeSelectMenu memberSizeSelectMenu = new MemberSizeSelectMenu();
+        SelectMenuComponent memberSizeSelectMenu = componentFactory.getDefaultSelectMenu(SelectMenuType.MEMBER_SIZE_SELECT_MENU);
         String defaultSize = "25";
         String promptMessage = "**Step 5**\nChoose maximum attendants count for this event";
 
@@ -162,7 +165,7 @@ public class CreateEventInteraction {
     }
 
     protected Mono<ButtonInteractionEvent> promptConfirmationAndDeferReply() {
-        ButtonRow buttonRow = createConfirmationButtonRow();
+        ButtonRowComponent buttonRow = createConfirmationButtonRow();
         return createConfirmationMessageSpec(buttonRow)
                 .flatMap(prompt -> createDeferrableButtonPrompt(prompt, buttonRow));
     }
@@ -237,7 +240,7 @@ public class CreateEventInteraction {
                 .createMono());
     }
 
-    private Mono<ButtonInteractionEvent> createDeferrableButtonPrompt(MessageCreateSpec prompt, ButtonRow buttonRow) {
+    private Mono<ButtonInteractionEvent> createDeferrableButtonPrompt(MessageCreateSpec prompt, ButtonRowComponent buttonRow) {
         return Mono.defer(() -> promptBuilderFactory.deferrablePrivateButtonBuilder(initialEvent, prompt, buttonRow)
                 .withMessageCollector(messageCollector)
                 .build()
@@ -248,7 +251,7 @@ public class CreateEventInteraction {
         return promptService.fetchGuildTextChannels(initialEvent)
                 .collectList()
                 .flatMap(textChannels -> {
-                    ChannelSelectMenu channelSelectMenu = new ChannelSelectMenu(textChannels);
+                    SelectMenuComponent channelSelectMenu = componentFactory.getChannelSelectMenu(textChannels);
 
                     return createSelectMenuPrompt(promptMessage, channelSelectMenu, processDestinationChannelInput(getOriginChannelId()));
                 });
@@ -275,27 +278,24 @@ public class CreateEventInteraction {
         };
     }
 
-    private Mono<CustomSelectMenu> getAllEmbedTypesAndCreateCustomMenu() {
+    private Mono<SelectMenuComponent> getAllEmbedTypesAndCreateCustomMenu() {
         return Mono.defer(() -> getAllEmbedTypesMono()
                 .flatMap(this::createCustomMenu));
     }
 
     private Mono<Map<Long, String>> getAllEmbedTypesMono() {
-        Map<Long, String> embedTypeMap = embedTypeService.getAllEmbedTypes()
+        return Mono.fromSupplier(() -> embedTypeService.getAllEmbedTypes()
                 .stream()
-                .collect(Collectors.toMap(EmbedType::getId, EmbedType::getName));
-
-        return Mono.just(embedTypeMap);
+                .collect(Collectors.toMap(EmbedType::getId, EmbedType::getName)));
 
     }
 
-    private Mono<CustomSelectMenu> createCustomMenu(Map<Long, String> embedTypeMap) {
-        CustomSelectMenu embedTypeCustomMenu = new CustomSelectMenu(
+    private Mono<SelectMenuComponent> createCustomMenu(Map<Long, String> embedTypeMap) {
+        return Mono.fromSupplier(() -> componentFactory.getCustomSelectMenu(
                 "embed-type",
                 "Choose type of the event!",
                 embedTypeMap
-        );
-        return Mono.just(embedTypeCustomMenu);
+        ));
     }
 
     private Consumer<SelectMenuInteractionEvent> processEmbedTypeInput() {
@@ -324,15 +324,11 @@ public class CreateEventInteraction {
         };
     }
 
-    private static ButtonRow createConfirmationButtonRow() {
-        return ButtonRow.builder()
-                .addButton("confirm", "Confirm", ButtonRow.Builder.ButtonType.PRIMARY)
-                .addButton("cancel", "Cancel", ButtonRow.Builder.ButtonType.DANGER)
-                .addButton("repeat", "Start Again!", ButtonRow.Builder.ButtonType.SECONDARY)
-                .build();
+    private ButtonRowComponent createConfirmationButtonRow() {
+        return componentFactory.getConfirmationButtonRow();
     }
 
-    private Mono<MessageCreateSpec> createConfirmationMessageSpec(ButtonRow buttonRow) {
+    private Mono<MessageCreateSpec> createConfirmationMessageSpec(ButtonRowComponent buttonRow) {
         return Mono.fromSupplier(() -> MessageCreateSpec.builder()
                 .addEmbed(embedGenerator.generatePreview(eventBuilder))
                 .addComponent(buttonRow.getActionRow())
