@@ -1,5 +1,6 @@
 package com.github.havlli.EventPilot.command.createevent;
 
+import com.github.havlli.EventPilot.component.SelectMenuComponent;
 import com.github.havlli.EventPilot.core.GuildEventCreator;
 import com.github.havlli.EventPilot.entity.embedtype.EmbedType;
 import com.github.havlli.EventPilot.entity.embedtype.EmbedTypeService;
@@ -11,8 +12,6 @@ import com.github.havlli.EventPilot.exception.InvalidDateTimeException;
 import com.github.havlli.EventPilot.generator.EmbedGenerator;
 import com.github.havlli.EventPilot.prompt.*;
 import discord4j.common.util.Snowflake;
-import discord4j.core.GatewayDiscordClient;
-import discord4j.core.event.EventDispatcher;
 import discord4j.core.event.domain.interaction.ButtonInteractionEvent;
 import discord4j.core.event.domain.interaction.ChatInputInteractionEvent;
 import discord4j.core.event.domain.interaction.SelectMenuInteractionEvent;
@@ -56,8 +55,6 @@ class CreateEventInteractionTest {
     private AutoCloseable autoCloseable;
     private CreateEventInteraction underTest;
     @Mock
-    private GatewayDiscordClient clientMock;
-    @Mock
     private MessageCollector collectorMock;
     @Mock
     private PromptFormatter formatterMock;
@@ -78,16 +75,16 @@ class CreateEventInteractionTest {
     @Mock
     private GuildEventCreator guildEventCreatorMock;
     @Mock
+    private TextPromptBuilderFactory promptBuilderFactory;
+    @Mock
     private ObjectFactory<CreateEventInteraction> provider;
 
     @BeforeEach
     void setUp() {
         autoCloseable = MockitoAnnotations.openMocks(this);
         underTest = new CreateEventInteraction(
-                clientMock,
                 collectorMock,
                 formatterMock,
-                filterMock,
                 promptServiceMock,
                 embedGeneratorMock,
                 eventServiceMock,
@@ -95,6 +92,7 @@ class CreateEventInteractionTest {
                 embedTypeServiceMock,
                 timeServiceMock,
                 guildEventCreatorMock,
+                promptBuilderFactory,
                 provider
         );
     }
@@ -331,160 +329,129 @@ class CreateEventInteractionTest {
     @Test
     void promptName() {
         // Arrange
-        PrivateChannel messageChannelMock = mock(PrivateChannel.class);
-        Mono<PrivateChannel> messageChannelMono = Mono.just(messageChannelMock);
+        TextPromptBuilder.Builder<MessageCreateEvent> promptBuilderMock = mock(TextPromptBuilder.Builder.class);
+        when(promptBuilderFactory.defaultPrivateMessageBuilder(any(), any(MessageCreateSpec.class)))
+                .thenReturn(promptBuilderMock);
+        when(promptBuilderMock.withMessageCollector(collectorMock)).thenReturn(promptBuilderMock);
+        when(promptBuilderMock.eventProcessor(any())).thenReturn(promptBuilderMock);
 
-        Message messageMock = mock(Message.class);
-        Mono<Message> messageMono = Mono.just(messageMock);
-        when(messageChannelMock.createMessage(any(MessageCreateSpec.class))).thenReturn(messageMono);
-        doNothing().when(collectorMock).collect(messageMock);
-
-        EventDispatcher eventDispatcherMock = mock(EventDispatcher.class);
-        when(clientMock.getEventDispatcher()).thenReturn(eventDispatcherMock);
-        when(eventDispatcherMock.on(MessageCreateEvent.class)).thenReturn(Flux.empty());
-
-        Predicate<MessageCreateEvent> predicate = event -> false;
-        when(filterMock.isMessageAuthor(any())).thenReturn(predicate);
+        TextPromptBuilder<MessageCreateEvent> promptMock = mock(TextPromptBuilder.class);
+        when(promptBuilderMock.build()).thenReturn(promptMock);
+        when(promptMock.createMono()).thenReturn(Mono.just(mock(MessageCreateEvent.class)));
 
         // Act
-        underTest.setPrivateChannel(messageChannelMono);
         Mono<MessageCreateEvent> actual = underTest.promptName();
 
         // Assert
         StepVerifier.create(actual)
-                .expectSubscription()
+                .expectNextCount(1L)
                 .verifyComplete();
     }
 
     @Test
     void promptDescription() {
         // Arrange
-        PrivateChannel messageChannelMock = mock(PrivateChannel.class);
-        Mono<PrivateChannel> messageChannelMono = Mono.just(messageChannelMock);
+        TextPromptBuilder.Builder<MessageCreateEvent> promptBuilderMock = mock(TextPromptBuilder.Builder.class);
+        when(promptBuilderFactory.defaultPrivateMessageBuilder(any(), any(MessageCreateSpec.class)))
+                .thenReturn(promptBuilderMock);
+        when(promptBuilderMock.withMessageCollector(collectorMock)).thenReturn(promptBuilderMock);
+        when(promptBuilderMock.eventProcessor(any())).thenReturn(promptBuilderMock);
 
-        Message messageMock = mock(Message.class);
-        Mono<Message> messageMono = Mono.just(messageMock);
-        when(messageChannelMock.createMessage(any(MessageCreateSpec.class))).thenReturn(messageMono);
-        doNothing().when(collectorMock).collect(messageMock);
-
-        EventDispatcher eventDispatcherMock = mock(EventDispatcher.class);
-        when(clientMock.getEventDispatcher()).thenReturn(eventDispatcherMock);
-        when(eventDispatcherMock.on(MessageCreateEvent.class)).thenReturn(Flux.empty());
-
-        Predicate<MessageCreateEvent> predicate = event -> false;
-        when(filterMock.isMessageAuthor(any())).thenReturn(predicate);
+        TextPromptBuilder<MessageCreateEvent> promptMock = mock(TextPromptBuilder.class);
+        when(promptBuilderMock.build()).thenReturn(promptMock);
+        when(promptMock.createMono()).thenReturn(Mono.just(mock(MessageCreateEvent.class)));
 
         // Act
-        underTest.setPrivateChannel(messageChannelMono);
         Mono<MessageCreateEvent> actual = underTest.promptDescription();
 
         // Assert
         StepVerifier.create(actual)
-                .expectSubscription()
+                .expectNextCount(1L)
                 .verifyComplete();
     }
 
     @Test
     void promptDateTime() {
         // Arrange
-        PrivateChannel messageChannelMock = mock(PrivateChannel.class);
-        Mono<PrivateChannel> messageChannelMono = Mono.just(messageChannelMock);
+        TextPromptBuilder.Builder<MessageCreateEvent> promptBuilderMock = mock(TextPromptBuilder.Builder.class);
+        when(promptBuilderFactory.defaultPrivateMessageBuilder(any(), any(MessageCreateSpec.class)))
+                .thenReturn(promptBuilderMock);
+        when(promptBuilderMock.withMessageCollector(collectorMock)).thenReturn(promptBuilderMock);
+        when(promptBuilderMock.eventProcessor(any())).thenReturn(promptBuilderMock);
+        when(promptBuilderMock.onErrorRepeat(any(), anyString())).thenReturn(promptBuilderMock);
 
-        Message messageMock = mock(Message.class);
-        Mono<Message> messageMono = Mono.just(messageMock);
-        when(messageChannelMock.createMessage(any(MessageCreateSpec.class))).thenReturn(messageMono);
-        doNothing().when(collectorMock).collect(messageMock);
-
-        EventDispatcher eventDispatcherMock = mock(EventDispatcher.class);
-        when(clientMock.getEventDispatcher()).thenReturn(eventDispatcherMock);
-        when(eventDispatcherMock.on(MessageCreateEvent.class)).thenReturn(Flux.empty());
-
-        Predicate<MessageCreateEvent> predicate = event -> false;
-        when(filterMock.isMessageAuthor(any())).thenReturn(predicate);
+        TextPromptBuilder<MessageCreateEvent> promptMock = mock(TextPromptBuilder.class);
+        when(promptBuilderMock.build()).thenReturn(promptMock);
+        when(promptMock.createMono()).thenReturn(Mono.just(mock(MessageCreateEvent.class)));
 
         // Act
-        underTest.setPrivateChannel(messageChannelMono);
         Mono<MessageCreateEvent> actual = underTest.promptDateTime();
 
         // Assert
         StepVerifier.create(actual)
-                .expectSubscription()
+                .expectNextCount(1L)
                 .verifyComplete();
     }
 
     @Test
-    void promptEmbedType() {
+    void promptEmbedType_CollectsAllEmbedTypesAndCreatesPrompt() {
         // Arrange
-        PrivateChannel messageChannelMock = mock(PrivateChannel.class);
-        Mono<PrivateChannel> messageChannelMono = Mono.just(messageChannelMock);
+        EmbedType embedType = EmbedType.builder().withName("test").withStructure("test").build();
+        when(embedTypeServiceMock.getAllEmbedTypes()).thenReturn(List.of(embedType));
 
-        Message messageMock = mock(Message.class);
-        Mono<Message> messageMono = Mono.just(messageMock);
-        when(messageChannelMock.createMessage(any(MessageCreateSpec.class))).thenReturn(messageMono);
-        doNothing().when(collectorMock).collect(messageMock);
+        TextPromptBuilder.Builder<SelectMenuInteractionEvent> promptBuilderMock = mock(TextPromptBuilder.Builder.class);
+        when(promptBuilderFactory.defaultPrivateSelectMenuBuilder(any(), any(), any(SelectMenuComponent.class)))
+                .thenReturn(promptBuilderMock);
+        when(promptBuilderMock.withMessageCollector(collectorMock)).thenReturn(promptBuilderMock);
+        when(promptBuilderMock.eventProcessor(any())).thenReturn(promptBuilderMock);
 
-        EventDispatcher eventDispatcherMock = mock(EventDispatcher.class);
-        when(clientMock.getEventDispatcher()).thenReturn(eventDispatcherMock);
-        when(eventDispatcherMock.on(SelectMenuInteractionEvent.class)).thenReturn(Flux.empty());
-
-        Predicate<SelectMenuInteractionEvent> predicate = event -> false;
-        when(filterMock.selectInteractionEvent(any(), any())).thenReturn(predicate);
+        TextPromptBuilder<SelectMenuInteractionEvent> promptMock = mock(TextPromptBuilder.class);
+        when(promptBuilderMock.build()).thenReturn(promptMock);
+        when(promptMock.createMono()).thenReturn(Mono.just(mock(SelectMenuInteractionEvent.class)));
 
         // Act
-        underTest.setPrivateChannel(messageChannelMono);
         Mono<SelectMenuInteractionEvent> actual = underTest.promptEmbedType();
 
         // Assert
         StepVerifier.create(actual)
-                .expectSubscription()
+                .expectNextCount(1L)
                 .verifyComplete();
     }
 
     @Test
     void promptMemberSize() {
         // Arrange
-        PrivateChannel messageChannelMock = mock(PrivateChannel.class);
-        Mono<PrivateChannel> messageChannelMono = Mono.just(messageChannelMock);
+        TextPromptBuilder.Builder<SelectMenuInteractionEvent> promptBuilderMock = mock(TextPromptBuilder.Builder.class);
+        when(promptBuilderFactory.defaultPrivateSelectMenuBuilder(any(), any(), any(SelectMenuComponent.class)))
+                .thenReturn(promptBuilderMock);
+        when(promptBuilderMock.withMessageCollector(collectorMock)).thenReturn(promptBuilderMock);
+        when(promptBuilderMock.eventProcessor(any())).thenReturn(promptBuilderMock);
 
-        Message messageMock = mock(Message.class);
-        Mono<Message> messageMono = Mono.just(messageMock);
-        when(messageChannelMock.createMessage(any(MessageCreateSpec.class))).thenReturn(messageMono);
-        doNothing().when(collectorMock).collect(messageMock);
-
-        EventDispatcher eventDispatcherMock = mock(EventDispatcher.class);
-        when(clientMock.getEventDispatcher()).thenReturn(eventDispatcherMock);
-        when(eventDispatcherMock.on(SelectMenuInteractionEvent.class)).thenReturn(Flux.empty());
-
-        Predicate<SelectMenuInteractionEvent> predicate = event -> false;
-        when(filterMock.selectInteractionEvent(any(), any())).thenReturn(predicate);
+        TextPromptBuilder<SelectMenuInteractionEvent> promptMock = mock(TextPromptBuilder.class);
+        when(promptBuilderMock.build()).thenReturn(promptMock);
+        when(promptMock.createMono()).thenReturn(Mono.just(mock(SelectMenuInteractionEvent.class)));
 
         // Act
-        underTest.setPrivateChannel(messageChannelMono);
         Mono<SelectMenuInteractionEvent> actual = underTest.promptMemberSize();
 
         // Assert
         StepVerifier.create(actual)
-                .expectSubscription()
+                .expectNextCount(1L)
                 .verifyComplete();
     }
 
     @Test
     void promptDestinationChannel() {
         // Arrange
-        PrivateChannel messageChannelMock = mock(PrivateChannel.class);
-        Mono<PrivateChannel> messageChannelMono = Mono.just(messageChannelMock);
+        TextPromptBuilder.Builder<SelectMenuInteractionEvent> promptBuilderMock = mock(TextPromptBuilder.Builder.class);
+        when(promptBuilderFactory.defaultPrivateSelectMenuBuilder(any(), any(), any(SelectMenuComponent.class)))
+                .thenReturn(promptBuilderMock);
+        when(promptBuilderMock.withMessageCollector(collectorMock)).thenReturn(promptBuilderMock);
+        when(promptBuilderMock.eventProcessor(any())).thenReturn(promptBuilderMock);
 
-        Message messageMock = mock(Message.class);
-        Mono<Message> messageMono = Mono.just(messageMock);
-        when(messageChannelMock.createMessage(any(MessageCreateSpec.class))).thenReturn(messageMono);
-        doNothing().when(collectorMock).collect(messageMock);
-
-        EventDispatcher eventDispatcherMock = mock(EventDispatcher.class);
-        when(clientMock.getEventDispatcher()).thenReturn(eventDispatcherMock);
-        when(eventDispatcherMock.on(SelectMenuInteractionEvent.class)).thenReturn(Flux.empty());
-
-        Predicate<SelectMenuInteractionEvent> predicate = event -> false;
-        when(filterMock.selectInteractionEvent(any(), any())).thenReturn(predicate);
+        TextPromptBuilder<SelectMenuInteractionEvent> promptMock = mock(TextPromptBuilder.class);
+        when(promptBuilderMock.build()).thenReturn(promptMock);
+        when(promptMock.createMono()).thenReturn(Mono.just(mock(SelectMenuInteractionEvent.class)));
 
         ChatInputInteractionEvent initialEventMock = mock(ChatInputInteractionEvent.class);
         underTest.setInitialEvent(initialEventMock);
@@ -499,40 +466,33 @@ class CreateEventInteractionTest {
 
 
         // Act
-        underTest.setPrivateChannel(messageChannelMono);
         Mono<SelectMenuInteractionEvent> actual = underTest.promptDestinationChannel();
 
         // Assert
         StepVerifier.create(actual)
-                .expectSubscription()
+                .expectNextCount(1L)
                 .verifyComplete();
     }
 
     @Test
     void promptConfirmationAndDeferReply() {
         // Arrange
-        PrivateChannel messageChannelMock = mock(PrivateChannel.class);
-        Mono<PrivateChannel> messageChannelMono = Mono.just(messageChannelMock);
+        TextPromptBuilder.Builder<ButtonInteractionEvent> promptBuilderMock = mock(TextPromptBuilder.Builder.class);
+        when(promptBuilderFactory.deferrablePrivateButtonBuilder(any(), any(), any()))
+                .thenReturn(promptBuilderMock);
+        when(promptBuilderMock.withMessageCollector(collectorMock)).thenReturn(promptBuilderMock);
 
-        Message messageMock = mock(Message.class);
-        Mono<Message> messageMono = Mono.just(messageMock);
-        when(messageChannelMock.createMessage(any(MessageCreateSpec.class))).thenReturn(messageMono);
-        doNothing().when(collectorMock).collect(messageMock);
+        TextPromptBuilder<ButtonInteractionEvent> promptMock = mock(TextPromptBuilder.class);
+        when(promptBuilderMock.build()).thenReturn(promptMock);
+        when(promptMock.createMono()).thenReturn(Mono.just(mock(ButtonInteractionEvent.class)));
 
-        EventDispatcher eventDispatcherMock = mock(EventDispatcher.class);
-        when(clientMock.getEventDispatcher()).thenReturn(eventDispatcherMock);
-        when(eventDispatcherMock.on(ButtonInteractionEvent.class)).thenReturn(Flux.empty());
-
-        Predicate<ButtonInteractionEvent> predicate = event -> false;
-        when(filterMock.buttonInteractionEvent(any(), any())).thenReturn(predicate);
 
         // Act
-        underTest.setPrivateChannel(messageChannelMono);
         Mono<ButtonInteractionEvent> actual = underTest.promptConfirmationAndDeferReply();
 
         // Assert
         StepVerifier.create(actual)
-                .expectSubscription()
+                .expectNextCount(1L)
                 .verifyComplete();
     }
 
