@@ -1,12 +1,11 @@
 package com.github.havlli.EventPilot.core;
 
+import com.github.havlli.EventPilot.component.CustomComponentFactory;
 import com.github.havlli.EventPilot.component.SelectMenuComponent;
-import com.github.havlli.EventPilot.component.selectmenu.ExpiredSelectMenu;
 import com.github.havlli.EventPilot.entity.event.Event;
 import com.github.havlli.EventPilot.entity.event.EventService;
 import discord4j.common.util.Snowflake;
 import discord4j.core.GatewayDiscordClient;
-import discord4j.core.object.component.ActionRow;
 import discord4j.core.object.entity.Message;
 import discord4j.core.spec.MessageEditSpec;
 import discord4j.rest.http.client.ClientException;
@@ -23,13 +22,18 @@ import java.util.function.Function;
 public class DiscordService {
 
     private static final Logger LOG = LoggerFactory.getLogger(DiscordService.class);
-    private static final SelectMenuComponent EXPIRED_COMPONENT = new ExpiredSelectMenu();
+    private final CustomComponentFactory componentFactory;
     private final GatewayDiscordClient client;
     private final EventService eventService;
 
-    public DiscordService(GatewayDiscordClient client, EventService eventService) {
+    public DiscordService(
+            GatewayDiscordClient client,
+            EventService eventService,
+            CustomComponentFactory componentFactory
+    ) {
         this.client = client;
         this.eventService = eventService;
+        this.componentFactory = componentFactory;
     }
 
     public Flux<Message> deactivateEvents(List<Event> events) {
@@ -42,17 +46,12 @@ public class DiscordService {
         Snowflake channelId = Snowflake.of(event.getDestinationChannelId());
 
         return client.getMessageById(channelId, messageId)
-                .flatMap(handleMessage())
+                .flatMap(this::handleMessage)
                 .onErrorResume(ClientException.class, handleMessageNotFound(messageId, channelId));
     }
 
-    private Function<Message, Mono<? extends Message>> handleMessage() {
-        return message -> {
-            if (isAlreadyDeactivated(message))
-                return completeSignal();
-            else
-                return deactivateEventMessage(message);
-        };
+    private Mono<Message> handleMessage(Message message) {
+        return isDeactivated(message) ? completeSignal() : deactivateMessage(message);
     }
 
     private Function<ClientException, Mono<? extends Message>> handleMessageNotFound(Snowflake messageId, Snowflake channelId) {
@@ -62,18 +61,18 @@ public class DiscordService {
         };
     }
 
-    private boolean isAlreadyDeactivated(Message message) {
+    private boolean isDeactivated(Message message) {
         return message.getComponents().stream()
                 .flatMap(layoutComponent -> layoutComponent.getChildren().stream())
                 .map(messageComponent -> messageComponent.getData().customId().toOptional())
-                .anyMatch(id -> id.isPresent() && id.get().equals(EXPIRED_COMPONENT.getCustomId()));
+                .anyMatch(id -> id.isPresent() && id.get().equals(getExpiredSelectMenu().getCustomId()));
     }
 
     private Mono<Message> completeSignal() {
         return Mono.empty();
     }
 
-    private Mono<Message> deactivateEventMessage(Message message) {
+    private Mono<Message> deactivateMessage(Message message) {
         return message.edit(editMessageWithDeactivatedComponent())
                 .doOnSuccess(this::deleteEventFromDatabase);
     }
@@ -83,9 +82,12 @@ public class DiscordService {
     }
 
     private MessageEditSpec editMessageWithDeactivatedComponent() {
-        ActionRow expiredComponentRow = EXPIRED_COMPONENT.getActionRow();
         return MessageEditSpec.builder()
-                .addComponent(expiredComponentRow)
+                .addComponent(getExpiredSelectMenu().getActionRow())
                 .build();
+    }
+
+    private SelectMenuComponent getExpiredSelectMenu() {
+        return componentFactory.getDefaultSelectMenu(CustomComponentFactory.SelectMenuType.EXPIRED_SELECT_MENU);
     }
 }

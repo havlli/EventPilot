@@ -1,5 +1,7 @@
 package com.github.havlli.EventPilot.core;
 
+import com.github.havlli.EventPilot.component.CustomComponentFactory;
+import com.github.havlli.EventPilot.component.selectmenu.ExpiredSelectMenu;
 import com.github.havlli.EventPilot.entity.event.Event;
 import com.github.havlli.EventPilot.entity.event.EventService;
 import discord4j.common.util.Snowflake;
@@ -33,11 +35,15 @@ class DiscordServiceTest {
     private GatewayDiscordClient clientMock;
     @Mock
     private EventService eventServiceMock;
+    @Mock
+    private CustomComponentFactory componentFactory;
 
     @BeforeEach
     void setUp() {
         autoCloseable = MockitoAnnotations.openMocks(this);
-        underTest = new DiscordService(clientMock, eventServiceMock);
+        underTest = new DiscordService(clientMock, eventServiceMock, componentFactory);
+        when(componentFactory.getDefaultSelectMenu(CustomComponentFactory.SelectMenuType.EXPIRED_SELECT_MENU))
+                .thenReturn(new ExpiredSelectMenu());
     }
 
     @AfterEach
@@ -237,7 +243,7 @@ class DiscordServiceTest {
         when(messageOneMock.getId()).thenReturn(Snowflake.of(1234L));
 
         // Act
-        DiscordService discordService = spy(new DiscordService(clientMock, eventServiceMock));
+        DiscordService discordService = spy(new DiscordService(clientMock, eventServiceMock, componentFactory));
         Flux<Message> actual = discordService.deactivateEvents(List.of(eventOneMock));
 
         // Assert
