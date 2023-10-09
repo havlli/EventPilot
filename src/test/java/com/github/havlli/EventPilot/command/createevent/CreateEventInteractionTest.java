@@ -40,6 +40,7 @@ import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.slf4j.Logger;
 import org.springframework.beans.factory.ObjectFactory;
+import org.springframework.context.MessageSource;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.core.publisher.SignalType;
@@ -49,6 +50,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.time.Instant;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -85,6 +87,8 @@ class CreateEventInteractionTest {
     @Mock
     private CustomComponentFactory componentFactory;
     @Mock
+    private MessageSource messageSourceMock;
+    @Mock
     private ObjectFactory<CreateEventInteraction> provider;
 
     @BeforeEach
@@ -102,6 +106,7 @@ class CreateEventInteractionTest {
                 guildEventCreatorMock,
                 promptBuilderFactory,
                 componentFactory,
+                messageSourceMock,
                 provider
         );
     }
@@ -348,6 +353,9 @@ class CreateEventInteractionTest {
         when(promptBuilderMock.build()).thenReturn(promptMock);
         when(promptMock.createMono()).thenReturn(Mono.just(mock(MessageCreateEvent.class)));
 
+        when(messageSourceMock.getMessage("interaction.create-event.name", null, Locale.ENGLISH))
+                .thenReturn("test");
+
         // Act
         Mono<MessageCreateEvent> actual = underTest.promptName();
 
@@ -369,6 +377,9 @@ class CreateEventInteractionTest {
         TextPromptBuilder<MessageCreateEvent> promptMock = mock(TextPromptBuilder.class);
         when(promptBuilderMock.build()).thenReturn(promptMock);
         when(promptMock.createMono()).thenReturn(Mono.just(mock(MessageCreateEvent.class)));
+
+        when(messageSourceMock.getMessage("interaction.create-event.description", null, Locale.ENGLISH))
+                .thenReturn("test");
 
         // Act
         Mono<MessageCreateEvent> actual = underTest.promptDescription();
@@ -392,6 +403,11 @@ class CreateEventInteractionTest {
         TextPromptBuilder<MessageCreateEvent> promptMock = mock(TextPromptBuilder.class);
         when(promptBuilderMock.build()).thenReturn(promptMock);
         when(promptMock.createMono()).thenReturn(Mono.just(mock(MessageCreateEvent.class)));
+
+        when(messageSourceMock.getMessage("interaction.create-event.datetime", null, Locale.ENGLISH))
+                .thenReturn("test");
+        when(messageSourceMock.getMessage("interaction.create-event.datetime.exception.parse", null, Locale.ENGLISH))
+                .thenReturn("test");
 
         // Act
         Mono<MessageCreateEvent> actual = underTest.promptDateTime();
@@ -420,6 +436,8 @@ class CreateEventInteractionTest {
 
         when(componentFactory.getCustomSelectMenu(anyString(), anyString(), any())).thenReturn(new CustomSelectMenu("test", "test", Map.of()));
 
+        when(messageSourceMock.getMessage("interaction.create-event.embed-type", null, Locale.ENGLISH))
+                .thenReturn("test");
         // Act
         Mono<SelectMenuInteractionEvent> actual = underTest.promptEmbedType();
 
@@ -444,6 +462,8 @@ class CreateEventInteractionTest {
 
         when(componentFactory.getDefaultSelectMenu(CustomComponentFactory.SelectMenuType.MEMBER_SIZE_SELECT_MENU)).thenReturn(new MemberSizeSelectMenu());
 
+        when(messageSourceMock.getMessage("interaction.create-event.member-size", null, Locale.ENGLISH))
+                .thenReturn("test");
         // Act
         Mono<SelectMenuInteractionEvent> actual = underTest.promptMemberSize();
 
@@ -480,7 +500,8 @@ class CreateEventInteractionTest {
 
         when(componentFactory.getChannelSelectMenu(anyList())).thenReturn(new ChannelSelectMenu(List.of(textChannelMock)));
 
-
+        when(messageSourceMock.getMessage("interaction.create-event.destination-channel", null, Locale.ENGLISH))
+                .thenReturn("test");
 
         // Act
         Mono<SelectMenuInteractionEvent> actual = underTest.promptDestinationChannel();

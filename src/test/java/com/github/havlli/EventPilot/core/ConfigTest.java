@@ -2,9 +2,10 @@ package com.github.havlli.EventPilot.core;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.support.ResourceBundleMessageSource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 
-import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.assertj.core.api.Assertions.assertThat;
 
 class ConfigTest {
 
@@ -20,6 +21,15 @@ class ConfigTest {
         PathMatchingResourcePatternResolver actual = underTest.pathMatchingResourcePatternResolver();
 
         // Assert
-        assertNotNull(actual);
+        assertThat(actual).isNotNull();
+    }
+
+    @Test
+    void messageSource() {
+        // Act
+        ResourceBundleMessageSource actual = underTest.messageSource();
+
+        //
+        assertThat(actual).isNotNull();
     }
 }

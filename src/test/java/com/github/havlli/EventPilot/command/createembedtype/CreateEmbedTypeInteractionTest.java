@@ -1,5 +1,7 @@
-package com.github.havlli.EventPilot.command;
+package com.github.havlli.EventPilot.command.createembedtype;
 
+import com.github.havlli.EventPilot.command.createembedtype.CreateEmbedTypeInteraction;
+import com.github.havlli.EventPilot.component.CustomComponentFactory;
 import com.github.havlli.EventPilot.entity.embedtype.EmbedType;
 import com.github.havlli.EventPilot.entity.embedtype.EmbedTypeService;
 import com.github.havlli.EventPilot.generator.EmbedGenerator;
@@ -21,9 +23,12 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.beans.factory.ObjectFactory;
+import org.springframework.context.MessageSource;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
+
+import java.util.Locale;
 
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
@@ -42,6 +47,10 @@ class CreateEmbedTypeInteractionTest {
     private EmbedGenerator embedGeneratorMock;
     @Mock
     private TextPromptBuilderFactory promptBuilderFactoryMock;
+    @Mock
+    private CustomComponentFactory componentFactoryMock;
+    @Mock
+    private MessageSource messageSourceMock;
 
     @BeforeEach
     void setUp() {
@@ -51,7 +60,9 @@ class CreateEmbedTypeInteractionTest {
                 messageCollectorMock,
                 embedTypeServiceMock,
                 embedGeneratorMock,
-                promptBuilderFactoryMock
+                promptBuilderFactoryMock,
+                componentFactoryMock,
+                messageSourceMock
         );
     }
 
@@ -120,6 +131,9 @@ class CreateEmbedTypeInteractionTest {
         MessageCreateEvent messageCreateEventMock = mock(MessageCreateEvent.class);
         when(builder.createMono()).thenReturn(Mono.just(messageCreateEventMock));
 
+        when(messageSourceMock.getMessage("interaction.embedtype.name", null, Locale.ENGLISH))
+                .thenReturn("test");
+
 
         // Act
         Mono<MessageCreateEvent> actual = underTestSpy.promptName();
@@ -149,6 +163,12 @@ class CreateEmbedTypeInteractionTest {
         when(builderMock.build()).thenReturn(builder);
         MessageCreateEvent messageCreateEventMock = mock(MessageCreateEvent.class);
         when(builder.createMono()).thenReturn(Mono.just(messageCreateEventMock));
+
+        when(messageSourceMock.getMessage("interaction.embedtype.importjson", null, Locale.ENGLISH))
+                .thenReturn("test");
+        when(messageSourceMock.getMessage("interaction.embedtype.importjson.exception", null, Locale.ENGLISH))
+                .thenReturn("test");
+
 
 
         // Act
@@ -180,6 +200,9 @@ class CreateEmbedTypeInteractionTest {
         when(builderMock.build()).thenReturn(builder);
         ButtonInteractionEvent messageCreateEventMock = mock(ButtonInteractionEvent.class);
         when(builder.createMono()).thenReturn(Mono.just(messageCreateEventMock));
+
+        when(messageSourceMock.getMessage("interaction.embedtype.confirmation", null, Locale.ENGLISH))
+                .thenReturn("test");
 
 
         // Act
@@ -277,6 +300,9 @@ class CreateEmbedTypeInteractionTest {
         when(userMock.getPrivateChannel()).thenReturn(Mono.just(privateChannelMock));
         Message expectedMessage = mock(Message.class);
         when(privateChannelMock.createMessage(any(MessageCreateSpec.class))).thenReturn(Mono.just(expectedMessage));
+
+        when(messageSourceMock.getMessage(eq("interaction.embedtype.complete"), any(), eq(Locale.ENGLISH)))
+                .thenReturn("test");
 
         // Act
         Mono<Message> actual = underTestSpy.finalizeProcess();

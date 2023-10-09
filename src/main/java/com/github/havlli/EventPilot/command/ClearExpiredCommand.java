@@ -12,11 +12,13 @@ import discord4j.core.object.entity.User;
 import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.spec.InteractionCallbackSpecDeferReplyMono;
 import discord4j.rest.util.Permission;
+import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
+import java.util.Locale;
 import java.util.function.Function;
 import java.util.function.Predicate;
 
@@ -29,15 +31,18 @@ public class ClearExpiredCommand implements SlashCommand {
     private final SimplePermissionValidator permissionChecker;
     private final SelectMenuComponent expiredSelectMenu;
     private final UserSessionValidator userSessionValidator;
+    private final MessageSource messageSource;
 
     public ClearExpiredCommand(
             SimplePermissionValidator permissionChecker,
             SelectMenuComponent expiredSelectMenu,
-            UserSessionValidator userSessionValidator
+            UserSessionValidator userSessionValidator,
+            MessageSource messageSource
     ) {
         this.permissionChecker = permissionChecker;
         this.expiredSelectMenu = expiredSelectMenu;
         this.userSessionValidator = userSessionValidator;
+        this.messageSource = messageSource;
     }
 
     @Override
@@ -130,10 +135,10 @@ public class ClearExpiredCommand implements SlashCommand {
 
     private String formatResponseMessage(int count) {
         if (count == 0) {
-            return  "No expired events found in this channel.";
+            return  messageSource.getMessage("interaction.clear-expired.events-not-found", null, Locale.ENGLISH);
         } else {
-            String messagePlural = count == 1 ? "event" : "events";
-            return String.format("Deleted %d %s in this channel.", count, messagePlural);
+            String eventPlural = count == 1 ? "event" : "events";
+            return messageSource.getMessage("interaction.clear-expired.deleted-count", new Object[]{count, eventPlural}, Locale.ENGLISH);
         }
     }
 

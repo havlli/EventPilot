@@ -8,9 +8,11 @@ import discord4j.core.event.domain.interaction.ChatInputInteractionEvent;
 import discord4j.core.object.entity.Message;
 import discord4j.core.spec.InteractionCallbackSpecDeferReplyMono;
 import discord4j.rest.util.Permission;
+import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
+import java.util.Locale;
 import java.util.function.Function;
 
 @Component
@@ -20,12 +22,19 @@ public class CreateEventCommand implements SlashCommand {
     private final CreateEventInteraction createEventInteraction;
     private final SimplePermissionValidator permissionChecker;
     private final UserSessionValidator userSessionValidator;
+    private final MessageSource messageSource;
     private Class<? extends Event> eventType = ChatInputInteractionEvent.class;
 
-    public CreateEventCommand(CreateEventInteraction createEventInteraction, SimplePermissionValidator permissionChecker, UserSessionValidator userSessionValidator) {
+    public CreateEventCommand(
+            CreateEventInteraction createEventInteraction,
+            SimplePermissionValidator permissionChecker,
+            UserSessionValidator userSessionValidator,
+            MessageSource messageSource
+    ) {
         this.createEventInteraction = createEventInteraction;
         this.permissionChecker = permissionChecker;
         this.userSessionValidator = userSessionValidator;
+        this.messageSource = messageSource;
     }
 
     @Override
@@ -71,8 +80,8 @@ public class CreateEventCommand implements SlashCommand {
     }
 
     private Mono<Message> createFollowupMessage(ChatInputInteractionEvent event) {
-        String prompt = "Initiated process of creating event in your DMs, please continue there!";
-        return event.createFollowup(prompt)
+        String message = messageSource.getMessage("interaction.private.initiated", null, Locale.ENGLISH);
+        return event.createFollowup(message)
                 .withEphemeral(true)
                 .flatMap(invokeFinalInteraction(event));
     }

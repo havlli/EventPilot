@@ -12,6 +12,7 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockitoAnnotations;
+import org.springframework.context.MessageSource;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -81,7 +82,7 @@ class EventTypeComparatorTest {
     void compareWhenTwoDifferentEvents() {
         // Arrange
         SlashCommand command1 = new TestCommand();
-        SlashCommand command2 = new CreateEventCommand(mock(CreateEventInteraction.class), mock(SimplePermissionValidator.class), mock(UserSessionValidator.class));
+        SlashCommand command2 = new CreateEventCommand(mock(CreateEventInteraction.class), mock(SimplePermissionValidator.class), mock(UserSessionValidator.class), mock(MessageSource.class));
 
         // Act
         int result = underTest.compare(command1, command2);

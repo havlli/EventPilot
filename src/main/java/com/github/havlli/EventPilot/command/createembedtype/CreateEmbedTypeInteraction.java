@@ -1,6 +1,7 @@
-package com.github.havlli.EventPilot.command;
+package com.github.havlli.EventPilot.command.createembedtype;
 
-import com.github.havlli.EventPilot.component.ButtonRow;
+import com.github.havlli.EventPilot.component.ButtonRowComponent;
+import com.github.havlli.EventPilot.component.CustomComponentFactory;
 import com.github.havlli.EventPilot.entity.embedtype.EmbedType;
 import com.github.havlli.EventPilot.entity.embedtype.EmbedTypeService;
 import com.github.havlli.EventPilot.generator.EmbedGenerator;
@@ -14,10 +15,13 @@ import discord4j.core.object.entity.User;
 import discord4j.core.spec.EmbedCreateSpec;
 import discord4j.core.spec.MessageCreateSpec;
 import org.springframework.beans.factory.ObjectFactory;
+import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+
+import java.util.Locale;
 
 @Component
 @Scope("prototype")
@@ -28,6 +32,8 @@ public class CreateEmbedTypeInteraction {
     private final EmbedTypeService embedTypeService;
     private final EmbedGenerator embedGenerator;
     private final TextPromptBuilderFactory promptBuilderFactory;
+    private final CustomComponentFactory componentFactory;
+    private final MessageSource messageSource;
     private ChatInputInteractionEvent initialEvent;
     private User user;
     private EmbedType.Builder embedTypeBuilder;
@@ -37,13 +43,17 @@ public class CreateEmbedTypeInteraction {
             MessageCollector messageCollector,
             EmbedTypeService embedTypeService,
             EmbedGenerator embedGenerator,
-            TextPromptBuilderFactory promptBuilderFactory
+            TextPromptBuilderFactory promptBuilderFactory,
+            CustomComponentFactory componentFactory,
+            MessageSource messageSource
     ) {
         this.objectFactory = objectFactory;
         this.messageCollector = messageCollector;
         this.embedTypeService = embedTypeService;
         this.embedGenerator = embedGenerator;
         this.promptBuilderFactory = promptBuilderFactory;
+        this.componentFactory = componentFactory;
+        this.messageSource = messageSource;
     }
 
     public Mono<Message> initiateOn(ChatInputInteractionEvent event) {
@@ -71,7 +81,7 @@ public class CreateEmbedTypeInteraction {
     }
 
     protected Mono<MessageCreateEvent> promptName() {
-        String prompt = "**Step 1**\nEnter name for your embed type!";
+        String prompt = messageSource.getMessage("interaction.embedtype.name", null, Locale.ENGLISH);
 
         return Mono.defer(() -> promptBuilderFactory.defaultPrivateMessageBuilder(initialEvent, prompt)
                 .withMessageCollector(messageCollector)
@@ -81,49 +91,21 @@ public class CreateEmbedTypeInteraction {
     }
 
     protected Mono<MessageCreateEvent> promptImportDialog() {
-        String prompt = """
-                **Step 2**
-                Please provide a JSON object that follows the following structure:
-                ```json
-                {
-                  "-1": "Absence",
-                  "-2": "Late",
-                  "1": "Tank",
-                  "-3": "Tentative",
-                  "2": "Melee",
-                  "3": "Ranged",
-                  "4": "Healer",
-                  "5": "Support"
-                }
-                ```
-                - The JSON object should be enclosed in curly braces {}.
-                - Each key-value pair should be separated by a colon :.
-                - The keys should be integers.
-                - The values should be strings.
-                - The keys and values should be enclosed in double quotes "".
-                - The keys can be positive or negative integers.
-                - The values should correspond to the provided descriptions.
-                - Negative keys indicate that the field should be displayed inline.
-                - Positive keys indicate that the field should not be displayed inline.
-                                
-                Please make sure your JSON object adheres to these rules. If you have any questions, feel free to ask.
-                """;
+        String prompt = messageSource.getMessage("interaction.embedtype.importjson", null, Locale.ENGLISH);
+        String errorMessage = messageSource.getMessage("interaction.embedtype.importjson.exception", null, Locale.ENGLISH);
 
         return Mono.defer(() -> promptBuilderFactory.defaultPrivateMessageBuilder(initialEvent, prompt)
                 .withMessageCollector(messageCollector)
                 .eventProcessor(this::processImportWithException)
-                .onErrorRepeat(RuntimeException.class, "JsonProcessingException")
+                .onErrorRepeat(RuntimeException.class, errorMessage)
                 .build()
                 .createMono());
     }
 
     protected Mono<ButtonInteractionEvent> promptConfirmation() {
-        String prompt = "Are you sure you want to create this embed type?";
-        ButtonRow buttonRow = ButtonRow.builder()
-                .addButton("confirm", "Confirm", ButtonRow.Builder.ButtonType.PRIMARY)
-                .addButton("cancel", "Cancel", ButtonRow.Builder.ButtonType.DANGER)
-                .addButton("repeat", "Start Again!", ButtonRow.Builder.ButtonType.SECONDARY)
-                .build();
+        String prompt = messageSource.getMessage("interaction.embedtype.confirmation", null, Locale.ENGLISH);
+
+        ButtonRowComponent buttonRow = componentFactory.getConfirmationButtonRow();
         return Mono.defer(() -> promptBuilderFactory.deferrablePrivateButtonBuilder(initialEvent, prompt, generatePreview(), buttonRow)
                 .withMessageCollector(messageCollector)
                 .build()
@@ -182,7 +164,8 @@ public class CreateEmbedTypeInteraction {
     }
 
     private Mono<Message> sendCompleteMessage(EmbedType embedType) {
-        String prompt = "Your EmbedType **%s** was successfully created!".formatted(embedType.getName());
+        String prompt = messageSource.getMessage("interaction.embedtype.complete", new Object[]{embedType.getName()}, Locale.ENGLISH);
+
         return user.getPrivateChannel()
                 .flatMap(channel -> channel.createMessage(MessageCreateSpec.builder()
                         .content(prompt)

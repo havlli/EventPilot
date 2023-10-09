@@ -22,6 +22,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.context.MessageSource;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
@@ -29,6 +30,7 @@ import reactor.test.StepVerifier;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.util.List;
+import java.util.Locale;
 import java.util.Optional;
 import java.util.function.Function;
 import java.util.function.Predicate;
@@ -55,11 +57,18 @@ class ClearExpiredCommandTest {
     private MessageChannel messageChannel;
     @Mock
     private UserSessionValidator sessionValidatorMock;
+    @Mock
+    private MessageSource messageSourceMock;
 
     @BeforeEach
     void setUp() {
         autoCloseable = MockitoAnnotations.openMocks(this);
-        underTest = new ClearExpiredCommand(permissionCheckerMock, selectMenuComponentMock, sessionValidatorMock);
+        underTest = new ClearExpiredCommand(
+                permissionCheckerMock,
+                selectMenuComponentMock,
+                sessionValidatorMock,
+                messageSourceMock
+        );
     }
 
     @AfterEach
@@ -271,6 +280,8 @@ class ClearExpiredCommandTest {
         formatResponseMessageMethod.setAccessible(true);
 
         String expected = "No expired events found in this channel.";
+        when(messageSourceMock.getMessage("interaction.clear-expired.events-not-found", null, Locale.ENGLISH))
+                .thenReturn(expected);
 
         // Act
         String actual = (String) formatResponseMessageMethod.invoke(underTest, 0);
@@ -287,6 +298,9 @@ class ClearExpiredCommandTest {
         formatResponseMessageMethod.setAccessible(true);
 
         String expected = "Deleted 2 events in this channel.";
+
+        when(messageSourceMock.getMessage(eq("interaction.clear-expired.deleted-count"), any(), eq(Locale.ENGLISH)))
+                .thenReturn(expected);
 
         // Act
         String actual = (String) formatResponseMessageMethod.invoke(underTest, 2);

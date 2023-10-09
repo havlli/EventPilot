@@ -12,8 +12,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.context.MessageSource;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
+
+import java.util.Locale;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
@@ -28,11 +31,13 @@ class CreateEventCommandTest {
     private SimplePermissionValidator simplePermissionValidator;
     @Mock
     private UserSessionValidator userSessionValidator;
+    @Mock
+    private MessageSource messageSource;
 
     @BeforeEach
     public void setUp() {
         autoCloseable = MockitoAnnotations.openMocks(this);
-        underTest = new CreateEventCommand(eventInteraction, simplePermissionValidator, userSessionValidator);
+        underTest = new CreateEventCommand(eventInteraction, simplePermissionValidator, userSessionValidator, messageSource);
     }
 
     @AfterEach
@@ -56,6 +61,9 @@ class CreateEventCommandTest {
         when(interactionEvent.createFollowup(anyString())).thenReturn(followupMock);
         InteractionFollowupCreateMono followupEphemeralMock = mock(InteractionFollowupCreateMono.class);
         when(followupMock.withEphemeral(true)).thenReturn(followupEphemeralMock);
+
+        when(messageSource.getMessage("interaction.private.initiated", null, Locale.ENGLISH))
+                .thenReturn("test");
 
         // Act
         StepVerifier.create(underTest.handle(interactionEvent))

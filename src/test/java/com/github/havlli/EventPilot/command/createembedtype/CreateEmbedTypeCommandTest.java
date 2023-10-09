@@ -1,5 +1,7 @@
-package com.github.havlli.EventPilot.command;
+package com.github.havlli.EventPilot.command.createembedtype;
 
+import com.github.havlli.EventPilot.command.createembedtype.CreateEmbedTypeCommand;
+import com.github.havlli.EventPilot.command.createembedtype.CreateEmbedTypeInteraction;
 import com.github.havlli.EventPilot.core.SimplePermissionValidator;
 import com.github.havlli.EventPilot.session.UserSessionValidator;
 import discord4j.core.event.domain.Event;

@@ -27,6 +27,7 @@ import discord4j.core.spec.MessageEditSpec;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.ObjectFactory;
+import org.springframework.context.MessageSource;
 import org.springframework.context.annotation.Scope;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
@@ -35,6 +36,7 @@ import reactor.core.publisher.SignalType;
 
 import java.time.Instant;
 import java.time.format.DateTimeParseException;
+import java.util.Locale;
 import java.util.Map;
 import java.util.function.Consumer;
 import java.util.function.Function;
@@ -58,6 +60,7 @@ public class CreateEventInteraction {
     private final GuildEventCreator guildEventCreator;
     private final TextPromptBuilderFactory promptBuilderFactory;
     private final CustomComponentFactory componentFactory;
+    private final MessageSource messageSource;
     private final ObjectFactory<CreateEventInteraction> provider;
     private ChatInputInteractionEvent initialEvent;
     private User user;
@@ -76,6 +79,7 @@ public class CreateEventInteraction {
             GuildEventCreator guildEventCreator,
             TextPromptBuilderFactory promptBuilderFactory,
             CustomComponentFactory componentFactory,
+            MessageSource messageSource,
             ObjectFactory<CreateEventInteraction> provider
     ) {
         this.messageCollector = messageCollector;
@@ -89,6 +93,7 @@ public class CreateEventInteraction {
         this.guildEventCreator = guildEventCreator;
         this.promptBuilderFactory = promptBuilderFactory;
         this.componentFactory = componentFactory;
+        this.messageSource = messageSource;
         this.provider = provider;
     }
 
@@ -123,28 +128,28 @@ public class CreateEventInteraction {
     }
 
     protected Mono<MessageCreateEvent> promptName() {
-        String message = "**Step 1**\nEnter name for your event!";
+        String message = messageSource.getMessage("interaction.create-event.name", null, Locale.ENGLISH);
 
         return createDeferMessageSpecMono(message)
                 .flatMap(messageCreateSpec -> createMessagePrompt(messageCreateSpec, processNameInput()));
     }
 
     protected Mono<MessageCreateEvent> promptDescription() {
-        String message = "**Step 2**\nEnter description";
+        String message = messageSource.getMessage("interaction.create-event.description", null, Locale.ENGLISH);
 
         return createDeferMessageSpecMono(message)
                 .flatMap(messageCreateSpec -> createMessagePrompt(messageCreateSpec, processDescriptionInput()));
     }
 
     protected Mono<MessageCreateEvent> promptDateTime() {
-        String message = "**Step 3**\nEnter the date and time in UTC timezone (format: dd.MM.yyyy HH:mm)";
+        String message = messageSource.getMessage("interaction.create-event.datetime", null, Locale.ENGLISH);
 
         return createDeferMessageSpecMono(message)
                 .flatMap(messageCreateSpec -> createMessagePromptWithError(messageCreateSpec, processDateTimeInput()));
     }
 
     protected Mono<SelectMenuInteractionEvent> promptEmbedType() {
-        String message = "**Step 4**\nChoose type of the event";
+        String message = messageSource.getMessage("interaction.create-event.embed-type", null, Locale.ENGLISH);
 
         return getAllEmbedTypesAndCreateCustomMenu()
                 .flatMap(customMenu -> createSelectMenuPrompt(message, customMenu, processEmbedTypeInput()));
@@ -153,15 +158,15 @@ public class CreateEventInteraction {
     protected Mono<SelectMenuInteractionEvent> promptMemberSize() {
         SelectMenuComponent memberSizeSelectMenu = componentFactory.getDefaultSelectMenu(SelectMenuType.MEMBER_SIZE_SELECT_MENU);
         String defaultSize = "25";
-        String promptMessage = "**Step 5**\nChoose maximum attendants count for this event";
+        String message = messageSource.getMessage("interaction.create-event.member-size", null, Locale.ENGLISH);
 
-        return createSelectMenuPrompt(promptMessage, memberSizeSelectMenu, processMemberSizeInput(defaultSize));
+        return createSelectMenuPrompt(message, memberSizeSelectMenu, processMemberSizeInput(defaultSize));
     }
 
     protected Mono<SelectMenuInteractionEvent> promptDestinationChannel() {
-        String promptMessage = "**Step 6**\nChoose in which channel post this raid signup";
+        String message = messageSource.getMessage("interaction.create-event.destination-channel", null, Locale.ENGLISH);
 
-        return getTextChannelsThenCreatePrompt(promptMessage);
+        return getTextChannelsThenCreatePrompt(message);
     }
 
     protected Mono<ButtonInteractionEvent> promptConfirmationAndDeferReply() {
@@ -223,10 +228,11 @@ public class CreateEventInteraction {
     }
 
     private Mono<MessageCreateEvent> createMessagePromptWithError(MessageCreateSpec messageCreateSpec, Consumer<MessageCreateEvent> eventProcessor) {
+        String parseErrorMessage = messageSource.getMessage("interaction.create-event.datetime.exception.parse", null, Locale.ENGLISH);
         return Mono.defer(() -> promptBuilderFactory.defaultPrivateMessageBuilder(initialEvent, messageCreateSpec)
                 .withMessageCollector(messageCollector)
                 .eventProcessor(eventProcessor)
-                .onErrorRepeat(DateTimeParseException.class, "Invalid Format")
+                .onErrorRepeat(DateTimeParseException.class, parseErrorMessage)
                 .build()
                 .createMono()
                 .onErrorResume(InvalidDateTimeException.class, sendMessageToUserAndRepeatOnException()));
@@ -337,12 +343,13 @@ public class CreateEventInteraction {
 
     public Mono<Message> finalizeProcess() {
         Snowflake destinationChannel = Snowflake.of(eventBuilder.getDestinationChannelId());
+        String message = messageSource.getMessage("interaction.create-event.finalize.generating", null, Locale.ENGLISH);
         LOG.info("finalizeProcess - Destination channel: {}", destinationChannel);
         return initialEvent.getInteraction()
                 .getGuild()
                 .flatMap(guild -> guild.getChannelById(destinationChannel)
                         .cast(MessageChannel.class)
-                        .flatMap(channel -> channel.createMessage("Generating event..."))
+                        .flatMap(channel -> channel.createMessage(message))
                         .flatMap(finalize(destinationChannel, guild))
                 );
     }
@@ -360,8 +367,9 @@ public class CreateEventInteraction {
     }
 
     private Function<InvalidDateTimeException, Mono<MessageCreateEvent>> sendMessageToUserAndRepeatOnException() {
+        String errorMessage = messageSource.getMessage("interaction.create-event.datetime.exception.not-future", null, Locale.ENGLISH);
         return e -> privateChannelMono
-                .flatMap(channel -> channel.createMessage("Date and time of the event has to be in future!"))
+                .flatMap(channel -> channel.createMessage(errorMessage))
                 .flatMap(message -> {
                     messageCollector.collect(message);
                     return promptDateTime();
@@ -374,7 +382,8 @@ public class CreateEventInteraction {
             eventBuilder.withEventId(messageId.asString());
             Event event = buildEventAndSubscribeInteractions();
             String messageUrl = constructMessageUrl(destinationChannel, guild, messageId);
-            Mono<Message> finalMessage = getFinalMessage("Event created in " + messageUrl);
+            String completeMessage = messageSource.getMessage("interaction.create-event.finalize.complete", new Object[] {messageUrl}, Locale.ENGLISH);
+            Mono<Message> finalMessage = getFinalMessage(completeMessage);
             MessageEditSpec finalEmbed = getFinalEmbed(event);
             return message.edit(finalEmbed)
                     .then(guildEventCreator.createScheduledEvent(event))
