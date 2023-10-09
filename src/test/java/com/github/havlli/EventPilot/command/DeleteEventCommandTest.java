@@ -19,9 +19,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.context.MessageSource;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
+import java.util.Locale;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
@@ -43,11 +45,13 @@ class DeleteEventCommandTest {
     private MessageChannel messageChannel;
     @Mock
     private UserSessionValidator sessionValidatorMock;
+    @Mock
+    private MessageSource messageSourceMock;
 
     @BeforeEach
     void setUp() {
         autoCloseable = MockitoAnnotations.openMocks(this);
-        underTest = new DeleteEventCommand(permissionChecker, sessionValidatorMock);
+        underTest = new DeleteEventCommand(permissionChecker, sessionValidatorMock, messageSourceMock);
     }
 
     @AfterEach
@@ -105,6 +109,8 @@ class DeleteEventCommandTest {
 
         DeleteEventCommand underTestSpy = spy(underTest);
         doReturn(Mono.empty()).when(underTestSpy).sendMessage(interactionEvent, "Event not found!");
+        when(messageSourceMock.getMessage("interaction.delete-event.event-not-found", null, Locale.ENGLISH))
+                .thenReturn("Event not found!");
 
         // Act
         Mono<Message> actual = underTestSpy.deleteEventInteraction(interactionEvent);
@@ -159,6 +165,9 @@ class DeleteEventCommandTest {
         when(interactionEvent.getClient()).thenReturn(clientMock);
         when(clientMock.getSelfId()).thenReturn(Snowflake.of("1234"));
 
+        when(messageSourceMock.getMessage("interaction.delete-event.not-authorized", null, Locale.ENGLISH))
+                .thenReturn("Event not found, already deleted or not posted by this bot!");
+
         DeleteEventCommand underTestSpy = spy(underTest);
         doReturn(Mono.empty()).when(underTestSpy).sendMessage(interactionEvent, "Event not found, already deleted or not posted by this bot!");
 
@@ -182,6 +191,8 @@ class DeleteEventCommandTest {
         when(messageMock.getAuthor()).thenReturn(Optional.empty());
 
         DeleteEventCommand underTestSpy = spy(underTest);
+        when(messageSourceMock.getMessage("interaction.delete-event.not-authorized", null, Locale.ENGLISH))
+                .thenReturn("Event not found, already deleted or not posted by this bot!");
         doReturn(Mono.empty()).when(underTestSpy).sendMessage(interactionEvent, "Event not found, already deleted or not posted by this bot!");
 
         // Act
@@ -216,6 +227,8 @@ class DeleteEventCommandTest {
         when(messageMock.delete()).thenReturn(Mono.empty());
 
         DeleteEventCommand underTestSpy = spy(underTest);
+        when(messageSourceMock.getMessage("interaction.delete-event.event-deleted", null, Locale.ENGLISH))
+                .thenReturn("Event deleted!");
         doReturn(Mono.empty()).when(underTestSpy).sendMessage(interactionEvent, "Event deleted!");
         // Act
         Mono<Message> actual = underTestSpy.deleteMessage(interactionEvent, messageMock);

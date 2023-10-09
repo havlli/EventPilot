@@ -10,9 +10,11 @@ import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.User;
 import discord4j.core.spec.InteractionCallbackSpecDeferReplyMono;
 import discord4j.rest.util.Permission;
+import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
+import java.util.Locale;
 import java.util.Optional;
 import java.util.function.Function;
 
@@ -24,10 +26,16 @@ public class DeleteEventCommand implements SlashCommand {
     private Class<? extends Event> eventType = ChatInputInteractionEvent.class;
     private final SimplePermissionValidator permissionChecker;
     private final UserSessionValidator userSessionValidator;
+    private final MessageSource messageSource;
 
-    public DeleteEventCommand(SimplePermissionValidator permissionChecker, UserSessionValidator userSessionValidator) {
+    public DeleteEventCommand(
+            SimplePermissionValidator permissionChecker,
+            UserSessionValidator userSessionValidator,
+            MessageSource messageSource
+    ) {
         this.permissionChecker = permissionChecker;
         this.userSessionValidator = userSessionValidator;
+        this.messageSource = messageSource;
     }
 
     @Override
@@ -88,7 +96,8 @@ public class DeleteEventCommand implements SlashCommand {
     }
 
     private Function<Throwable, Mono<? extends Message>> handleMessageNotFound(ChatInputInteractionEvent event) {
-        return e -> sendMessage(event, "Event not found!");
+        String message = messageSource.getMessage("interaction.delete-event.event-not-found", null, Locale.ENGLISH);
+        return e -> sendMessage(event, message);
     }
 
     private Function<Message, Mono<? extends Message>> handleMessageFound(ChatInputInteractionEvent event) {
@@ -97,7 +106,8 @@ public class DeleteEventCommand implements SlashCommand {
             if (author.isPresent() && author.get().getId().equals(event.getClient().getSelfId())) {
                 return deleteMessage(event, message);
             } else {
-                return sendMessage(event, "Event not found, already deleted or not posted by this bot!");
+                String notAuthorizedMessage = messageSource.getMessage("interaction.delete-event.not-authorized", null, Locale.ENGLISH);
+                return sendMessage(event, notAuthorizedMessage);
             }
         };
     }
@@ -116,7 +126,8 @@ public class DeleteEventCommand implements SlashCommand {
     }
 
     public Mono<Message> deleteMessage(ChatInputInteractionEvent event, Message message) {
+        String eventDeletedMessage = messageSource.getMessage("interaction.delete-event.event-deleted", null, Locale.ENGLISH);
         return message.delete()
-                .then(sendMessage(event, "Event deleted!"));
+                .then(sendMessage(event, eventDeletedMessage));
     }
 }

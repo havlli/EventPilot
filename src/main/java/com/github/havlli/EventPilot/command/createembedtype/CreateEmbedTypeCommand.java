@@ -9,8 +9,11 @@ import discord4j.core.object.entity.Message;
 import discord4j.core.spec.InteractionCallbackSpecDeferReplyMono;
 import discord4j.core.spec.InteractionFollowupCreateSpec;
 import discord4j.rest.util.Permission;
+import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
+
+import java.util.Locale;
 
 @Component
 public class CreateEmbedTypeCommand implements SlashCommand {
@@ -20,11 +23,18 @@ public class CreateEmbedTypeCommand implements SlashCommand {
     private final SimplePermissionValidator permissionValidator;
     private final UserSessionValidator userSessionValidator;
     private final CreateEmbedTypeInteraction createEmbedTypeInteraction;
+    private final MessageSource messageSource;
 
-    public CreateEmbedTypeCommand(SimplePermissionValidator permissionValidator, UserSessionValidator userSessionValidator, CreateEmbedTypeInteraction createEmbedTypeInteraction) {
+    public CreateEmbedTypeCommand(
+            SimplePermissionValidator permissionValidator,
+            UserSessionValidator userSessionValidator,
+            CreateEmbedTypeInteraction createEmbedTypeInteraction,
+            MessageSource messageSource
+    ) {
         this.permissionValidator = permissionValidator;
         this.userSessionValidator = userSessionValidator;
         this.createEmbedTypeInteraction = createEmbedTypeInteraction;
+        this.messageSource = messageSource;
     }
 
     @Override
@@ -76,7 +86,7 @@ public class CreateEmbedTypeCommand implements SlashCommand {
     }
 
     private Mono<Message> createFollowupMessage(ChatInputInteractionEvent event) {
-        String prompt = "Initiated process of creating embed type in your DMs, please continue there!";
+        String prompt = messageSource.getMessage("interaction.private.initiated", null, Locale.ENGLISH);
         return event.createFollowup(InteractionFollowupCreateSpec.builder()
                         .content(prompt)
                         .ephemeral(true)

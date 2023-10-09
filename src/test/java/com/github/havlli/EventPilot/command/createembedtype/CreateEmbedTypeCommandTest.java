@@ -1,7 +1,5 @@
 package com.github.havlli.EventPilot.command.createembedtype;
 
-import com.github.havlli.EventPilot.command.createembedtype.CreateEmbedTypeCommand;
-import com.github.havlli.EventPilot.command.createembedtype.CreateEmbedTypeInteraction;
 import com.github.havlli.EventPilot.core.SimplePermissionValidator;
 import com.github.havlli.EventPilot.session.UserSessionValidator;
 import discord4j.core.event.domain.Event;
@@ -14,8 +12,11 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import org.springframework.context.MessageSource;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
+
+import java.util.Locale;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -31,6 +32,8 @@ class CreateEmbedTypeCommandTest {
     private UserSessionValidator userSessionValidatorMock;
     @Mock
     private CreateEmbedTypeInteraction createEmbedTypeInteractionMock;
+    @Mock
+    private MessageSource messageSourceMock;
 
     @BeforeEach
     void setUp() {
@@ -38,7 +41,8 @@ class CreateEmbedTypeCommandTest {
         underTest = new CreateEmbedTypeCommand(
                 permissionValidatorMock,
                 userSessionValidatorMock,
-                createEmbedTypeInteractionMock
+                createEmbedTypeInteractionMock,
+                messageSourceMock
         );
     }
 
@@ -77,6 +81,9 @@ class CreateEmbedTypeCommandTest {
         doReturn(Mono.empty()).when(userSessionValidatorMock).validateThenWrap(any(), any());
 
         when(eventMock.createFollowup(any(InteractionFollowupCreateSpec.class))).thenReturn(Mono.empty());
+
+        when(messageSourceMock.getMessage("interaction.private.initiated", null, Locale.ENGLISH))
+                .thenReturn("Initiated process of creating event in your DMs, please continue there!");
 
         // Act
         Mono<?> actual = underTest.handle(eventMock);

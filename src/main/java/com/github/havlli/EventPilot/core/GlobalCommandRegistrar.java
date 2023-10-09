@@ -22,7 +22,7 @@ import java.util.List;
 @DependsOn("restClient")
 public class GlobalCommandRegistrar implements ApplicationRunner {
 
-    private static final Logger logger = LoggerFactory.getLogger(GlobalCommandRegistrar.class);
+    private static final Logger LOG = LoggerFactory.getLogger(GlobalCommandRegistrar.class);
     private final RestClient restClient;
     private final PathMatchingResourcePatternResolver pathMatcher;
     private final String parentFolder;
@@ -60,7 +60,7 @@ public class GlobalCommandRegistrar implements ApplicationRunner {
                 commands.add(request);
             }
         } catch (IOException e) {
-            logger.error("Error while trying to match locationPattern[%s]".formatted(getLocationPattern()), e);
+            LOG.error("Error while trying to match locationPattern[%s]".formatted(getLocationPattern()), e);
             throw e;
         }
 
@@ -69,8 +69,8 @@ public class GlobalCommandRegistrar implements ApplicationRunner {
 
     private static void overwriteGlobalApplicationCommands(ApplicationService applicationService, long applicationId, List<ApplicationCommandRequest> commands) {
         applicationService.bulkOverwriteGlobalApplicationCommand(applicationId, commands)
-                .doOnNext(data -> logger.info("Successfully registered Global Command [{}]", data.name()))
-                .doOnError(e -> logger.error("Failed to register global commands", e))
+                .doOnNext(data -> LOG.info("Successfully registered Global Command [{}]", data.name()))
+                .doOnError(e -> LOG.error("Failed to register global commands", e))
                 .subscribe();
     }
 

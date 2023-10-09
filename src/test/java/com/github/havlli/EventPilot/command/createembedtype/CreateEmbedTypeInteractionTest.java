@@ -1,6 +1,5 @@
 package com.github.havlli.EventPilot.command.createembedtype;
 
-import com.github.havlli.EventPilot.command.createembedtype.CreateEmbedTypeInteraction;
 import com.github.havlli.EventPilot.component.CustomComponentFactory;
 import com.github.havlli.EventPilot.entity.embedtype.EmbedType;
 import com.github.havlli.EventPilot.entity.embedtype.EmbedTypeService;
@@ -131,7 +130,7 @@ class CreateEmbedTypeInteractionTest {
         MessageCreateEvent messageCreateEventMock = mock(MessageCreateEvent.class);
         when(builder.createMono()).thenReturn(Mono.just(messageCreateEventMock));
 
-        when(messageSourceMock.getMessage("interaction.embedtype.name", null, Locale.ENGLISH))
+        when(messageSourceMock.getMessage("interaction.create-embed-type.name", null, Locale.ENGLISH))
                 .thenReturn("test");
 
 
@@ -164,9 +163,9 @@ class CreateEmbedTypeInteractionTest {
         MessageCreateEvent messageCreateEventMock = mock(MessageCreateEvent.class);
         when(builder.createMono()).thenReturn(Mono.just(messageCreateEventMock));
 
-        when(messageSourceMock.getMessage("interaction.embedtype.importjson", null, Locale.ENGLISH))
+        when(messageSourceMock.getMessage("interaction.create-embed-type.import-json", null, Locale.ENGLISH))
                 .thenReturn("test");
-        when(messageSourceMock.getMessage("interaction.embedtype.importjson.exception", null, Locale.ENGLISH))
+        when(messageSourceMock.getMessage("interaction.create-embed-type.import-json.exception", null, Locale.ENGLISH))
                 .thenReturn("test");
 
 
@@ -201,7 +200,7 @@ class CreateEmbedTypeInteractionTest {
         ButtonInteractionEvent messageCreateEventMock = mock(ButtonInteractionEvent.class);
         when(builder.createMono()).thenReturn(Mono.just(messageCreateEventMock));
 
-        when(messageSourceMock.getMessage("interaction.embedtype.confirmation", null, Locale.ENGLISH))
+        when(messageSourceMock.getMessage("interaction.create-embed-type.confirmation", null, Locale.ENGLISH))
                 .thenReturn("test");
 
 
@@ -301,7 +300,7 @@ class CreateEmbedTypeInteractionTest {
         Message expectedMessage = mock(Message.class);
         when(privateChannelMock.createMessage(any(MessageCreateSpec.class))).thenReturn(Mono.just(expectedMessage));
 
-        when(messageSourceMock.getMessage(eq("interaction.embedtype.complete"), any(), eq(Locale.ENGLISH)))
+        when(messageSourceMock.getMessage(eq("interaction.create-embed-type.complete"), any(), eq(Locale.ENGLISH)))
                 .thenReturn("test");
 
         // Act

@@ -81,7 +81,7 @@ public class CreateEmbedTypeInteraction {
     }
 
     protected Mono<MessageCreateEvent> promptName() {
-        String prompt = messageSource.getMessage("interaction.embedtype.name", null, Locale.ENGLISH);
+        String prompt = messageSource.getMessage("interaction.create-embed-type.name", null, Locale.ENGLISH);
 
         return Mono.defer(() -> promptBuilderFactory.defaultPrivateMessageBuilder(initialEvent, prompt)
                 .withMessageCollector(messageCollector)
@@ -91,8 +91,8 @@ public class CreateEmbedTypeInteraction {
     }
 
     protected Mono<MessageCreateEvent> promptImportDialog() {
-        String prompt = messageSource.getMessage("interaction.embedtype.importjson", null, Locale.ENGLISH);
-        String errorMessage = messageSource.getMessage("interaction.embedtype.importjson.exception", null, Locale.ENGLISH);
+        String prompt = messageSource.getMessage("interaction.create-embed-type.import-json", null, Locale.ENGLISH);
+        String errorMessage = messageSource.getMessage("interaction.create-embed-type.import-json.exception", null, Locale.ENGLISH);
 
         return Mono.defer(() -> promptBuilderFactory.defaultPrivateMessageBuilder(initialEvent, prompt)
                 .withMessageCollector(messageCollector)
@@ -103,7 +103,7 @@ public class CreateEmbedTypeInteraction {
     }
 
     protected Mono<ButtonInteractionEvent> promptConfirmation() {
-        String prompt = messageSource.getMessage("interaction.embedtype.confirmation", null, Locale.ENGLISH);
+        String prompt = messageSource.getMessage("interaction.create-embed-type.confirmation", null, Locale.ENGLISH);
 
         ButtonRowComponent buttonRow = componentFactory.getConfirmationButtonRow();
         return Mono.defer(() -> promptBuilderFactory.deferrablePrivateButtonBuilder(initialEvent, prompt, generatePreview(), buttonRow)
@@ -164,11 +164,10 @@ public class CreateEmbedTypeInteraction {
     }
 
     private Mono<Message> sendCompleteMessage(EmbedType embedType) {
-        String prompt = messageSource.getMessage("interaction.embedtype.complete", new Object[]{embedType.getName()}, Locale.ENGLISH);
-
+        String message = messageSource.getMessage("interaction.create-embed-type.complete", new Object[]{embedType.getName()}, Locale.ENGLISH);
         return user.getPrivateChannel()
                 .flatMap(channel -> channel.createMessage(MessageCreateSpec.builder()
-                        .content(prompt)
+                        .content(message)
                         .build())
                 );
     }
