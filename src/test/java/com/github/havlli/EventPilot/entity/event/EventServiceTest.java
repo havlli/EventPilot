@@ -1,5 +1,6 @@
 package com.github.havlli.EventPilot.entity.event;
 
+import com.github.havlli.EventPilot.exception.ResourceNotFoundException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -9,6 +10,7 @@ import org.mockito.MockitoAnnotations;
 
 import java.util.List;
 
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.Mockito.*;
 
 class EventServiceTest {
@@ -86,14 +88,27 @@ class EventServiceTest {
     }
 
     @Test
-    void deleteEventById() {
+    void deleteEventById_deletesEvent_WhenEventExists() {
         // Arrange
         var eventId = "1";
+        when(eventDAO.existsById(eventId)).thenReturn(true);
 
         // Act
         underTest.deleteEventById(eventId);
 
         // Assert
         verify(eventDAO, times(1)).deleteById(eventId);
+    }
+
+    @Test
+    void deleteEventById_throwsException_WhenEventNotExists() {
+        // Arrange
+        var eventId = "1";
+        when(eventDAO.existsById(eventId)).thenReturn(false);
+
+        // Assert
+        assertThatThrownBy(() -> underTest.deleteEventById(eventId))
+                .isInstanceOf(ResourceNotFoundException.class);
+        verify(eventDAO, never()).deleteById(eventId);
     }
 }

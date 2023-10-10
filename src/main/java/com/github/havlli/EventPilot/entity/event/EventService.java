@@ -1,5 +1,6 @@
 package com.github.havlli.EventPilot.entity.event;
 
+import com.github.havlli.EventPilot.exception.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
@@ -30,6 +31,9 @@ public class EventService {
     }
 
     public void deleteEventById(String id) {
+        if (!eventDAO.existsById(id)) {
+            throw new ResourceNotFoundException("Cannot delete event that does not exist!");
+        }
         eventDAO.deleteById(id);
     }
 

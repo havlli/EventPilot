@@ -42,4 +42,9 @@ public class EventJPADataAccessService implements EventDAO {
     public List<Event> getExpiredEvents() {
         return eventRepository.findAllWithDatetimeBeforeCurrentTime();
     }
+
+    @Override
+    public boolean existsById(String id) {
+        return eventRepository.existsById(id);
+    }
 }
