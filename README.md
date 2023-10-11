@@ -58,8 +58,6 @@ _The project leverages the following technologies:_
   system, used to store and manage event-related data.
 - [**Flyway**](https://flywaydb.org) - Database migration tool that ensures the consistency and
   integrity of the database schema.
-- [**Spring Data Redis**](https://spring.io/projects/spring-data-redis) - Library for integrating
-  Redis with Spring Boot applications, used for handling custom user sessions.
 - [**Redis**](https://redis.io) - In-memory data store used as a database and cache for efficient
   data storage and retrieval.
 - [**JUnit 5**](https://junit.org/junit5/) - Testing framework for Java, utilized for writing unit
