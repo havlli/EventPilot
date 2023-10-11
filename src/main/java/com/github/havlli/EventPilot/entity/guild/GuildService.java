@@ -32,10 +32,7 @@ public class GuildService {
     }
 
     public void createGuildIfNotExists(String id, String name) {
-        if (!existsGuildById(id)) {
-            Guild newGuild = new Guild(id, name);
-            saveGuild(newGuild);
-        }
+        guildDAO.saveGuildIfNotExists(id, name);
     }
 
 }

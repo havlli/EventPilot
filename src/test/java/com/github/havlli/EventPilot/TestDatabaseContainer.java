@@ -57,8 +57,8 @@ public abstract class TestDatabaseContainer {
                 postgresSQLContainer.getPassword());
              Statement statement = connection.createStatement()
         ) {
-            String schemaSql = new String(Files.readAllBytes(Paths.get(sqlResourcePath)));
-            statement.execute(schemaSql);
+            String sql = new String(Files.readAllBytes(Paths.get(sqlResourcePath)));
+            statement.execute(sql);
             System.out.println(statement.getUpdateCount());
         }
     }

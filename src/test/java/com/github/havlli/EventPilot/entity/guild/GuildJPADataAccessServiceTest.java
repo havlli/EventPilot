@@ -71,4 +71,17 @@ class GuildJPADataAccessServiceTest {
         // Assert
         verify(guildRepository, times(1)).save(guild);
     }
+
+    @Test
+    void saveGuildIfNotExists() {
+        // Arrange
+        String id = "1";
+        String name = "test";
+
+        // Act
+        underTest.saveGuildIfNotExists(id, name);
+
+        // Assert
+        verify(guildRepository, times(1)).saveGuildIfNotExists(id, name);
+    }
 }

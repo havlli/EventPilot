@@ -33,4 +33,11 @@ public class GuildJPADataAccessService implements GuildDAO {
     public void saveGuild(Guild guild) {
         guildRepository.save(guild);
     }
+
+
+    @Override
+    public void saveGuildIfNotExists(String guildId, String guildName) {
+        guildRepository.saveGuildIfNotExists(guildId, guildName);
+    }
+
 }

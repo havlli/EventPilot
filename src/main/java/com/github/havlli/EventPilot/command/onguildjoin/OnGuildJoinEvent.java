@@ -41,6 +41,7 @@ public class OnGuildJoinEvent implements SlashCommand {
     }
 
     private Mono<Void> createGuildIfNotExists(String name, String id) {
+        System.out.println("guild join event triggered");
         guildService.createGuildIfNotExists(id, name);
         return Mono.empty();
     }

@@ -91,7 +91,7 @@ class GuildServiceTest {
         underTest.createGuildIfNotExists(id, name);
 
         // Assert
-        verify(guildDAO, times(1)).saveGuild(any());
+        verify(guildDAO, times(1)).saveGuildIfNotExists(id, name);
     }
 
     @Test

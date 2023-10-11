@@ -8,4 +8,5 @@ public interface GuildDAO {
     List<Guild> getGuilds();
     boolean existsGuildById(String id);
     void saveGuild(Guild guild);
+    void saveGuildIfNotExists(String id, String name);
 }
