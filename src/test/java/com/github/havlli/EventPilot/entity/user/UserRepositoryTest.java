@@ -181,4 +181,81 @@ public class UserRepositoryTest extends TestDatabaseContainer {
         assertThat(actual).isEmpty();
     }
 
+    @Test
+    void findByUsername_ReturnsOptionalUser_WhenUsernameExists() {
+        // Arrange
+        User user = new User("user", "email", "password");
+        underTest.save(user);
+        String username = user.getUsername();
+
+        // Act
+        Optional<User> actual = underTest.findByUsername(username);
+
+        // Assert
+        assertThat(actual).hasValue(user);
+    }
+
+    @Test
+    void findByUsername_ReturnsEmptyOptional_WhenUsernameNotExists() {
+        // Arrange
+        String username = "not-existing";
+
+        // Act
+        Optional<User> actual = underTest.findByUsername(username);
+
+        // Assert
+        assertThat(actual).isEmpty();
+    }
+
+    @Test
+    void existsByUsername_ReturnsTrue_WhenUsernameExists() {
+        // Arrange
+        User user = new User("user", "email", "password");
+        underTest.save(user);
+        String username = user.getUsername();
+
+        // Act
+        boolean actual = underTest.existsByUsername(username);
+
+        // Assert
+        assertThat(actual).isTrue();
+    }
+
+    @Test
+    void existsByUsername_ReturnsFalse_WhenUsernameNotExists() {
+        // Arrange
+        String username = "not-existing";
+
+        // Act
+        boolean actual = underTest.existsByUsername(username);
+
+        // Assert
+        assertThat(actual).isFalse();
+    }
+
+    @Test
+    void existsByEmail_ReturnsTrue_WhenEmailExists() {
+        // Arrange
+        User user = new User("user", "email", "password");
+        underTest.save(user);
+        String email = user.getEmail();
+
+        // Act
+        boolean actual = underTest.existsByEmail(email);
+
+        // Assert
+        assertThat(actual).isTrue();
+    }
+
+    @Test
+    void existsByEmail_ReturnsFalse_WhenEmailNotExists() {
+        // Arrange
+        String email = "not-existing";
+
+        // Act
+        boolean actual = underTest.existsByEmail(email);
+
+        // Assert
+        assertThat(actual).isFalse();
+    }
 }
