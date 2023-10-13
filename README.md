@@ -60,6 +60,8 @@ _The project leverages the following technologies:_
   integrity of the database schema.
 - [**Redis**](https://redis.io) - In-memory data store used as a database and cache for efficient
   data storage and retrieval.
+- [**Spring Security**](https://spring.io/projects/spring-security) - Highly customizable authentication and access-control framework.
+- [**JSON Web Token**](https://jwt.io/introduction) - Open standard that defines a compact and self-contained way for securely transmitting information between parties as a JSON object.
 - [**JUnit 5**](https://junit.org/junit5/) - Testing framework for Java, utilized for writing unit
   tests.
 - [**Mockito**](https://site.mockito.org) - Mocking framework used for testing, providing
