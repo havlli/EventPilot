@@ -1,5 +1,6 @@
 package com.github.havlli.EventPilot.entity.user;
 
+import com.github.havlli.EventPilot.exception.DuplicateResourceException;
 import com.github.havlli.EventPilot.exception.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 
@@ -8,29 +9,41 @@ import java.util.List;
 @Service
 public class UserService {
 
-    private final UserDAO userDAO;
+    private final UserDAO userRepository;
 
-    public UserService(UserDAO userDAO) {
-        this.userDAO = userDAO;
+    public UserService(UserDAO userRepository) {
+        this.userRepository = userRepository;
     }
 
     public void saveUser(User user) {
-        userDAO.saveUser(user);
+        userRepository.saveUser(user);
     }
 
-    public void deleteUserById(Long id) throws ResourceNotFoundException {
-        if (!userDAO.userExistsById(id)) {
+    public void deleteUserById(Long id) {
+        if (!userRepository.userExistsById(id)) {
             throw new ResourceNotFoundException("Cannot delete user with id {%s} - does not exist!".formatted(id));
         }
-        userDAO.deleteUserById(id);
+        userRepository.deleteUserById(id);
     }
 
     public List<User> findAllUsers() {
-        return userDAO.findAllUsers();
+        return userRepository.findAllUsers();
     }
 
-    public User findUserById(Long id) throws ResourceNotFoundException {
-        return userDAO.findUserById(id)
+    public User findUserById(Long id) {
+        return userRepository.findUserById(id)
                 .orElseThrow(() -> new ResourceNotFoundException("User with id {%s} was not found!".formatted(id)));
+    }
+
+    public void checkUsernameAvailability(String username) {
+        if(userRepository.existsByUsername(username)) {
+            throw new DuplicateResourceException("Username already taken");
+        }
+    }
+
+    public void checkEmailAvailability(String email){
+        if(userRepository.existsByEmail(email)) {
+            throw new DuplicateResourceException("Email already taken");
+        }
     }
 }

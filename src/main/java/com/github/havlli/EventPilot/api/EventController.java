@@ -2,10 +2,7 @@ package com.github.havlli.EventPilot.api;
 
 import com.github.havlli.EventPilot.entity.event.EventDTO;
 import com.github.havlli.EventPilot.entity.event.EventService;
-import com.github.havlli.EventPilot.exception.ResourceNotFoundException;
-import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.ErrorResponse;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -21,22 +18,21 @@ public class EventController {
     }
 
     @GetMapping
-    public List<EventDTO> getAllEvents() {
-        return eventService.getAllEvents()
+    public ResponseEntity<List<EventDTO>> getAllEvents() {
+        List<EventDTO> eventDTOList = eventService.getAllEvents()
                 .stream()
                 .map(EventDTO::fromEvent)
                 .toList();
+
+        return ResponseEntity.ok()
+                .body(eventDTOList);
     }
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteEventById(@PathVariable String id) {
-        try {
-            eventService.deleteEventById(id);
-            return ResponseEntity.noContent().build();
-        } catch (ResourceNotFoundException e) {
-            ErrorResponse errorResponse = ErrorResponse.builder(e, HttpStatus.NOT_FOUND, e.getMessage()).build();
-            return ResponseEntity.status(HttpStatus.NOT_FOUND)
-                    .body(errorResponse);
-        }
+        eventService.deleteEventById(id);
+
+        return ResponseEntity.noContent()
+                .build();
     }
 }

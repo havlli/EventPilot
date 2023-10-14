@@ -1,6 +1,8 @@
 package com.github.havlli.EventPilot.journey;
 
 import com.github.havlli.EventPilot.TestDatabaseContainer;
+import com.github.havlli.EventPilot.api.ApiErrorResponse;
+import com.github.havlli.EventPilot.api.auth.UserSignupRequest;
 import com.github.havlli.EventPilot.entity.embedtype.EmbedType;
 import com.github.havlli.EventPilot.entity.embedtype.EmbedTypeRepository;
 import com.github.havlli.EventPilot.entity.event.Event;
@@ -8,13 +10,19 @@ import com.github.havlli.EventPilot.entity.event.EventDTO;
 import com.github.havlli.EventPilot.entity.event.EventRepository;
 import com.github.havlli.EventPilot.entity.guild.Guild;
 import com.github.havlli.EventPilot.entity.guild.GuildRepository;
+import com.github.havlli.EventPilot.entity.user.UserRepository;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabase;
 import org.springframework.boot.test.context.SpringBootTest;
+import org.springframework.http.HttpHeaders;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.web.reactive.server.WebTestClient;
+import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
+import reactor.core.publisher.Mono;
 
 import java.time.Instant;
 import java.util.List;
@@ -37,16 +45,26 @@ public class EventControllerIT extends TestDatabaseContainer {
     private EventRepository eventRepository;
     @Autowired
     private EmbedTypeRepository embedTypeRepository;
+    @Autowired
+    private UserRepository userRepository;
+    @Autowired
+    private RequestMappingHandlerMapping requestMappingHandler;
+    private static final String BASE_URI = "/api/events";
+
+    @BeforeEach
+    void setUp() {
+        userRepository.deleteAll();
+    }
 
     @Test
-    void getAllEvents_ReturnsListOfEventDTOs() {
+    void getAllEvents_ReturnsListOfEventDTOs_WhenUserAuthenticated() {
         // Arrange
         EmbedType embedType = EmbedType.builder().withName("test").withStructure("test").build();
-        System.out.println(guildRepository.findAll());
-        System.out.println(guildRepository.existsById("1075050744719364156"));
         embedTypeRepository.save(embedType);
+
         Guild guild = new Guild("1234", "guild");
         guildRepository.save(guild);
+
         Event event = Event.builder()
                 .withEmbedType(embedType)
                 .withEventId("1234567890")
@@ -62,10 +80,13 @@ public class EventControllerIT extends TestDatabaseContainer {
 
         List<EventDTO> expected = Stream.of(event).map(EventDTO::fromEvent).toList();
 
+        String bearerToken = signupUser("username", "password", "email");
+
         // Act
         List<EventDTO> actual = webTestClient.get()
-                .uri("/api/events")
+                .uri(BASE_URI)
                 .accept(MediaType.APPLICATION_JSON)
+                .header(HttpHeaders.AUTHORIZATION, bearerToken)
                 .exchange()
                 .expectStatus().isOk()
                 .expectBodyList(EventDTO.class)
@@ -76,13 +97,31 @@ public class EventControllerIT extends TestDatabaseContainer {
     }
 
     @Test
-    void deleteEventById_deletesEvent_WhenEventExists() {
+    void getAllEvents_ReturnsApiErrorResponse_WhenNotAuthenticated() {
+        // Act
+        ApiErrorResponse actual = webTestClient.get()
+                .uri(BASE_URI)
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectStatus().isUnauthorized()
+                .expectBody(ApiErrorResponse.class)
+                .returnResult()
+                .getResponseBody();
+
+        // Assert
+        assertThat(actual).isNotNull();
+        assertThat(actual.httpStatus()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        assertThat(actual.path()).isEqualTo(BASE_URI);
+    }
+
+    @Test
+    void deleteEventById_DeletesEventAndReturnsNoContentStatus_WhenAuthenticatedAndEventExists() {
         EmbedType embedType = EmbedType.builder().withName("test").withStructure("test").build();
-        System.out.println(guildRepository.findAll());
-        System.out.println(guildRepository.existsById("1075050744719364156"));
         embedTypeRepository.save(embedType);
+
         Guild guild = new Guild("1234", "guild");
         guildRepository.save(guild);
+
         String eventId = "1234567890";
         Event event = Event.builder()
                 .withEmbedType(embedType)
@@ -97,10 +136,14 @@ public class EventControllerIT extends TestDatabaseContainer {
                 .build();
         eventRepository.save(event);
 
+        String bearerToken = signupUser("username", "password", "email");
+        String endpoint = BASE_URI + "/" + eventId;
+
         // Act
         webTestClient.delete()
-                .uri("/api/events/" + eventId)
+                .uri(endpoint)
                 .accept(MediaType.APPLICATION_JSON)
+                .header(HttpHeaders.AUTHORIZATION, bearerToken)
                 .exchange()
                 .expectStatus()
                 .isNoContent();
@@ -110,13 +153,13 @@ public class EventControllerIT extends TestDatabaseContainer {
     }
 
     @Test
-    void deleteEventById_Returns404_WhenEventNotExists() {
+    void deleteEventById_Returns404_WhenAuthenticatedAndEventDoesNotExist() {
         EmbedType embedType = EmbedType.builder().withName("test").withStructure("test").build();
-        System.out.println(guildRepository.findAll());
-        System.out.println(guildRepository.existsById("1075050744719364156"));
         embedTypeRepository.save(embedType);
+
         Guild guild = new Guild("1234", "guild");
         guildRepository.save(guild);
+
         String eventId = "1234567890";
         Event event = Event.builder()
                 .withEmbedType(embedType)
@@ -131,15 +174,63 @@ public class EventControllerIT extends TestDatabaseContainer {
                 .build();
         eventRepository.save(event);
 
+        String bearerToken = signupUser("username", "password", "email");
+        String nonExistentEventId = "111111";
+        String endpoint = BASE_URI + "/" + nonExistentEventId;
+
         // Act
-        webTestClient.delete()
-                .uri("/api/events/111111")
+        ApiErrorResponse actual = webTestClient.delete()
+                .uri(endpoint)
                 .accept(MediaType.APPLICATION_JSON)
+                .header(HttpHeaders.AUTHORIZATION, bearerToken)
                 .exchange()
                 .expectStatus()
-                .isNotFound();
+                .isNotFound()
+                .expectBody(ApiErrorResponse.class)
+                .returnResult()
+                .getResponseBody();
+
 
         // Assert
         assertThat(eventRepository.findAll()).hasSize(1);
+        assertThat(actual).isNotNull();
+        assertThat(actual.httpStatus()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(actual.path()).isEqualTo(endpoint);
+    }
+
+    @Test
+    void deleteEventById_ReturnsApiErrorResponse_WhenNotAuthenticated() {
+        // Arrange
+        String endpoint = BASE_URI + "/123";
+
+        // Act
+        ApiErrorResponse actual = webTestClient.delete()
+                .uri(endpoint)
+                .accept(MediaType.APPLICATION_JSON)
+                .exchange()
+                .expectStatus().isUnauthorized()
+                .expectBody(ApiErrorResponse.class)
+                .returnResult()
+                .getResponseBody();
+
+        // Assert
+        assertThat(actual).isNotNull();
+        assertThat(actual.httpStatus()).isEqualTo(HttpStatus.UNAUTHORIZED);
+        assertThat(actual.path()).isEqualTo(endpoint);
+    }
+
+    // Helper methods
+    private String signupUser(String username, String password, String email) {
+        UserSignupRequest signupRequest = new UserSignupRequest(username, password, email);
+        String jwtToken = webTestClient.post()
+                .uri("/api/auth/signup")
+                .contentType(MediaType.APPLICATION_JSON)
+                .body(Mono.just(signupRequest), UserSignupRequest.class)
+                .exchange()
+                .expectStatus().isCreated()
+                .returnResult(Void.class)
+                .getResponseHeaders().get(HttpHeaders.AUTHORIZATION)
+                .get(0);
+        return String.format("Bearer %s", jwtToken);
     }
 }

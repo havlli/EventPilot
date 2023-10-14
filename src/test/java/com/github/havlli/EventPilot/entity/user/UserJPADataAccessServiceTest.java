@@ -6,10 +6,6 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
-import java.util.List;
-import java.util.Optional;
-
-import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
 class UserJPADataAccessServiceTest {
@@ -69,7 +65,7 @@ class UserJPADataAccessServiceTest {
     @Test
     void findAllUsers() {
         // Act
-        List<User> actual = underTestSpy.findAllUsers();
+        underTestSpy.findAllUsers();
 
         // Assert
         verify(userRepository, times(1)).findAll();
@@ -81,9 +77,45 @@ class UserJPADataAccessServiceTest {
         Long id = 1L;
 
         // Act
-        Optional<User> actual = underTestSpy.findUserById(id);
+        underTestSpy.findUserById(id);
 
         // Assert
         verify(userRepository, times(1)).findById(id);
+    }
+
+    @Test
+    void findUserByUsername() {
+        // Arrange
+        String username = "username";
+
+        // Act
+        underTestSpy.findUserByUsername(username);
+
+        // Assert
+        verify(userRepository, times(1)).findByUsername(username);
+    }
+
+    @Test
+    void existsByUsername() {
+        // Arrange
+        String username = "username";
+
+        // Act
+        underTestSpy.existsByUsername(username);
+
+        // Assert
+        verify(userRepository, times(1)).existsByUsername(username);
+    }
+
+    @Test
+    void existsByEmail() {
+        // Arrange
+        String email = "email";
+
+        // Act
+        underTestSpy.existsByEmail(email);
+
+        // Assert
+        verify(userRepository, times(1)).existsByEmail(email);
     }
 }

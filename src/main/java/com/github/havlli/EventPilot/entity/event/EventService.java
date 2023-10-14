@@ -30,7 +30,7 @@ public class EventService {
         eventDAO.deleteAllEvents(events);
     }
 
-    public void deleteEventById(String id) throws ResourceNotFoundException{
+    public void deleteEventById(String id) {
         if (!eventDAO.existsById(id)) {
             throw new ResourceNotFoundException("Cannot delete event with id {%s} - does not exist!".formatted(id));
         }

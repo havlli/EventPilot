@@ -37,4 +37,19 @@ public class UserJPADataAccessService implements UserDAO {
     public Optional<User> findUserById(Long id) {
         return userRepository.findById(id);
     }
+
+    @Override
+    public Optional<User> findUserByUsername(String username) {
+        return userRepository.findByUsername(username);
+    }
+
+    @Override
+    public Boolean existsByUsername(String username) {
+        return userRepository.existsByUsername(username);
+    }
+
+    @Override
+    public Boolean existsByEmail(String email) {
+        return userRepository.existsByEmail(email);
+    }
 }
