@@ -7,6 +7,7 @@ import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
@@ -20,12 +21,27 @@ import java.util.function.Function;
 @Component
 public class JWTService {
     private static final Logger LOG = LoggerFactory.getLogger(JWTService.class);
-    private String jwtSecret = "=======================================Secret==========================";
+    private final String jwtSecret;
+
+    public JWTService(@Value("${security.jwt.secret}") String jwtSecret) {
+        this.jwtSecret = jwtSecret;
+    }
+
+    public boolean hasClaim(String token, String claimName) {
+        final Claims claims = extractAllClaims(token);
+        return claims.get(claimName) != null;
+    }
+
+    public Boolean isTokenValid(String token, UserDetails userDetails) {
+        final String userName = extractUsername(token)
+                .orElseThrow(() -> new JwtException("Invalid Token"));
+        return (userName.equals(userDetails.getUsername()) && !isTokenExpired(token));
+    }
 
     public Optional<String> extractUsername(String token) {
         try {
             String subject = extractClaim(token, Claims::getSubject);
-            return subject == null ? Optional.empty() : Optional.of(subject);
+            return subject != null ? Optional.of(subject) : Optional.empty();
         } catch (JwtException e) {
             LOG.error("extractUsername - {} - {}", e.getClass(), e.getMessage());
             return Optional.empty();
@@ -36,32 +52,17 @@ public class JWTService {
         return extractClaim(token, Claims::getExpiration);
     }
 
-    public boolean hasClaim(String token, String claimName) {
-        final Claims claims = extractAllClaims(token);
-        return claims.get(claimName) != null;
-    }
-
-    private Boolean isTokenExpired(String token) {
-        return extractExpiration(token)
-                .before(new Date(System.currentTimeMillis()));
-    }
-
-    public Boolean isTokenValid(String token, UserDetails userDetails) {
-        final String userName = extractUsername(token).orElseThrow();
-        return (userName.equals(userDetails.getUsername()) && !isTokenExpired(token));
-    }
-
-    private Claims extractAllClaims(String token) {
-            return Jwts.parserBuilder()
-                    .setSigningKey(getKey())
-                    .build()
-                    .parseClaimsJws(token)
-                    .getBody();
-    }
-
     private <T> T extractClaim(String token, Function<Claims, T> claimsResolver) {
         final Claims claims = extractAllClaims(token);
         return claimsResolver.apply(claims);
+    }
+
+    private Claims extractAllClaims(String token) {
+        return Jwts.parserBuilder()
+                .setSigningKey(getKey())
+                .build()
+                .parseClaimsJws(token)
+                .getBody();
     }
 
     public String generateToken(UserDetails userDetails) {
@@ -75,7 +76,8 @@ public class JWTService {
         return createToken(claims, userDetails);
     }
 
-    public String generateToken(UserDetails userDetails, Map<String, Object> claims) {
+    public String generateToken(User user, Map<String, Object> claims) {
+        UserDetailsImpl userDetails = UserDetailsImpl.of(user);
         return createToken(claims, userDetails);
     }
 
@@ -90,7 +92,12 @@ public class JWTService {
                 .compact();
     }
 
-    public Key getKey() {
+    private Boolean isTokenExpired(String token) {
+        return extractExpiration(token)
+                .before(new Date(System.currentTimeMillis()));
+    }
+
+    private Key getKey() {
         return Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtSecret));
     }
 }

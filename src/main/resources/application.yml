@@ -2,6 +2,9 @@ server:
   port: 8080
   error:
     include-message: always
+    include-binding-errors: always
+    include-stacktrace: on_param
+    include-exception: true
 
 spring:
   datasource:
@@ -25,9 +28,18 @@ cache:
     host: localhost
     port: 6379
 
+security:
+  jwt:
+    secret: =======================================Secret==========================
+
 discord:
   token: ${DISCORD_BOT_TOKEN}
   commands:
     folder: commands
   scheduler:
     interval-seconds: 60
+
+#logging:
+#  level:
+#    org.hibernate.SQL: debug
+#    org.springframework.security: trace
