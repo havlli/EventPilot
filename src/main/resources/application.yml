@@ -30,7 +30,7 @@ cache:
 
 security:
   jwt:
-    secret: =======================================Secret==========================
+    secret: ${JWT_SECRET}
 
 discord:
   token: ${DISCORD_BOT_TOKEN}
