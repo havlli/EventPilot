@@ -114,11 +114,12 @@ name: eventpilot
 services:
   eventpilot:
     container_name: eventpilot-app
-    image: eventpilot:latest
+    image: havlli/eventpilot:latest
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://database:5432/eventpilot
       CACHE_REDIS_HOST: cache
       DISCORD_TOKEN: your-discord-bot-token
+      JWT_SECRET: at-least-256bits-HS256-compliant-secret
     ports:
       - 8080:8080
     depends_on:
@@ -152,7 +153,10 @@ volumes:
 
 Make sure you replace `DISCORD_TOKEN` environmental variable with your discord bot token. If you're
 unsure how to obtain the discord bot token
-check [FAQ: How to acquire Discord Bot Token](#how-to-acquire-discord-bot-token)
+check [FAQ: How to acquire Discord Bot Token.](#how-to-acquire-discord-bot-token)
+Make sure that your `JWT_SECRET` is compliant with HS256 algorithm, if you are unsure how to create 
+such secret just create random 32 characters long `String`. Generating secrets using online tools
+is, from security reasons, not advised.
 
 2. Once you set your `DISCORD_TOKEN` variable simply run in same directory:
 

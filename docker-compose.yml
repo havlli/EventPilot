@@ -2,11 +2,12 @@ name: eventpilot
 services:
   eventpilot:
     container_name: eventpilot-app
-    image: eventpilot:latest
+    image: havlli/eventpilot:latest
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://database:5432/eventpilot
       CACHE_REDIS_HOST: cache
       DISCORD_TOKEN: your-discord-bot-token
+      JWT_SECRET: at-least-256bits-HS256-compliant-secret
     ports:
       - 8080:8080
     depends_on:
