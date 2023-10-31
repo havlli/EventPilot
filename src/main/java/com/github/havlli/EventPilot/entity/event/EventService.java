@@ -40,4 +40,8 @@ public class EventService {
     public List<Event> getExpiredEvents() {
         return eventDAO.getExpiredEvents();
     }
+
+    public List<Event> getLastFiveEvents() {
+        return eventDAO.getLastFiveEvents();
+    }
 }

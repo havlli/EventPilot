@@ -9,4 +9,6 @@ public interface EventRepository extends JpaRepository<Event, String> {
 
     @Query("SELECT e FROM Event e WHERE e.dateTime < CURRENT_TIMESTAMP")
     List<Event> findAllWithDatetimeBeforeCurrentTime();
+    @Query("SELECT e FROM Event e ORDER BY e.eventId DESC LIMIT 5")
+    List<Event> findLastFiveEvents();
 }

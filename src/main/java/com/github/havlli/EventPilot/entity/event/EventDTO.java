@@ -1,8 +1,8 @@
 package com.github.havlli.EventPilot.entity.event;
 
-import com.github.havlli.EventPilot.entity.embedtype.EmbedType;
-import com.github.havlli.EventPilot.entity.guild.Guild;
-import com.github.havlli.EventPilot.entity.participant.Participant;
+import com.github.havlli.EventPilot.entity.embedtype.EmbedTypeDTO;
+import com.github.havlli.EventPilot.entity.guild.GuildDTO;
+import com.github.havlli.EventPilot.entity.participant.ParticipantDTO;
 
 import java.time.Instant;
 import java.util.List;
@@ -15,9 +15,9 @@ public record EventDTO(
         Instant dateTime,
         String destinationChannelId,
         String memberSize,
-        List<Participant> participants,
-        Guild guild,
-        EmbedType embedType
+        List<ParticipantDTO> participants,
+        GuildDTO guild,
+        EmbedTypeDTO embedType
 ) {
     public static EventDTO fromEvent(Event event) {
         return new EventDTO(
@@ -28,12 +28,9 @@ public record EventDTO(
                 event.getDateTime(),
                 event.getDestinationChannelId(),
                 event.getMemberSize(),
-                event.getParticipants(),
-                new Guild(event.getGuild().getId(), event.getGuild().getName()),
-                EmbedType.builder()
-                        .withName(event.getEmbedType().getName())
-                        .withStructure(event.getEmbedType().getStructure())
-                        .build()
+                ParticipantDTO.fromParticipants(event.getParticipants()),
+                GuildDTO.fromGuild(event.getGuild()),
+                EmbedTypeDTO.fromEmbedType(event.getEmbedType())
         );
     }
 }

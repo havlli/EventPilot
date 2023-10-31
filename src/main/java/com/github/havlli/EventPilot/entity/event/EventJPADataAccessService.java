@@ -47,4 +47,9 @@ public class EventJPADataAccessService implements EventDAO {
     public boolean existsById(String id) {
         return eventRepository.existsById(id);
     }
+
+    @Override
+    public List<Event> getLastFiveEvents() {
+        return eventRepository.findLastFiveEvents();
+    }
 }

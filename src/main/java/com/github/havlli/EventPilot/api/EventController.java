@@ -35,4 +35,15 @@ public class EventController {
         return ResponseEntity.noContent()
                 .build();
     }
+
+    @GetMapping("/last")
+    public ResponseEntity<List<EventDTO>> getLastFiveEvents() {
+        List<EventDTO> eventDTOList = eventService.getLastFiveEvents()
+                .stream()
+                .map(EventDTO::fromEvent)
+                .toList();
+
+        return ResponseEntity.ok()
+                .body(eventDTOList);
+    }
 }

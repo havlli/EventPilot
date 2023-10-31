@@ -78,6 +78,7 @@ public class EventControllerIT extends TestDatabaseContainer {
                 .build();
         eventRepository.save(event);
 
+        guild.getEvents().add(event);
         List<EventDTO> expected = Stream.of(event).map(EventDTO::fromEvent).toList();
 
         String bearerToken = signupUser("username", "password", "email");
@@ -217,6 +218,63 @@ public class EventControllerIT extends TestDatabaseContainer {
         assertThat(actual).isNotNull();
         assertThat(actual.httpStatus()).isEqualTo(HttpStatus.UNAUTHORIZED);
         assertThat(actual.path()).isEqualTo(endpoint);
+    }
+
+    @Test
+    void getLastFiveEvents_ReturnsListOfEventDTOs_WhenUserAuthenticated() {
+        // Arrange
+        EmbedType embedType = EmbedType.builder().withName("test").withStructure("test").build();
+        embedTypeRepository.save(embedType);
+
+        Guild guild = new Guild("1234", "guild");
+        guildRepository.save(guild);
+
+        Event event1 = Event.builder()
+                .withEmbedType(embedType)
+                .withEventId("1234567890")
+                .withName("Preview name")
+                .withDescription("Preview description")
+                .withAuthor("Author")
+                .withDateTime(Instant.now())
+                .withGuild(guild)
+                .withDestinationChannel("1234567890")
+                .withMemberSize("25")
+                .build();
+        eventRepository.save(event1);
+
+        Event event2 = Event.builder()
+                .withEmbedType(embedType)
+                .withEventId("12345678901")
+                .withName("Preview name")
+                .withDescription("Preview description")
+                .withAuthor("Author")
+                .withDateTime(Instant.now())
+                .withGuild(guild)
+                .withDestinationChannel("1234567890")
+                .withMemberSize("25")
+                .build();
+        eventRepository.save(event2);
+
+        guild.getEvents().add(event1);
+        guild.getEvents().add(event2);
+        List<EventDTO> expected = Stream.of(event1, event2)
+                .map(EventDTO::fromEvent).toList();
+
+        String bearerToken = signupUser("username", "password", "email");
+
+        // Act
+        List<EventDTO> actual = webTestClient.get()
+                .uri(BASE_URI + "/last")
+                .accept(MediaType.APPLICATION_JSON)
+                .header(HttpHeaders.AUTHORIZATION, bearerToken)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBodyList(EventDTO.class)
+                .returnResult().getResponseBody();
+
+        // Assert
+        assertThat(actual).usingRecursiveFieldByFieldElementComparatorIgnoringFields("dateTime")
+                .containsAll(expected);
     }
 
     // Helper methods

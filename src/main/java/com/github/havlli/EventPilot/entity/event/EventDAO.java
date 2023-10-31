@@ -10,4 +10,5 @@ public interface EventDAO {
     void deleteAllEvents(List<Event> events);
     List<Event> getExpiredEvents();
     boolean existsById(String id);
+    List<Event> getLastFiveEvents();
 }
