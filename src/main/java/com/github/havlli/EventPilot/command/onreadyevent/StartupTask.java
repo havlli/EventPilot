@@ -35,6 +35,7 @@ public class StartupTask {
         this.client = client;
     }
 
+
     public Mono<Void> subscribeEventInteractions() {
         List<Event> events = eventService.getAllEvents();
         events.forEach(embedGenerator::subscribeInteractions);
