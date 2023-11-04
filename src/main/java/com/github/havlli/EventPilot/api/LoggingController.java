@@ -19,7 +19,7 @@ public class LoggingController {
     }
 
     @GetMapping("stream-sse")
-    public Flux<ServerSentEvent<ConsoleLogEventDTO>> sse() {
+    public Flux<ServerSentEvent<ConsoleLogEventDTO>> consoleLogStream() {
         return consoleLogPublisher.asFlux()
                 .map(loggingEvent -> ServerSentEvent.<ConsoleLogEventDTO> builder()
                         .id(String.valueOf(loggingEvent.getInstant().toEpochMilli()))

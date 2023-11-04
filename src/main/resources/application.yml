@@ -43,8 +43,3 @@ discord:
     folder: commands
   scheduler:
     interval-seconds: 60
-
-#logging:
-#  level:
-#    org.hibernate.SQL: debug
-#    org.springframework.security: trace
