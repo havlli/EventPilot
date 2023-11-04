@@ -30,6 +30,5 @@ class ThrowableProxyDTOTest {
         assertThat(actual.className()).isEqualTo(className);
         assertThat(actual.message()).isEqualTo(message);
         assertThat(actual.stackTrace()).contains(stackTrace);
-
     }
 }

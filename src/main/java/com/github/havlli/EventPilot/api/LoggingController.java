@@ -1,5 +1,6 @@
 package com.github.havlli.EventPilot.api;
 
+import ch.qos.logback.classic.spi.ILoggingEvent;
 import com.github.havlli.EventPilot.logging.ConsoleLogEventDTO;
 import com.github.havlli.EventPilot.logging.ConsoleLogPublisher;
 import org.springframework.http.codec.ServerSentEvent;
@@ -21,9 +22,13 @@ public class LoggingController {
     @GetMapping("stream-sse")
     public Flux<ServerSentEvent<ConsoleLogEventDTO>> consoleLogStream() {
         return consoleLogPublisher.asFlux()
-                .map(loggingEvent -> ServerSentEvent.<ConsoleLogEventDTO> builder()
-                        .id(String.valueOf(loggingEvent.getInstant().toEpochMilli()))
-                        .data(ConsoleLogEventDTO.fromLoggingEvent(loggingEvent))
-                        .build());
+                .map(this::mapToServerSentEvent);
+    }
+
+    private ServerSentEvent<ConsoleLogEventDTO> mapToServerSentEvent(ILoggingEvent loggingEvent) {
+        return ServerSentEvent.<ConsoleLogEventDTO>builder()
+                .id(String.valueOf(loggingEvent.getInstant().toEpochMilli()))
+                .data(ConsoleLogEventDTO.fromLoggingEvent(loggingEvent))
+                .build();
     }
 }
