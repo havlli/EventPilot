@@ -40,7 +40,7 @@ public class MessageCollector {
 
     private Mono<Void> deleteMessage(Message message) {
         return message.delete().onErrorResume(error -> {
-            LOG.error("Error occurred while deleting message {}\n{}", message.getId().asString(), error.getStackTrace());
+            LOG.error("Error occurred while deleting message %s".formatted(message.getId().asString()));
             return Mono.empty();
         });
     }

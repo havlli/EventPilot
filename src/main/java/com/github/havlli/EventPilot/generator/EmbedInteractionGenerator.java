@@ -53,10 +53,10 @@ public class EmbedInteractionGenerator {
                                 .filter(interaction -> interaction.getCustomId().equals(customId))
                                 .flatMap(interaction -> handleEvent(interaction, event, embedGenerator))
                                 .subscribe();
-                        LOG.info("Interaction {} for Event {} got subscribed", value, event.getEventId());
+                        LOG.info("Interaction %s for Event %s got subscribed".formatted(value, event.getEventId()));
                     });
         } catch (JsonProcessingException e) {
-            LOG.error("Serialization error - {}", e.getMessage());
+            LOG.error("Serialization error - %s".formatted(e.getMessage()));
         }
     }
 

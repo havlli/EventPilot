@@ -69,7 +69,7 @@ public class GlobalCommandRegistrar implements ApplicationRunner {
 
     private static void overwriteGlobalApplicationCommands(ApplicationService applicationService, long applicationId, List<ApplicationCommandRequest> commands) {
         applicationService.bulkOverwriteGlobalApplicationCommand(applicationId, commands)
-                .doOnNext(data -> LOG.info("Successfully registered Global Command [{}]", data.name()))
+                .doOnNext(data -> LOG.info("Successfully registered Global Command [%s]".formatted(data.name())))
                 .doOnError(e -> LOG.error("Failed to register global commands", e))
                 .subscribe();
     }

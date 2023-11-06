@@ -43,7 +43,7 @@ public class JWTService {
             String subject = extractClaim(token, Claims::getSubject);
             return subject != null ? Optional.of(subject) : Optional.empty();
         } catch (JwtException e) {
-            LOG.error("extractUsername - {} - {}", e.getClass(), e.getMessage());
+            LOG.error("extractUsername - %s - %s".formatted(e.getClass(), e.getMessage()));
             return Optional.empty();
         }
     }

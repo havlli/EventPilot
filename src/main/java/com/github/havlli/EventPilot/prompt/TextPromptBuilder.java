@@ -19,6 +19,7 @@ import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Mono;
 
 import javax.validation.constraints.NotNull;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -105,7 +106,7 @@ public class TextPromptBuilder<T extends Event> {
         return messageChannel
                 .flatMap(channel -> channel.createMessage(onErrorMessage))
                 .flatMap(message -> {
-                    LOG.error("threw error {}\n{}", errorClass.getCanonicalName(), e.getStackTrace());
+                    LOG.error("threw error %s\n%s".formatted(errorClass.getCanonicalName(), Arrays.toString(e.getStackTrace())));
                     messageCollector.collect(message);
                     return repeatInteraction();
                 });

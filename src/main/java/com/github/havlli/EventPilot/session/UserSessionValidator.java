@@ -31,7 +31,7 @@ public class UserSessionValidator {
         }
         return followupMessage
                 .doFinally(__ -> {
-                    LOG.info("Terminating user session - {}", event.getInteraction().getUser().getUsername());
+                    LOG.info("Terminating user session - %s".formatted(event.getInteraction().getUser().getUsername()));
                     terminate(event);
                 });
     }

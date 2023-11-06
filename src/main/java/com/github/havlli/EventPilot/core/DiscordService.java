@@ -56,7 +56,7 @@ public class DiscordService {
 
     private Function<ClientException, Mono<? extends Message>> handleMessageNotFound(Snowflake messageId, Snowflake channelId) {
         return e -> {
-            LOG.error("Message {} was not found in channel {}", messageId.asString(), channelId.asString());
+            LOG.error("Message %s was not found in channel %s".formatted(messageId.asString(), channelId.asString()));
             return completeSignal();
         };
     }

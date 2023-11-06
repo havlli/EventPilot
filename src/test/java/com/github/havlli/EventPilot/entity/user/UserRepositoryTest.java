@@ -30,7 +30,7 @@ public class UserRepositoryTest extends TestDatabaseContainer {
 
     @BeforeEach
     void setUp() {
-        LOG.info("Number of beans initialized { {} }", applicationContext.getBeanDefinitionCount());
+        LOG.info("Number of beans initialized { %s }".formatted(applicationContext.getBeanDefinitionCount()));
     }
 
     @Test

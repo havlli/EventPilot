@@ -344,7 +344,7 @@ public class CreateEventInteraction {
     public Mono<Message> finalizeProcess() {
         Snowflake destinationChannel = Snowflake.of(eventBuilder.getDestinationChannelId());
         String message = messageSource.getMessage("interaction.create-event.finalize.generating", null, Locale.ENGLISH);
-        LOG.info("finalizeProcess - Destination channel: {}", destinationChannel);
+        LOG.info("finalizeProcess - Destination channel: %s".formatted(destinationChannel));
         return initialEvent.getInteraction()
                 .getGuild()
                 .flatMap(guild -> guild.getChannelById(destinationChannel)

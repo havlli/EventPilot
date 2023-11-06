@@ -31,7 +31,7 @@ public class ComponentGenerator {
                     ActionRow.of(generateDefaultButtons(delimiter, event.getEventId(), roles))
             );
         } catch (JsonProcessingException e) {
-            LOG.error("Serialization error - {}", e.getMessage());
+            LOG.error("Serialization error - %s".formatted(e.getMessage()));
         }
 
         return new ArrayList<>();

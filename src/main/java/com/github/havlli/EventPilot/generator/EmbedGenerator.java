@@ -164,7 +164,7 @@ public class EmbedGenerator {
                     .map(mapEntryToField(eventParticipants))
                     .collect(Collectors.toList());
         } catch (JsonProcessingException e) {
-            LOG.error("Serialization error - {}", e.getMessage());
+            LOG.error("Serialization error - %s".formatted(e.getMessage()));
         }
 
         return new ArrayList<>();
