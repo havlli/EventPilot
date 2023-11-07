@@ -14,7 +14,7 @@ public class ConsoleLogPublisher {
     }
 
     private Sinks.Many<ILoggingEvent> initiateSink() {
-        return Sinks.many().multicast().onBackpressureBuffer();
+        return Sinks.many().replay().limit(50);
     }
 
     public void publish(ILoggingEvent eventObject) {

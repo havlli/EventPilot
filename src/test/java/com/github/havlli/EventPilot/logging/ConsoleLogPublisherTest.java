@@ -8,6 +8,8 @@ import org.mockito.MockitoAnnotations;
 import reactor.core.publisher.Flux;
 import reactor.test.StepVerifier;
 
+import java.util.stream.IntStream;
+
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
 
@@ -28,14 +30,21 @@ class ConsoleLogPublisherTest {
     }
 
     @Test
-    void publish_SinkAcceptsLoggingEvent() {
+    void publish_SinkAcceptsLoggingEventAndReplaysLast50EventsForFutureSubscribers() {
         // Arrange
         ILoggingEvent loggingEventMock = mock(ILoggingEvent.class);
 
         // Act & Assert
         StepVerifier.create(underTest.asFlux())
-                .then(() -> underTest.publish(loggingEventMock))
-                .expectNext(loggingEventMock)
+                .then(() -> IntStream.iterate(0, i -> i + 1)
+                        .limit(60)
+                        .forEach(__ -> underTest.publish(loggingEventMock)))
+                .expectNextCount(50)
+                .thenCancel()
+                .verify();
+
+        StepVerifier.create(underTest.asFlux())
+                .expectNextCount(50)
                 .thenCancel()
                 .verify();
     }
