@@ -6,7 +6,6 @@ import com.github.havlli.EventPilot.entity.embedtype.EmbedTypeService;
 import com.github.havlli.EventPilot.entity.event.Event;
 import com.github.havlli.EventPilot.entity.event.EventService;
 import com.github.havlli.EventPilot.entity.participant.Participant;
-import com.github.havlli.EventPilot.entity.participant.ParticipantService;
 import discord4j.common.util.Snowflake;
 import discord4j.core.GatewayDiscordClient;
 import discord4j.core.event.EventDispatcher;
@@ -23,10 +22,10 @@ import org.mockito.MockitoAnnotations;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
 
+import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.Optional;
 
 import static org.mockito.Mockito.*;
 
@@ -39,8 +38,6 @@ class EmbedInteractionGeneratorTest {
     @Mock
     private GatewayDiscordClient clientMock;
     @Mock
-    private ParticipantService participantServiceMock;
-    @Mock
     private EventService eventServiceMock;
 
 
@@ -48,7 +45,7 @@ class EmbedInteractionGeneratorTest {
     @BeforeEach
     void setUp() {
         autoCloseable = MockitoAnnotations.openMocks(this);
-        underTest = new EmbedInteractionGenerator(embedTypeServiceMock, clientMock, participantServiceMock, eventServiceMock);
+        underTest = new EmbedInteractionGenerator(embedTypeServiceMock, clientMock, eventServiceMock);
     }
 
     @AfterEach
@@ -146,13 +143,10 @@ class EmbedInteractionGeneratorTest {
         when(interactionEventMock.deferEdit()).thenReturn(interactionCallbackSpecDeferEditMono);
         when(interactionCallbackSpecDeferEditMono.then(any())).thenReturn(Mono.empty());
 
-        when(participantServiceMock.getParticipant(any(), any())).thenReturn(Optional.of(participantOne));
         // Act
         underTest.handleEvent(interactionEventMock, eventMock, embedGeneratorMock).block();
 
         // Assert
-        verify(participantServiceMock, never()).addParticipant(any(), any());
-        verify(participantServiceMock, times(1)).updateRoleIndex(any(), any());
         verify(eventServiceMock, times(1)).saveEvent(eventMock);
     }
 
@@ -182,13 +176,10 @@ class EmbedInteractionGeneratorTest {
         when(interactionEventMock.deferEdit()).thenReturn(interactionCallbackSpecDeferEditMono);
         when(interactionCallbackSpecDeferEditMono.then(any())).thenReturn(Mono.empty());
 
-        when(participantServiceMock.getParticipant(any(), any())).thenReturn(Optional.empty());
         // Act
         underTest.handleEvent(interactionEventMock, eventMock, embedGeneratorMock).block();
 
         // Assert
-        verify(participantServiceMock, times(1)).addParticipant(any(), any());
-        verify(participantServiceMock, never()).updateRoleIndex(any(), any());
         verify(eventServiceMock, times(1)).saveEvent(eventMock);
     }
 
@@ -196,7 +187,7 @@ class EmbedInteractionGeneratorTest {
     void handleEvent_AddNewParticipantSavesEventAndReturnsMono_NoParticipantsExist() {
         // Arrange
         Event eventMock = mock(Event.class);
-        List<Participant> participantList = List.of();
+        List<Participant> participantList = new ArrayList<>();
         when(eventMock.getParticipants()).thenReturn(participantList);
 
         ButtonInteractionEvent interactionEventMock = mock(ButtonInteractionEvent.class);
@@ -214,14 +205,10 @@ class EmbedInteractionGeneratorTest {
         InteractionCallbackSpecDeferEditMono interactionCallbackSpecDeferEditMono = mock(InteractionCallbackSpecDeferEditMono.class);
         when(interactionEventMock.deferEdit()).thenReturn(interactionCallbackSpecDeferEditMono);
         when(interactionCallbackSpecDeferEditMono.then(any())).thenReturn(Mono.empty());
-
-        when(participantServiceMock.getParticipant(any(), any())).thenReturn(Optional.empty());
         // Act
         underTest.handleEvent(interactionEventMock, eventMock, embedGeneratorMock).block();
 
         // Assert
-        verify(participantServiceMock, times(1)).addParticipant(any(), any());
-        verify(participantServiceMock, never()).updateRoleIndex(any(), any());
         verify(eventServiceMock, times(1)).saveEvent(eventMock);
     }
 }

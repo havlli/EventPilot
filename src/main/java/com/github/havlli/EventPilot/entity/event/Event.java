@@ -77,7 +77,7 @@ public class Event {
         this.memberSize = builder.memberSize;
         this.guild = builder.guild;
         this.embedType = builder.embedType;
-        this.participants = new ArrayList<>();
+        this.participants = builder.participants;
     }
 
     public String getEventId() {
@@ -170,6 +170,7 @@ public class Event {
         private String memberSize;
         private Guild guild;
         private EmbedType embedType;
+        private List<Participant> participants;
 
         private Builder() { }
 
@@ -227,7 +228,35 @@ public class Event {
             return destinationChannelId;
         }
 
+        public Builder withParticipants(List<Participant> participants) {
+            this.participants = participants;
+            return this;
+        }
+
+        public List<Participant> getParticipants() {
+            return participants;
+        }
+
+        public Builder fromEvent(Event event) {
+            this.eventId = event.getEventId();
+            this.name = event.getName();
+            this.description = event.getDescription();
+            this.author = event.getAuthor();
+            this.dateTime = event.getDateTime();
+            this.destinationChannelId = event.getDestinationChannelId();
+            this.instances = event.getInstances();
+            this.memberSize = event.getMemberSize();
+            this.guild = event.getGuild();
+            this.embedType = event.getEmbedType();
+            this.participants = event.getParticipants();
+
+            return this;
+        }
+
         public Event build() {
+            if (this.participants == null) {
+                this.participants = new ArrayList<>();
+            }
             this.event = new Event(this);
             return this.event;
         }

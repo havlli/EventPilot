@@ -1,12 +1,20 @@
 package com.github.havlli.EventPilot.entity.participant;
 
 import com.github.havlli.EventPilot.entity.event.Event;
+import com.github.havlli.EventPilot.entity.event.EventService;
+import com.github.havlli.EventPilot.generator.EmbedGenerator;
+import discord4j.core.GatewayDiscordClient;
+import discord4j.core.object.entity.Message;
+import discord4j.core.spec.EmbedCreateSpec;
+import discord4j.core.spec.MessageEditSpec;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
+import reactor.core.publisher.Mono;
+import reactor.test.StepVerifier;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -101,5 +109,30 @@ class ParticipantServiceTest {
 
         // Assert
         verify(participantDAO, times(1)).getParticipantsByEvent(eventMock);
+    }
+
+    @Test
+    public void updateDiscordMessage() {
+        // Arrange
+        EventService eventServiceMock = mock(EventService.class);
+        GatewayDiscordClient clientMock = mock(GatewayDiscordClient.class);
+        Message messageMock = mock(Message.class);
+        when(clientMock.getMessageById(any(),any())).thenReturn(Mono.just(messageMock));
+        when(messageMock.edit(any(MessageEditSpec.class))).thenReturn(Mono.empty());
+        Event eventMock = mock(Event.class);
+        when(eventMock.getEventId()).thenReturn("123123123");
+        when(eventMock.getDestinationChannelId()).thenReturn("123123123");
+        EmbedGenerator embedGeneratorMock = mock(EmbedGenerator.class);
+        when(embedGeneratorMock.generateEmbed(eventMock)).thenReturn(mock(EmbedCreateSpec.class));
+
+        ParticipantService underTestSpy = spy(new ParticipantService(participantDAO, embedGeneratorMock, eventServiceMock, clientMock));
+
+        // Act
+        Mono<Message> actual = underTestSpy.updateDiscordMessage(eventMock);
+
+        // Assert
+        StepVerifier.create(actual)
+                .expectSubscription()
+                .verifyComplete();
     }
 }

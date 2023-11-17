@@ -4,6 +4,7 @@ import com.github.havlli.EventPilot.entity.event.Event;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public class ParticipantJPADataAccessService implements ParticipantDAO {
@@ -22,5 +23,10 @@ public class ParticipantJPADataAccessService implements ParticipantDAO {
     @Override
     public void saveParticipant(Participant participant) {
         participantRepository.save(participant);
+    }
+
+    @Override
+    public Optional<Participant> findById(Long id) {
+        return participantRepository.findById(id);
     }
 }

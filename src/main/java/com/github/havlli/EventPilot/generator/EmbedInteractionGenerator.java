@@ -6,7 +6,6 @@ import com.github.havlli.EventPilot.entity.embedtype.EmbedTypeService;
 import com.github.havlli.EventPilot.entity.event.Event;
 import com.github.havlli.EventPilot.entity.event.EventService;
 import com.github.havlli.EventPilot.entity.participant.Participant;
-import com.github.havlli.EventPilot.entity.participant.ParticipantService;
 import discord4j.core.GatewayDiscordClient;
 import discord4j.core.event.domain.interaction.ButtonInteractionEvent;
 import discord4j.core.object.entity.Message;
@@ -26,18 +25,15 @@ public class EmbedInteractionGenerator {
     private static final Logger LOG = LoggerFactory.getLogger(EmbedInteractionGenerator.class);
     private final EmbedTypeService embedTypeService;
     private final GatewayDiscordClient client;
-    private final ParticipantService participantService;
     private final EventService eventService;
 
     public EmbedInteractionGenerator(
             EmbedTypeService embedTypeService,
             GatewayDiscordClient client,
-            ParticipantService participantService,
             EventService eventService
     ) {
         this.embedTypeService = embedTypeService;
         this.client = client;
-        this.participantService = participantService;
         this.eventService = eventService;
     }
 
@@ -66,13 +62,13 @@ public class EmbedInteractionGenerator {
         String userId = user.getId().asString();
         int roleIndex = extractRoleIndex(event.getCustomId(), embedGenerator.getDelimiter());
 
-        Optional<Participant> participant = participantService.getParticipant(userId, participants);
+        Optional<Participant> participant = getParticipant(userId, participants);
         if (participant.isEmpty()) {
             Integer currentOrder = participants.size() + 1;
             Participant newParticipant = new Participant(userId, user.getUsername(), currentOrder, roleIndex, embedEvent);
-            participantService.addParticipant(newParticipant, participants);
+            participants.add(newParticipant);
         } else {
-            participantService.updateRoleIndex(participant.get(), roleIndex);
+            participant.orElseThrow().setRoleIndex(roleIndex);
         }
 
         eventService.saveEvent(embedEvent);
@@ -90,5 +86,11 @@ public class EmbedInteractionGenerator {
 
     private String constructCustomId(String id, String delimiter, Integer key) {
         return id + delimiter + key;
+    }
+
+    private Optional<Participant> getParticipant(String id, List<Participant> participants) {
+        return participants.stream()
+                .filter(participant -> participant.getUserId().equals(id))
+                .findFirst();
     }
 }
