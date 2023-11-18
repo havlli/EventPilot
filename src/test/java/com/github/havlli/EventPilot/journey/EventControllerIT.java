@@ -8,6 +8,7 @@ import com.github.havlli.EventPilot.entity.embedtype.EmbedTypeRepository;
 import com.github.havlli.EventPilot.entity.event.Event;
 import com.github.havlli.EventPilot.entity.event.EventDTO;
 import com.github.havlli.EventPilot.entity.event.EventRepository;
+import com.github.havlli.EventPilot.entity.event.EventUpdateRequest;
 import com.github.havlli.EventPilot.entity.guild.Guild;
 import com.github.havlli.EventPilot.entity.guild.GuildRepository;
 import com.github.havlli.EventPilot.entity.user.UserRepository;
@@ -21,7 +22,6 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.annotation.DirtiesContext;
 import org.springframework.test.web.reactive.server.WebTestClient;
-import org.springframework.web.servlet.mvc.method.annotation.RequestMappingHandlerMapping;
 import reactor.core.publisher.Mono;
 
 import java.time.Instant;
@@ -47,8 +47,6 @@ public class EventControllerIT extends TestDatabaseContainer {
     private EmbedTypeRepository embedTypeRepository;
     @Autowired
     private UserRepository userRepository;
-    @Autowired
-    private RequestMappingHandlerMapping requestMappingHandler;
     private static final String BASE_URI = "/api/events";
 
     @BeforeEach
@@ -275,6 +273,162 @@ public class EventControllerIT extends TestDatabaseContainer {
         // Assert
         assertThat(actual).usingRecursiveFieldByFieldElementComparatorIgnoringFields("dateTime")
                 .containsAll(expected);
+    }
+
+    @Test
+    void updateEvent_UpdatesAndReturnsEventDTO_WhenIdExistsAndUserAuthenticated() {
+        // Arrange
+        EmbedType embedType = EmbedType.builder().withName("test").withStructure("test").build();
+        embedTypeRepository.save(embedType);
+
+        Guild guild = new Guild("1234", "guild");
+        guildRepository.save(guild);
+
+        Event event = Event.builder()
+                .withEmbedType(embedType)
+                .withEventId("1234567890")
+                .withName("Preview name")
+                .withDescription("Preview description")
+                .withAuthor("Author")
+                .withDateTime(Instant.now())
+                .withGuild(guild)
+                .withDestinationChannel("1234567890")
+                .withMemberSize("25")
+                .build();
+        eventRepository.save(event);
+
+        String authorizationToken = signupUser("username", "password", "email");
+
+        String expectedName = "updatedName";
+        String expectedDesc = "updatedDescription";
+        String expectedSize = "5";
+        EventUpdateRequest updateRequest = new EventUpdateRequest(expectedName, expectedDesc, expectedSize);
+
+        // Act
+        EventDTO actual = webTestClient.post()
+                .uri(BASE_URI + "/" + event.getEventId())
+                .accept(MediaType.APPLICATION_JSON)
+                .header(HttpHeaders.AUTHORIZATION, authorizationToken)
+                .body(Mono.just(updateRequest), EventUpdateRequest.class)
+                .exchange()
+                .expectStatus()
+                .isOk()
+                .expectBody(EventDTO.class)
+                .returnResult()
+                .getResponseBody();
+
+        System.out.println(actual);
+
+        // Assert
+        assertThat(actual).hasFieldOrPropertyWithValue("name", expectedName);
+        assertThat(actual).hasFieldOrPropertyWithValue("description", expectedDesc);
+        assertThat(actual).hasFieldOrPropertyWithValue("memberSize", expectedSize);
+    }
+
+    @Test
+    void updateEvent_UpdatesAndReturnsEventDTO_WhenIdExistsAndUserAuthenticatedAndPartialEventDetails() {
+        // Arrange
+        EmbedType embedType = EmbedType.builder().withName("test").withStructure("test").build();
+        embedTypeRepository.save(embedType);
+
+        Guild guild = new Guild("1234", "guild");
+        guildRepository.save(guild);
+
+        Event event = Event.builder()
+                .withEmbedType(embedType)
+                .withEventId("1234567890")
+                .withName("Preview name")
+                .withDescription("Preview description")
+                .withAuthor("Author")
+                .withDateTime(Instant.now())
+                .withGuild(guild)
+                .withDestinationChannel("1234567890")
+                .withMemberSize("25")
+                .build();
+        eventRepository.save(event);
+
+        String authorizationToken = signupUser("username", "password", "email");
+
+        String expectedName = null;
+        String expectedDesc = "updatedDescription";
+        String expectedSize = null;
+        EventUpdateRequest updateRequest = new EventUpdateRequest(expectedName, expectedDesc, expectedSize);
+
+        // Act
+        EventDTO actual = webTestClient.post()
+                .uri(BASE_URI + "/" + event.getEventId())
+                .accept(MediaType.APPLICATION_JSON)
+                .header(HttpHeaders.AUTHORIZATION, authorizationToken)
+                .body(Mono.just(updateRequest), EventUpdateRequest.class)
+                .exchange()
+                .expectStatus()
+                .isOk()
+                .expectBody(EventDTO.class)
+                .returnResult()
+                .getResponseBody();
+
+        // Assert
+        assertThat(actual).hasFieldOrPropertyWithValue("name", event.getName());
+        assertThat(actual).hasFieldOrPropertyWithValue("description", expectedDesc);
+        assertThat(actual).hasFieldOrPropertyWithValue("memberSize", event.getMemberSize());
+    }
+
+    @Test
+    void updateEvent_RespondsWithNotFound_WhenEventNotExists() {
+        // Arrange
+        EmbedType embedType = EmbedType.builder().withName("test").withStructure("test").build();
+        embedTypeRepository.save(embedType);
+
+        Guild guild = new Guild("1234", "guild");
+        guildRepository.save(guild);
+
+        Event event = Event.builder()
+                .withEmbedType(embedType)
+                .withEventId("1234567890")
+                .withName("Preview name")
+                .withDescription("Preview description")
+                .withAuthor("Author")
+                .withDateTime(Instant.now())
+                .withGuild(guild)
+                .withDestinationChannel("1234567890")
+                .withMemberSize("25")
+                .build();
+        eventRepository.save(event);
+
+        String authorizationToken = signupUser("username", "password", "email");
+
+        String expectedName = "updatedName";
+        String expectedDesc = "updatedDescription";
+        String expectedSize = "5";
+        EventUpdateRequest updateRequest = new EventUpdateRequest(expectedName, expectedDesc, expectedSize);
+
+        // Act
+        webTestClient.post()
+                .uri(BASE_URI + "/66666666")
+                .accept(MediaType.APPLICATION_JSON)
+                .header(HttpHeaders.AUTHORIZATION, authorizationToken)
+                .body(Mono.just(updateRequest), EventUpdateRequest.class)
+                .exchange()
+                .expectStatus()
+                .isNotFound();
+    }
+
+    @Test
+    void updateEvent_UpdatesNothing_WhenUserNotAuthenticated() {
+        // Arrange
+        String expectedName = "updatedName";
+        String expectedDesc = "updatedDescription";
+        String expectedSize = "5";
+        EventUpdateRequest updateRequest = new EventUpdateRequest(expectedName, expectedDesc, expectedSize);
+
+        // Act
+        webTestClient.post()
+                .uri(BASE_URI + "/1")
+                .accept(MediaType.APPLICATION_JSON)
+                .body(Mono.just(updateRequest), EventUpdateRequest.class)
+                .exchange()
+                .expectStatus()
+                .isUnauthorized();
     }
 
     // Helper methods

@@ -3,6 +3,7 @@ package com.github.havlli.EventPilot.entity.event;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
+import java.util.Optional;
 
 @Repository
 public class EventJPADataAccessService implements EventDAO {
@@ -51,5 +52,10 @@ public class EventJPADataAccessService implements EventDAO {
     @Override
     public List<Event> getLastFiveEvents() {
         return eventRepository.findLastFiveEvents();
+    }
+
+    @Override
+    public Optional<Event> findById(String id) {
+        return eventRepository.findById(id);
     }
 }

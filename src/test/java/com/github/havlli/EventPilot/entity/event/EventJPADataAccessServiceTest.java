@@ -108,4 +108,16 @@ class EventJPADataAccessServiceTest {
         // Assert
         verify(eventRepository, times(1)).existsById(eventId);
     }
+
+    @Test
+    void findById() {
+        // Arrange
+        String eventId = "1234";
+
+        // Act
+        underTest.findById(eventId);
+
+        // Assert
+        verify(eventRepository, times(1)).findById(eventId);
+    }
 }

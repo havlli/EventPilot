@@ -1,7 +1,9 @@
 package com.github.havlli.EventPilot.api;
 
+import com.github.havlli.EventPilot.entity.event.Event;
 import com.github.havlli.EventPilot.entity.event.EventDTO;
 import com.github.havlli.EventPilot.entity.event.EventService;
+import com.github.havlli.EventPilot.entity.event.EventUpdateRequest;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -45,5 +47,13 @@ public class EventController {
 
         return ResponseEntity.ok()
                 .body(eventDTOList);
+    }
+
+    @PostMapping("/{id}")
+    public ResponseEntity<EventDTO> updateEvent(@PathVariable String id, @RequestBody EventUpdateRequest updateRequest) {
+        Event updatedEvent = eventService.updateEvent(id, updateRequest);
+
+        return ResponseEntity.ok()
+                .body(EventDTO.fromEvent(updatedEvent));
     }
 }

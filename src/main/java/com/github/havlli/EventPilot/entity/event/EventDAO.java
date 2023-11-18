@@ -1,6 +1,7 @@
 package com.github.havlli.EventPilot.entity.event;
 
 import java.util.List;
+import java.util.Optional;
 
 public interface EventDAO {
     void saveEvent(Event event);
@@ -11,4 +12,5 @@ public interface EventDAO {
     List<Event> getExpiredEvents();
     boolean existsById(String id);
     List<Event> getLastFiveEvents();
+    Optional<Event> findById(String id);
 }

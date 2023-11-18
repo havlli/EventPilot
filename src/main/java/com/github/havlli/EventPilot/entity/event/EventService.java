@@ -4,6 +4,7 @@ import com.github.havlli.EventPilot.exception.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class EventService {
@@ -43,5 +44,19 @@ public class EventService {
 
     public List<Event> getLastFiveEvents() {
         return eventDAO.getLastFiveEvents();
+    }
+
+    public Event updateEvent(String id, EventUpdateRequest updateRequest) {
+        Optional<Event> eventOptional = eventDAO.findById(id);
+
+        if (eventOptional.isEmpty()) {
+            throw new ResourceNotFoundException("Cannot update event with id {%s} - does not exist!".formatted(id));
+        }
+
+        Event updatedEvent = updateRequest.updateEvent(eventOptional.orElseThrow());
+
+        eventDAO.saveEvent(updatedEvent);
+
+        return updatedEvent;
     }
 }

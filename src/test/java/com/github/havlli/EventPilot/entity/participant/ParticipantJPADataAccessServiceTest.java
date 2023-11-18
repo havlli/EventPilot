@@ -51,4 +51,16 @@ class ParticipantJPADataAccessServiceTest {
         // Assert
         verify(participantRepository, times(1)).save(participant);
     }
+
+    @Test
+    void findById() {
+        // Arrange
+        Long id = 1L;
+
+        // Act
+        underTest.findById(id);
+
+        // Assert
+        verify(participantRepository, times(1)).findById(id);
+    }
 }
