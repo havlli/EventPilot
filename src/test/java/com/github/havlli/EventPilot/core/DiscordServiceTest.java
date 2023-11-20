@@ -4,11 +4,13 @@ import com.github.havlli.EventPilot.component.CustomComponentFactory;
 import com.github.havlli.EventPilot.component.selectmenu.ExpiredSelectMenu;
 import com.github.havlli.EventPilot.entity.event.Event;
 import com.github.havlli.EventPilot.entity.event.EventService;
+import com.github.havlli.EventPilot.generator.EmbedGenerator;
 import discord4j.common.util.Snowflake;
 import discord4j.core.GatewayDiscordClient;
 import discord4j.core.object.component.LayoutComponent;
 import discord4j.core.object.component.MessageComponent;
 import discord4j.core.object.entity.Message;
+import discord4j.core.spec.EmbedCreateSpec;
 import discord4j.core.spec.MessageEditSpec;
 import discord4j.discordjson.json.ComponentData;
 import discord4j.discordjson.possible.Possible;
@@ -37,11 +39,13 @@ class DiscordServiceTest {
     private EventService eventServiceMock;
     @Mock
     private CustomComponentFactory componentFactory;
+    @Mock
+    private EmbedGenerator embedGeneratorMock;
 
     @BeforeEach
     void setUp() {
         autoCloseable = MockitoAnnotations.openMocks(this);
-        underTest = new DiscordService(clientMock, eventServiceMock, componentFactory);
+        underTest = new DiscordService(clientMock, eventServiceMock, componentFactory, embedGeneratorMock);
         when(componentFactory.getDefaultSelectMenu(CustomComponentFactory.SelectMenuType.EXPIRED_SELECT_MENU))
                 .thenReturn(new ExpiredSelectMenu());
     }
@@ -49,6 +53,27 @@ class DiscordServiceTest {
     @AfterEach
     void tearDown() throws Exception {
         autoCloseable.close();
+    }
+
+    @Test
+    void updateEventMessage_ReturnsMessageMono_WhenMessageExists() {
+        // Arrange
+        Event eventMock = mock(Event.class);
+        when(eventMock.getDestinationChannelId()).thenReturn("123456789");
+        when(eventMock.getEventId()).thenReturn("12345");
+        Message messageMock = mock(Message.class);
+        when(clientMock.getMessageById(any(), any())).thenReturn(Mono.just(messageMock));
+        when(messageMock.edit(any(MessageEditSpec.class))).thenReturn(Mono.empty());
+        EmbedCreateSpec embedCreateSpecMock = mock(EmbedCreateSpec.class);
+        when(embedGeneratorMock.generateEmbed(eventMock)).thenReturn(embedCreateSpecMock);
+
+        // Act
+        Mono<Message> actual = underTest.updateEventMessage(eventMock);
+
+        // Assert
+        StepVerifier.create(actual)
+                .expectSubscription()
+                .verifyComplete();
     }
 
     @Test
@@ -243,7 +268,7 @@ class DiscordServiceTest {
         when(messageOneMock.getId()).thenReturn(Snowflake.of(1234L));
 
         // Act
-        DiscordService discordService = spy(new DiscordService(clientMock, eventServiceMock, componentFactory));
+        DiscordService discordService = spy(new DiscordService(clientMock, eventServiceMock, componentFactory, embedGeneratorMock));
         Flux<Message> actual = discordService.deactivateEvents(List.of(eventOneMock));
 
         // Assert

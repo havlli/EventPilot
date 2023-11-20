@@ -1,5 +1,6 @@
 package com.github.havlli.EventPilot.api;
 
+import com.github.havlli.EventPilot.core.DiscordService;
 import com.github.havlli.EventPilot.entity.event.Event;
 import com.github.havlli.EventPilot.entity.event.EventDTO;
 import com.github.havlli.EventPilot.entity.event.EventService;
@@ -14,9 +15,11 @@ import java.util.List;
 public class EventController {
 
     private final EventService eventService;
+    private final DiscordService discordService;
 
-    public EventController(EventService eventService) {
+    public EventController(EventService eventService, DiscordService discordService) {
         this.eventService = eventService;
+        this.discordService = discordService;
     }
 
     @GetMapping
@@ -52,6 +55,7 @@ public class EventController {
     @PostMapping("/{id}")
     public ResponseEntity<EventDTO> updateEvent(@PathVariable String id, @RequestBody EventUpdateRequest updateRequest) {
         Event updatedEvent = eventService.updateEvent(id, updateRequest);
+        discordService.updateEventMessage(updatedEvent).subscribe();
 
         return ResponseEntity.ok()
                 .body(EventDTO.fromEvent(updatedEvent));

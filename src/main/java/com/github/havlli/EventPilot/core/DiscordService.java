@@ -4,6 +4,7 @@ import com.github.havlli.EventPilot.component.CustomComponentFactory;
 import com.github.havlli.EventPilot.component.SelectMenuComponent;
 import com.github.havlli.EventPilot.entity.event.Event;
 import com.github.havlli.EventPilot.entity.event.EventService;
+import com.github.havlli.EventPilot.generator.EmbedGenerator;
 import discord4j.common.util.Snowflake;
 import discord4j.core.GatewayDiscordClient;
 import discord4j.core.object.entity.Message;
@@ -25,20 +26,30 @@ public class DiscordService {
     private final CustomComponentFactory componentFactory;
     private final GatewayDiscordClient client;
     private final EventService eventService;
+    private final EmbedGenerator embedGenerator;
 
     public DiscordService(
             GatewayDiscordClient client,
             EventService eventService,
-            CustomComponentFactory componentFactory
+            CustomComponentFactory componentFactory,
+            EmbedGenerator embedGenerator
     ) {
         this.client = client;
         this.eventService = eventService;
         this.componentFactory = componentFactory;
+        this.embedGenerator = embedGenerator;
     }
 
     public Flux<Message> deactivateEvents(List<Event> events) {
         return Flux.fromIterable(events)
                 .flatMap(this::deactivateEvent);
+    }
+
+    public Mono<Message> updateEventMessage(Event event) {
+        return client.getMessageById(Snowflake.of(event.getDestinationChannelId()), Snowflake.of(event.getEventId()))
+                .flatMap(message -> message.edit(MessageEditSpec.builder()
+                        .addEmbed(embedGenerator.generateEmbed(event))
+                        .build()));
     }
 
     private Mono<Message> deactivateEvent(Event event) {
