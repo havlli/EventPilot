@@ -1,9 +1,11 @@
 package com.github.havlli.EventPilot.api;
 
+import com.github.havlli.EventPilot.entity.user.User;
 import com.github.havlli.EventPilot.entity.user.UserDTO;
 import com.github.havlli.EventPilot.entity.user.UserService;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RestController;
 
@@ -28,5 +30,12 @@ public class UserController {
 
         return ResponseEntity.ok()
                 .body(userDTOList);
+    }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<UserDTO> getUserById(@PathVariable Long id) {
+        User user = userService.findUserById(id);
+        UserDTO userDTO = UserDTO.of(user);
+        return ResponseEntity.ok(userDTO);
     }
 }
