@@ -35,7 +35,10 @@ public class EventController {
 
     @DeleteMapping("/{id}")
     public ResponseEntity<?> deleteEventById(@PathVariable String id) {
+        Event event = eventService.getEventById(id);
         eventService.deleteEventById(id);
+        discordService.deleteEventMessage(event)
+                .subscribe();
 
         return ResponseEntity.noContent()
                 .build();

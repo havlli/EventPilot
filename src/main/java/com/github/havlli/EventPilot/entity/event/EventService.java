@@ -59,4 +59,9 @@ public class EventService {
 
         return updatedEvent;
     }
+
+    public Event getEventById(String id) {
+        return eventDAO.findById(id)
+                .orElseThrow(() -> new ResourceNotFoundException("Cannot get event with id {%s} - does not exist!".formatted(id)));
+    }
 }

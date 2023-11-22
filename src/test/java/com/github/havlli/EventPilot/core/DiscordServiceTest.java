@@ -56,6 +56,44 @@ class DiscordServiceTest {
     }
 
     @Test
+    void deleteEventMessage_ReturnsCompleteSignal_WhenMessageWasDeleted() {
+        // Arrange
+        Event eventMock = mock(Event.class);
+        when(eventMock.getEventId()).thenReturn("12345");
+        when(eventMock.getDestinationChannelId()).thenReturn("123456789");
+        Message messageMock = mock(Message.class);
+        when(clientMock.getMessageById(any(), any())).thenReturn(Mono.just(messageMock));
+        when(messageMock.delete()).thenReturn(Mono.empty());
+
+        // Act
+        Mono<Void> actual = underTest.deleteEventMessage(eventMock);
+
+        // Assert
+        StepVerifier.create(actual)
+                .expectSubscription()
+                .verifyComplete();
+    }
+
+    @Test
+    void deleteEventMessage_ReturnsCompleteSignalAndLogsError_WhenMessageWasNotFound() {
+        // Arrange
+        Event eventMock = mock(Event.class);
+        when(eventMock.getEventId()).thenReturn("12345");
+        when(eventMock.getDestinationChannelId()).thenReturn("123456789");
+        Message messageMock = mock(Message.class);
+        when(clientMock.getMessageById(any(), any())).thenReturn(Mono.just(messageMock));
+        when(messageMock.delete()).thenThrow(ClientException.class);
+
+        // Act
+        Mono<Void> actual = underTest.deleteEventMessage(eventMock);
+
+        // Assert
+        StepVerifier.create(actual)
+                .expectSubscription()
+                .verifyComplete();
+    }
+
+    @Test
     void updateEventMessage_ReturnsMessageMono_WhenMessageExists() {
         // Arrange
         Event eventMock = mock(Event.class);
@@ -63,7 +101,7 @@ class DiscordServiceTest {
         when(eventMock.getEventId()).thenReturn("12345");
         Message messageMock = mock(Message.class);
         when(clientMock.getMessageById(any(), any())).thenReturn(Mono.just(messageMock));
-        when(messageMock.edit(any(MessageEditSpec.class))).thenReturn(Mono.empty());
+        when(messageMock.edit(any(MessageEditSpec.class))).thenReturn(Mono.just(messageMock));
         EmbedCreateSpec embedCreateSpecMock = mock(EmbedCreateSpec.class);
         when(embedGeneratorMock.generateEmbed(eventMock)).thenReturn(embedCreateSpecMock);
 
@@ -72,8 +110,27 @@ class DiscordServiceTest {
 
         // Assert
         StepVerifier.create(actual)
-                .expectSubscription()
+                .expectNext(messageMock)
                 .verifyComplete();
+    }
+
+    @Test
+    void updateEventMessage_ReturnsError_WhenMessageDoesNotExists() {
+        // Arrange
+        Event eventMock = mock(Event.class);
+        when(eventMock.getDestinationChannelId()).thenReturn("123456789");
+        when(eventMock.getEventId()).thenReturn("12345");
+        Message messageMock = mock(Message.class);
+        when(clientMock.getMessageById(any(), any())).thenReturn(Mono.just(messageMock));
+        when(messageMock.edit(any(MessageEditSpec.class))).thenThrow(ClientException.class);
+
+        // Act
+        Mono<Message> actual = underTest.updateEventMessage(eventMock);
+
+        // Assert
+        StepVerifier.create(actual)
+                .expectError(ClientException.class)
+                .verify();
     }
 
     @Test

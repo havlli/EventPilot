@@ -191,6 +191,32 @@ class EventServiceTest {
         verify(eventDAO, times(1)).saveEvent(any());
     }
 
+    @Test
+    void getEventById_ReturnsEvent_WhenEventExists() {
+        // Arrange
+        var eventId = "1";
+        Event eventMock = mock(Event.class);
+        when(eventDAO.findById(eventId)).thenReturn(Optional.of(eventMock));
+
+        // Act
+        Event actual = underTest.getEventById(eventId);
+
+        // Assert
+        assertThat(actual).isEqualTo(eventMock);
+    }
+
+    @Test
+    void getEventById_Throws404Exception_WhenEventDoesNotExists() {
+        // Arrange
+        var eventId = "1";
+        when(eventDAO.findById(eventId)).thenReturn(Optional.empty());
+
+        // Assert
+        assertThatThrownBy(() -> underTest.getEventById(eventId))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessageContaining("Cannot get event with id");
+    }
+
 
     // Helper Methods
     @NotNull

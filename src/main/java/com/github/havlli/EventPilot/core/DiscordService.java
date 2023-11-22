@@ -52,6 +52,15 @@ public class DiscordService {
                         .build()));
     }
 
+    public Mono<Void> deleteEventMessage(Event event) {
+        return client.getMessageById(Snowflake.of(event.getDestinationChannelId()), Snowflake.of(event.getEventId()))
+                .flatMap(Message::delete)
+                .onErrorResume(error -> {
+                    LOG.error("Could not delete message %s in channel %s".formatted(event.getEventId(), event.getDestinationChannelId()));
+                    return Mono.empty();
+                });
+    }
+
     private Mono<Message> deactivateEvent(Event event) {
         Snowflake messageId = Snowflake.of(event.getEventId());
         Snowflake channelId = Snowflake.of(event.getDestinationChannelId());
