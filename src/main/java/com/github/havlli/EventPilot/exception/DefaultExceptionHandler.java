@@ -1,6 +1,7 @@
 package com.github.havlli.EventPilot.exception;
 
 import com.github.havlli.EventPilot.api.ApiErrorResponse;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.AuthenticationException;
@@ -27,6 +28,15 @@ public class DefaultExceptionHandler {
         ApiErrorResponse errorResponse = ApiErrorResponse.fromException(e, HttpStatus.UNAUTHORIZED, requestURI);
 
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(errorResponse);
+    }
+
+    @ExceptionHandler(DataIntegrityViolationException.class)
+    public ResponseEntity<ApiErrorResponse> handleDataIntegrityViolationException(DataIntegrityViolationException e, WebRequest request) {
+        String requestURI = extractRequestURI(request);
+        ApiErrorResponse errorResponse = ApiErrorResponse.fromException(e, HttpStatus.CONFLICT,requestURI);
+
+        return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(errorResponse);
     }
 

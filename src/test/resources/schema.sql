@@ -47,8 +47,8 @@ VALUES ('default', '{"-1":"Absence","-2":"Late","1":"Tank","-3":"Tentative","2":
 CREATE TABLE users
 (
     id          BIGSERIAL NOT NULL,
-    username    VARCHAR(35) NOT NULL,
-    email       VARCHAR(60) NOT NULL,
+    username    VARCHAR(35) NOT NULL UNIQUE,
+    email       VARCHAR(60) NOT NULL UNIQUE,
     password    VARCHAR(150) NOT NULL,
     PRIMARY KEY (id)
 );

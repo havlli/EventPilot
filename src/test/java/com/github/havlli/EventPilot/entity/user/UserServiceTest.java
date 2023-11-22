@@ -9,6 +9,7 @@ import org.mockito.MockitoAnnotations;
 
 import java.util.List;
 import java.util.Optional;
+import java.util.Set;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.AssertionsForClassTypes.assertThatThrownBy;
@@ -100,5 +101,48 @@ class UserServiceTest {
         // Assert
         assertThatThrownBy(() -> underTest.findUserById(1L))
                 .isInstanceOf(ResourceNotFoundException.class);
+    }
+
+    @Test
+    void updateUser_UpdatesUser_WhenUserExists() {
+        // Arrange
+        User user = User.builder()
+                .withId(null)
+                .withUsername("test")
+                .withPassword("password")
+                .withEmail("test")
+                .withRoles(Set.of())
+                .build();
+        when(userDAOMock.findUserById(any())).thenReturn(Optional.of(user));
+
+        UserUpdateRequest updateRequest = new UserUpdateRequest("test", "test", Set.of());
+
+        // Act
+        User actual = underTest.updateUser(1L, updateRequest);
+
+        // Assert
+        verify(userDAOMock).saveUser(any(User.class));
+        assertThat(actual).isEqualTo(user);
+    }
+
+    @Test
+    void updateUser_ThrowsException_WhenUserNotExists() {
+        // Arrange
+        User user = User.builder()
+                .withId(null)
+                .withUsername("test")
+                .withPassword("password")
+                .withEmail("test")
+                .withRoles(Set.of())
+                .build();
+        when(userDAOMock.findUserById(any())).thenReturn(Optional.empty());
+
+        UserUpdateRequest updateRequest = new UserUpdateRequest("test", "test", Set.of());
+
+        // Act & Assert
+        assertThatThrownBy(() -> underTest.updateUser(1L, updateRequest))
+                .isInstanceOf(ResourceNotFoundException.class)
+                .hasMessageContaining("Cannot update user with id");
+        verify(userDAOMock, never()).saveUser(any(User.class));
     }
 }

@@ -3,11 +3,9 @@ package com.github.havlli.EventPilot.api;
 import com.github.havlli.EventPilot.entity.user.User;
 import com.github.havlli.EventPilot.entity.user.UserDTO;
 import com.github.havlli.EventPilot.entity.user.UserService;
+import com.github.havlli.EventPilot.entity.user.UserUpdateRequest;
 import org.springframework.http.ResponseEntity;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PathVariable;
-import org.springframework.web.bind.annotation.RequestMapping;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
 
@@ -36,6 +34,14 @@ public class UserController {
     public ResponseEntity<UserDTO> getUserById(@PathVariable Long id) {
         User user = userService.findUserById(id);
         UserDTO userDTO = UserDTO.of(user);
+        return ResponseEntity.ok(userDTO);
+    }
+
+    @PostMapping("/{id}/edit")
+    public ResponseEntity<UserDTO> updateUser(@PathVariable Long id, @RequestBody UserUpdateRequest updateRequest) {
+        User updatedUser = userService.updateUser(id, updateRequest);
+        UserDTO userDTO = UserDTO.of(updatedUser);
+
         return ResponseEntity.ok(userDTO);
     }
 }

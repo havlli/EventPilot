@@ -53,6 +53,14 @@ public class User {
         this.roles = roles;
     }
 
+    private User(Builder builder) {
+        this.id = builder.id;
+        this.username = builder.username;
+        this.email = builder.email;
+        this.password = builder.password;
+        this.roles = builder.roles;
+    }
+
     public Long getId() {
         return id;
     }
@@ -95,5 +103,70 @@ public class User {
                 ", password='" + password + '\'' +
                 ", roles=" + roles +
                 '}';
+    }
+
+    public static Builder builder() {
+        return new Builder();
+    }
+
+    public static class Builder {
+        private User user;
+        private Long id;
+        private String username;
+        private String email;
+        private String password;
+        private Set<UserRole> roles;
+
+        private Builder() { }
+
+        public Builder withId(Long id) {
+            this.id = id;
+            return this;
+        }
+
+        public Builder withUsername(String username) {
+            this.username = username;
+            return this;
+        }
+
+        public Builder withEmail(String email) {
+            this.email = email;
+            return this;
+        }
+
+        public Builder withPassword(String password) {
+            this.password = password;
+            return this;
+        }
+
+        public Builder withRoles(Set<UserRole> roles) {
+            this.roles = roles;
+            return this;
+        }
+
+        public Builder withRoles(UserRole ...roles) {
+            this.roles = Set.of(roles);
+            return this;
+        }
+
+        public Builder fromUser(User user) {
+            this.id = user.id;
+            this.username = user.username;
+            this.password = user.password;
+            this.email = user.email;
+            this.roles = user.roles;
+
+            return this;
+        }
+
+        public User build() {
+            this.user = new User(this);
+            return user;
+        }
+
+        public User getUser() {
+            if (this.user == null) throw new IllegalStateException("Cannot retrieve user that was not built yet!");
+            return this.user;
+        }
     }
 }

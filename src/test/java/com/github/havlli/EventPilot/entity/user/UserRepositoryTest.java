@@ -71,7 +71,7 @@ public class UserRepositoryTest extends TestDatabaseContainer {
     void findAll_ReturnsAllUsers_WhenUsersExist() {
         // Arrange
         User user1 = new User("user1", "email", "password");
-        User user2 = new User("user2", "email", "password");
+        User user2 = new User("user2", "email2", "password");
         underTest.save(user1);
         underTest.save(user2);
 

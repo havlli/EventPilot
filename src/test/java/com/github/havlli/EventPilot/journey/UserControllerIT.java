@@ -3,9 +3,7 @@ package com.github.havlli.EventPilot.journey;
 import com.github.havlli.EventPilot.TestDatabaseContainer;
 import com.github.havlli.EventPilot.api.ApiErrorResponse;
 import com.github.havlli.EventPilot.api.auth.UserSignupRequest;
-import com.github.havlli.EventPilot.entity.user.User;
-import com.github.havlli.EventPilot.entity.user.UserDTO;
-import com.github.havlli.EventPilot.entity.user.UserRepository;
+import com.github.havlli.EventPilot.entity.user.*;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -19,7 +17,9 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
+import java.util.Set;
 
+import static java.util.stream.Collectors.toSet;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 
@@ -32,12 +32,197 @@ public class UserControllerIT extends TestDatabaseContainer {
     private WebTestClient webTestClient;
     @Autowired
     private UserRepository userRepository;
+    @Autowired
+    private UserRoleRepository userRoleRepository;
 
     private static final String USER_CONTROLLER_BASE_URI = "/api/users";
 
     @BeforeEach
     void setUp() {
         userRepository.deleteAll();
+    }
+
+    @Test
+    void updateUser_UpdatesUser_WhenUserExists() {
+        // Arrange
+        String username = "username";
+        String bearerToken = signupUser(username, "password", "email");
+
+        User fetchedUser = userRepository.findAll()
+                .stream()
+                .filter(user -> user.getUsername().equals("username"))
+                .findFirst()
+                .orElseThrow();
+
+        String newUsername = "newUsername";
+        String newEmail = "newEmail";
+        UserRole newRole = userRoleRepository.findByRole(UserRole.Role.ADMIN).orElseThrow();
+        Set<UserRole> newRoles = Set.of(newRole);
+        UserUpdateRequest updateRequest = new UserUpdateRequest(newUsername, newEmail, newRoles);
+
+        // Act
+        UserDTO actual = webTestClient.post()
+                .uri(USER_CONTROLLER_BASE_URI + "/" + fetchedUser.getId() + "/edit")
+                .contentType(MediaType.APPLICATION_JSON)
+                .header(HttpHeaders.AUTHORIZATION, bearerToken)
+                .body(Mono.just(updateRequest), UserUpdateRequest.class)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(UserDTO.class)
+                .returnResult()
+                .getResponseBody();
+
+        // Assert
+        assertThat(actual).isNotNull();
+        assertThat(actual.username()).isEqualTo(newUsername);
+        assertThat(actual.email()).isEqualTo(newEmail);
+        assertThat(actual.roles()).isEqualTo(newRoles.stream()
+                .map(userRole -> userRole.getRole().name())
+                .collect(toSet()));
+    }
+
+    @Test
+    void updateUser_ReturnsConflictResponse_WhenUsernameAlreadyExists() {
+        // Arrange
+        String username = "username";
+        String bearerToken = signupUser(username, "password", "email");
+
+        User fetchedUser = userRepository.findAll()
+                .stream()
+                .filter(user -> user.getUsername().equals("username"))
+                .findFirst()
+                .orElseThrow();
+
+        String existingUsername = "newUsername";
+        String newEmail = "newEmail";
+        UserRole newRole = userRoleRepository.findByRole(UserRole.Role.ADMIN).orElseThrow();
+        Set<UserRole> newRoles = Set.of(newRole);
+        UserUpdateRequest updateRequest = new UserUpdateRequest(existingUsername, newEmail, newRoles);
+
+        signupUser(existingUsername, "password", "anotherEmail");
+
+        // Act
+        ApiErrorResponse actual = webTestClient.post()
+                .uri(USER_CONTROLLER_BASE_URI + "/" + fetchedUser.getId() + "/edit")
+                .contentType(MediaType.APPLICATION_JSON)
+                .header(HttpHeaders.AUTHORIZATION, bearerToken)
+                .body(Mono.just(updateRequest), UserUpdateRequest.class)
+                .exchange()
+                .expectStatus().isEqualTo(HttpStatus.CONFLICT)
+                .expectBody(ApiErrorResponse.class)
+                .returnResult()
+                .getResponseBody();
+
+        // Assert
+        assertThat(actual).isNotNull();
+        assertThat(actual.httpStatus()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(actual.message()).contains("Key (username)");
+    }
+
+    @Test
+    void updateUser_ReturnsConflictResponse_WhenEmailAlreadyExists() {
+        // Arrange
+        String username = "username";
+        String bearerToken = signupUser(username, "password", "email");
+
+        User fetchedUser = userRepository.findAll()
+                .stream()
+                .filter(user -> user.getUsername().equals("username"))
+                .findFirst()
+                .orElseThrow();
+
+        String newUsername = "newUsername";
+        String existingEmail = "existingEmail";
+        UserRole newRole = userRoleRepository.findByRole(UserRole.Role.ADMIN).orElseThrow();
+        Set<UserRole> newRoles = Set.of(newRole);
+        UserUpdateRequest updateRequest = new UserUpdateRequest(newUsername, existingEmail, newRoles);
+
+        signupUser("user2", "password", existingEmail);
+
+        // Act
+        ApiErrorResponse actual = webTestClient.post()
+                .uri(USER_CONTROLLER_BASE_URI + "/" + fetchedUser.getId() + "/edit")
+                .contentType(MediaType.APPLICATION_JSON)
+                .header(HttpHeaders.AUTHORIZATION, bearerToken)
+                .body(Mono.just(updateRequest), UserUpdateRequest.class)
+                .exchange()
+                .expectStatus().isEqualTo(HttpStatus.CONFLICT)
+                .expectBody(ApiErrorResponse.class)
+                .returnResult()
+                .getResponseBody();
+
+        // Assert
+        assertThat(actual).isNotNull();
+        assertThat(actual.httpStatus()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(actual.message()).contains("Key (email)");
+    }
+
+    @Test
+    void updateUser_ReturnsConflictResponse_WhenUsernameAndEmailAlreadyExists() {
+        // Arrange
+        String username = "username";
+        String bearerToken = signupUser(username, "password", "email");
+
+        User fetchedUser = userRepository.findAll()
+                .stream()
+                .filter(user -> user.getUsername().equals("username"))
+                .findFirst()
+                .orElseThrow();
+
+        String existingUsername = "existingUsername";
+        String existingEmail = "existingEmail";
+        UserRole newRole = userRoleRepository.findByRole(UserRole.Role.ADMIN).orElseThrow();
+        Set<UserRole> newRoles = Set.of(newRole);
+        UserUpdateRequest updateRequest = new UserUpdateRequest(existingUsername, existingEmail, newRoles);
+
+        signupUser(existingUsername, "password", existingEmail);
+
+        // Act
+        ApiErrorResponse actual = webTestClient.post()
+                .uri(USER_CONTROLLER_BASE_URI + "/" + fetchedUser.getId() + "/edit")
+                .contentType(MediaType.APPLICATION_JSON)
+                .header(HttpHeaders.AUTHORIZATION, bearerToken)
+                .body(Mono.just(updateRequest), UserUpdateRequest.class)
+                .exchange()
+                .expectStatus().isEqualTo(HttpStatus.CONFLICT)
+                .expectBody(ApiErrorResponse.class)
+                .returnResult()
+                .getResponseBody();
+
+        // Assert
+        assertThat(actual).isNotNull();
+        assertThat(actual.httpStatus()).isEqualTo(HttpStatus.CONFLICT);
+        assertThat(actual.message()).contains("Key (username)");
+    }
+
+    @Test
+    void updateUser_Returns404Response_WhenUserDoesNotExists() {
+        // Arrange
+        String username = "username";
+        String bearerToken = signupUser(username, "password", "email");
+
+        String existingUsername = "existingUsername";
+        String existingEmail = "existingEmail";
+        UserRole newRole = userRoleRepository.findByRole(UserRole.Role.ADMIN).orElseThrow();
+        Set<UserRole> newRoles = Set.of(newRole);
+        UserUpdateRequest updateRequest = new UserUpdateRequest(existingUsername, existingEmail, newRoles);
+
+        // Act
+        ApiErrorResponse actual = webTestClient.post()
+                .uri(USER_CONTROLLER_BASE_URI + "/101/edit")
+                .contentType(MediaType.APPLICATION_JSON)
+                .header(HttpHeaders.AUTHORIZATION, bearerToken)
+                .body(Mono.just(updateRequest), UserUpdateRequest.class)
+                .exchange()
+                .expectStatus().isNotFound()
+                .expectBody(ApiErrorResponse.class)
+                .returnResult()
+                .getResponseBody();
+
+        // Assert
+        assertThat(actual).isNotNull();
+        assertThat(actual.httpStatus()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(actual.message()).contains("Cannot update user with id");
     }
 
     @Test

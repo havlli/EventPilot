@@ -6,6 +6,7 @@ import java.util.HashSet;
 import java.util.Objects;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 class UserTest {
 
@@ -55,4 +56,35 @@ class UserTest {
         assertThat(actualString).isEqualTo(expectedString);
     }
 
+    @Test
+    void testBuilder() {
+        // Act
+        long id = 1L;
+        String username = "test";
+        String email = "test";
+        String password = "test";
+        User.Builder builder = User.builder()
+                .withId(id)
+                .withUsername(username)
+                .withEmail(email)
+                .withPassword(password)
+                .withRoles(new UserRole(UserRole.Role.USER), new UserRole(UserRole.Role.ADMIN));
+
+        HashSet<UserRole> roles = new HashSet<>();
+        builder.withRoles(roles);
+
+        // Act & Assert
+        assertThatThrownBy(() -> builder.getUser())
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessageContaining("Cannot retrieve user that was not built yet!");
+
+        User actual = builder.build();
+
+        assertThat(actual).isNotNull();
+        assertThat(builder.getUser()).isNotNull();
+        assertThat(actual.getUsername()).isEqualTo(username);
+        assertThat(actual.getEmail()).isEqualTo(email);
+        assertThat(actual.getPassword()).isEqualTo(password);
+        assertThat(actual.getRoles()).isEqualTo(roles);
+    }
 }

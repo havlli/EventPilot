@@ -5,6 +5,7 @@ import com.github.havlli.EventPilot.exception.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
 
 @Service
 public class UserService {
@@ -45,5 +46,19 @@ public class UserService {
         if(userRepository.existsByEmail(email)) {
             throw new DuplicateResourceException("Email already taken");
         }
+    }
+
+    public User updateUser(Long id, UserUpdateRequest updateRequest) {
+        Optional<User> userOptional = userRepository.findUserById(id);
+
+        if (userOptional.isEmpty()) {
+            throw new ResourceNotFoundException("Cannot update user with id {%s} - does not exist!".formatted(id));
+        }
+
+        User updatedUser = updateRequest.updateUser(userOptional.orElseThrow());
+
+        userRepository.saveUser(updatedUser);
+
+        return updatedUser;
     }
 }
