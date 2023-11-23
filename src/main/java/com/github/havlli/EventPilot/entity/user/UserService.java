@@ -11,9 +11,11 @@ import java.util.Optional;
 public class UserService {
 
     private final UserDAO userRepository;
+    private final UserRoleService userRoleService;
 
-    public UserService(UserDAO userRepository) {
+    public UserService(UserDAO userRepository, UserRoleService userRoleService) {
         this.userRepository = userRepository;
+        this.userRoleService = userRoleService;
     }
 
     public void saveUser(User user) {
@@ -49,13 +51,19 @@ public class UserService {
     }
 
     public User updateUser(Long id, UserUpdateRequest updateRequest) {
+
         Optional<User> userOptional = userRepository.findUserById(id);
 
         if (userOptional.isEmpty()) {
             throw new ResourceNotFoundException("Cannot update user with id {%s} - does not exist!".formatted(id));
         }
 
-        User updatedUser = updateRequest.updateUser(userOptional.orElseThrow());
+        UserRole userRole = userRoleService.findByRole(updateRequest.role().getRole());
+
+        User updatedUser = User.builder()
+                .fromUser(updateRequest.updateUser(userOptional.orElseThrow()))
+                .withRoles(userRole)
+                .build();
 
         userRepository.saveUser(updatedUser);
 

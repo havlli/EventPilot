@@ -22,11 +22,13 @@ class UserServiceTest {
     private UserService underTest;
     @Mock
     private UserDAO userDAOMock;
+    @Mock
+    private UserRoleService userRoleService;
 
     @BeforeEach
     void setUp() {
         autoCloseable = MockitoAnnotations.openMocks(this);
-        underTest = new UserService(userDAOMock);
+        underTest = new UserService(userDAOMock, userRoleService);
     }
 
     @AfterEach
@@ -111,11 +113,13 @@ class UserServiceTest {
                 .withUsername("test")
                 .withPassword("password")
                 .withEmail("test")
-                .withRoles(Set.of())
+                .withRoles(Set.of(new UserRole(UserRole.Role.USER)))
                 .build();
         when(userDAOMock.findUserById(any())).thenReturn(Optional.of(user));
 
-        UserUpdateRequest updateRequest = new UserUpdateRequest("test", "test", Set.of());
+        UserUpdateRequest updateRequest = new UserUpdateRequest("test", "test", new UserRole(UserRole.Role.USER));
+
+        when(userRoleService.findByRole(any())).thenReturn(new UserRole(UserRole.Role.USER));
 
         // Act
         User actual = underTest.updateUser(1L, updateRequest);
@@ -137,7 +141,7 @@ class UserServiceTest {
                 .build();
         when(userDAOMock.findUserById(any())).thenReturn(Optional.empty());
 
-        UserUpdateRequest updateRequest = new UserUpdateRequest("test", "test", Set.of());
+        UserUpdateRequest updateRequest = new UserUpdateRequest("test", "test", new UserRole(UserRole.Role.USER));
 
         // Act & Assert
         assertThatThrownBy(() -> underTest.updateUser(1L, updateRequest))

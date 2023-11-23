@@ -17,9 +17,7 @@ import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Mono;
 
 import java.util.List;
-import java.util.Set;
 
-import static java.util.stream.Collectors.toSet;
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
 
@@ -57,8 +55,7 @@ public class UserControllerIT extends TestDatabaseContainer {
         String newUsername = "newUsername";
         String newEmail = "newEmail";
         UserRole newRole = userRoleRepository.findByRole(UserRole.Role.ADMIN).orElseThrow();
-        Set<UserRole> newRoles = Set.of(newRole);
-        UserUpdateRequest updateRequest = new UserUpdateRequest(newUsername, newEmail, newRoles);
+        UserUpdateRequest updateRequest = new UserUpdateRequest(newUsername, newEmail, newRole);
 
         // Act
         UserDTO actual = webTestClient.post()
@@ -76,9 +73,6 @@ public class UserControllerIT extends TestDatabaseContainer {
         assertThat(actual).isNotNull();
         assertThat(actual.username()).isEqualTo(newUsername);
         assertThat(actual.email()).isEqualTo(newEmail);
-        assertThat(actual.roles()).isEqualTo(newRoles.stream()
-                .map(userRole -> userRole.getRole().name())
-                .collect(toSet()));
     }
 
     @Test
@@ -96,8 +90,7 @@ public class UserControllerIT extends TestDatabaseContainer {
         String existingUsername = "newUsername";
         String newEmail = "newEmail";
         UserRole newRole = userRoleRepository.findByRole(UserRole.Role.ADMIN).orElseThrow();
-        Set<UserRole> newRoles = Set.of(newRole);
-        UserUpdateRequest updateRequest = new UserUpdateRequest(existingUsername, newEmail, newRoles);
+        UserUpdateRequest updateRequest = new UserUpdateRequest(existingUsername, newEmail, newRole);
 
         signupUser(existingUsername, "password", "anotherEmail");
 
@@ -134,8 +127,7 @@ public class UserControllerIT extends TestDatabaseContainer {
         String newUsername = "newUsername";
         String existingEmail = "existingEmail";
         UserRole newRole = userRoleRepository.findByRole(UserRole.Role.ADMIN).orElseThrow();
-        Set<UserRole> newRoles = Set.of(newRole);
-        UserUpdateRequest updateRequest = new UserUpdateRequest(newUsername, existingEmail, newRoles);
+        UserUpdateRequest updateRequest = new UserUpdateRequest(newUsername, existingEmail, newRole);
 
         signupUser("user2", "password", existingEmail);
 
@@ -172,8 +164,7 @@ public class UserControllerIT extends TestDatabaseContainer {
         String existingUsername = "existingUsername";
         String existingEmail = "existingEmail";
         UserRole newRole = userRoleRepository.findByRole(UserRole.Role.ADMIN).orElseThrow();
-        Set<UserRole> newRoles = Set.of(newRole);
-        UserUpdateRequest updateRequest = new UserUpdateRequest(existingUsername, existingEmail, newRoles);
+        UserUpdateRequest updateRequest = new UserUpdateRequest(existingUsername, existingEmail, newRole);
 
         signupUser(existingUsername, "password", existingEmail);
 
@@ -204,8 +195,7 @@ public class UserControllerIT extends TestDatabaseContainer {
         String existingUsername = "existingUsername";
         String existingEmail = "existingEmail";
         UserRole newRole = userRoleRepository.findByRole(UserRole.Role.ADMIN).orElseThrow();
-        Set<UserRole> newRoles = Set.of(newRole);
-        UserUpdateRequest updateRequest = new UserUpdateRequest(existingUsername, existingEmail, newRoles);
+        UserUpdateRequest updateRequest = new UserUpdateRequest(existingUsername, existingEmail, newRole);
 
         // Act
         ApiErrorResponse actual = webTestClient.post()
