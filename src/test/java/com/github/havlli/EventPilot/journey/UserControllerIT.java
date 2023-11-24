@@ -41,6 +41,56 @@ public class UserControllerIT extends TestDatabaseContainer {
     }
 
     @Test
+    void deleteUser_deletesUser_WhenUserExists() {
+        // Arrange
+        String username = "username";
+        String bearerToken = signupUser(username, "password", "email");
+
+        User fetchedUser = userRepository.findAll()
+                .stream()
+                .filter(user -> user.getUsername().equals(username))
+                .findFirst()
+                .orElseThrow();
+
+        Long userId = fetchedUser.getId();
+
+        // Act
+        webTestClient.delete()
+                .uri(USER_CONTROLLER_BASE_URI + "/" + userId)
+                .accept(MediaType.APPLICATION_JSON)
+                .header(HttpHeaders.AUTHORIZATION, bearerToken)
+                .exchange()
+                .expectStatus()
+                .isNoContent();
+
+        // Assert
+        assertThat(userRepository.findAll()).isEmpty();
+    }
+
+    @Test
+    void deleteUser_ReturnsApiErrorResponse_WhenUserDoesNotExists() {
+        // Arrange
+        String username = "username";
+        String bearerToken = signupUser(username, "password", "email");
+
+        // Act
+        ApiErrorResponse actual = webTestClient.delete()
+                .uri(USER_CONTROLLER_BASE_URI + "/101")
+                .accept(MediaType.APPLICATION_JSON)
+                .header(HttpHeaders.AUTHORIZATION, bearerToken)
+                .exchange()
+                .expectStatus().isNotFound()
+                .expectBody(ApiErrorResponse.class)
+                .returnResult()
+                .getResponseBody();
+
+        // Assert
+        assertThat(userRepository.findAll()).hasSize(1);
+        assertThat(actual).isNotNull();
+        assertThat(actual.message()).contains("Cannot delete user with id");
+    }
+
+    @Test
     void updateUser_UpdatesUser_WhenUserExists() {
         // Arrange
         String username = "username";
