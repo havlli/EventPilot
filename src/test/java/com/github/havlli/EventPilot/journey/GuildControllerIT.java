@@ -4,6 +4,7 @@ import com.github.havlli.EventPilot.TestDatabaseContainer;
 import com.github.havlli.EventPilot.api.ApiErrorResponse;
 import com.github.havlli.EventPilot.api.auth.UserSignupRequest;
 import com.github.havlli.EventPilot.entity.guild.Guild;
+import com.github.havlli.EventPilot.entity.guild.GuildDTO;
 import com.github.havlli.EventPilot.entity.guild.GuildRepository;
 import com.github.havlli.EventPilot.entity.user.UserRepository;
 import org.junit.jupiter.api.BeforeEach;
@@ -38,7 +39,55 @@ public class GuildControllerIT extends TestDatabaseContainer {
 
     @BeforeEach
     void setUp() {
+        guildRepository.deleteAll();
         userRepository.deleteAll();
+    }
+
+    @Test
+    void getGuildById_ReturnsGuild_WhenGuildExists() {
+        // Arrange
+        Guild guild = new Guild("1234", "guild");
+        guildRepository.save(guild);
+
+        String bearerToken = signupUser("username", "password", "email");
+
+        // Act
+        GuildDTO actual = webTestClient.get()
+                .uri(BASE_URI + "/" + guild.getId())
+                .accept(MediaType.APPLICATION_JSON)
+                .header(HttpHeaders.AUTHORIZATION, bearerToken)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(GuildDTO.class)
+                .returnResult()
+                .getResponseBody();
+
+        // Assert
+        assertThat(actual).isNotNull();
+        assertThat(actual.id()).isEqualTo(guild.getId());
+        assertThat(actual.name()).isEqualTo(guild.getName());
+    }
+
+    @Test
+    void getGuildById_ReturnsApiErrorResponse_WhenGuildDoesNotExists() {
+        // Arrange
+        String bearerToken = signupUser("username", "password", "email");
+
+        // Act
+        ApiErrorResponse actual = webTestClient.get()
+                .uri(BASE_URI + "/1234")
+                .accept(MediaType.APPLICATION_JSON)
+                .header(HttpHeaders.AUTHORIZATION, bearerToken)
+                .exchange()
+                .expectStatus().isNotFound()
+                .expectBody(ApiErrorResponse.class)
+                .returnResult()
+                .getResponseBody();
+
+        // Assert
+        assertThat(actual).isNotNull();
+        assertThat(actual.httpStatus()).isEqualTo(HttpStatus.NOT_FOUND);
+        assertThat(actual.path()).isEqualTo(BASE_URI + "/1234");
     }
 
     @Test
@@ -57,7 +106,7 @@ public class GuildControllerIT extends TestDatabaseContainer {
                 .expectStatus()
                 .isOk()
                 .expectBodyList(Guild.class)
-                .hasSize(2)
+                .hasSize(1)
                 .contains(guild);
     }
 
