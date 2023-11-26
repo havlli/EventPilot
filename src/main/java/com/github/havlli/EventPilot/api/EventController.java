@@ -63,4 +63,12 @@ public class EventController {
         return ResponseEntity.ok()
                 .body(EventDTO.fromEvent(updatedEvent));
     }
+
+    @GetMapping("/{id}")
+    public ResponseEntity<EventDTO> getEventById(@PathVariable String id) {
+        Event event = eventService.getEventById(id);
+        EventDTO eventDTO = EventDTO.fromEvent(event);
+
+        return ResponseEntity.ok(eventDTO);
+    }
 }

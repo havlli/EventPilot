@@ -55,6 +55,73 @@ public class EventControllerIT extends TestDatabaseContainer {
     }
 
     @Test
+    void getEventById_ReturnsEvent_WhenEventExists() {
+        // Arrange
+        EmbedType embedType = EmbedType.builder().withName("test").withStructure("test").build();
+        embedTypeRepository.save(embedType);
+
+        Guild guild = new Guild("1234", "guild");
+        guildRepository.save(guild);
+
+        String eventId = "1234567890";
+        Event event = Event.builder()
+                .withEmbedType(embedType)
+                .withEventId(eventId)
+                .withName("Preview name")
+                .withDescription("Preview description")
+                .withAuthor("Author")
+                .withDateTime(Instant.now())
+                .withGuild(guild)
+                .withDestinationChannel("1234567890")
+                .withMemberSize("25")
+                .build();
+        eventRepository.save(event);
+
+        guild.getEvents().add(event);
+
+        String bearerToken = signupUser("username", "password", "email");
+
+        // Act
+        EventDTO actual = webTestClient.get()
+                .uri(BASE_URI + "/" + eventId)
+                .accept(MediaType.APPLICATION_JSON)
+                .header(HttpHeaders.AUTHORIZATION, bearerToken)
+                .exchange()
+                .expectStatus().isOk()
+                .expectBody(EventDTO.class)
+                .returnResult()
+                .getResponseBody();
+
+        // Assert
+        assertThat(actual).isNotNull();
+        assertThat(actual.eventId()).isEqualTo(event.getEventId());
+        assertThat(actual.name()).isEqualTo(event.getName());
+        assertThat(actual.description()).isEqualTo(event.getDescription());
+        assertThat(actual.author()).isEqualTo(event.getAuthor());
+    }
+
+    @Test
+    void getEventById_ReturnsApiErrorResponse_WhenEventDoesNotExists() {
+        // Arrange
+        String bearerToken = signupUser("username", "password", "email");
+
+        // Act
+        ApiErrorResponse actual = webTestClient.get()
+                .uri(BASE_URI + "/12")
+                .accept(MediaType.APPLICATION_JSON)
+                .header(HttpHeaders.AUTHORIZATION, bearerToken)
+                .exchange()
+                .expectStatus().isNotFound()
+                .expectBody(ApiErrorResponse.class)
+                .returnResult()
+                .getResponseBody();
+
+        // Assert
+        assertThat(actual).isNotNull();
+        assertThat(actual.httpStatus()).isEqualTo(HttpStatus.NOT_FOUND);
+    }
+
+    @Test
     void getAllEvents_ReturnsListOfEventDTOs_WhenUserAuthenticated() {
         // Arrange
         EmbedType embedType = EmbedType.builder().withName("test").withStructure("test").build();
