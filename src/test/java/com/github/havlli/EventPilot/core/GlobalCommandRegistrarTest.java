@@ -1,5 +1,7 @@
 package com.github.havlli.EventPilot.core;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import discord4j.common.JacksonResources;
 import discord4j.discordjson.json.ApplicationCommandRequest;
 import discord4j.rest.RestClient;
 import discord4j.rest.service.ApplicationService;
@@ -11,6 +13,7 @@ import org.mockito.Captor;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import org.springframework.boot.ApplicationArguments;
+import org.springframework.core.io.Resource;
 import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
@@ -85,6 +88,25 @@ class GlobalCommandRegistrarTest {
         // Assert
         assertThatThrownBy(() -> underTest.run(applicationArguments))
                 .isInstanceOfAny(IOException.class);
+
+        verifyNoInteractions(applicationServiceMock);
+    }
+
+    @Test
+    void run_ShouldThrowRuntimeException_WhenReadFailed() throws IOException {
+        // Arrange
+        JacksonResources jacksonResourcesMock = mock(JacksonResources.class);
+        Resource resourceMock = mock(Resource.class);
+        when(resourceMock.getInputStream()).thenReturn(null);
+
+        GlobalCommandRegistrar underTestSpy = spy(underTest);
+        ObjectMapper objectMapperMock = mock(ObjectMapper.class);
+        when(jacksonResourcesMock.getObjectMapper()).thenReturn(objectMapperMock);
+        when(underTestSpy.readJsonValue(jacksonResourcesMock, resourceMock)).thenThrow(new IOException());
+
+        // Assert
+        assertThatThrownBy(() -> underTestSpy.readJsonValueOrThrow(jacksonResourcesMock, resourceMock))
+                .isInstanceOfAny(RuntimeException.class);
 
         verifyNoInteractions(applicationServiceMock);
     }

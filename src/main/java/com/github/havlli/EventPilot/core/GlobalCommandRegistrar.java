@@ -15,8 +15,10 @@ import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
-import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
+import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 @Component
 @DependsOn("restClient")
@@ -38,47 +40,66 @@ public class GlobalCommandRegistrar implements ApplicationRunner {
     }
 
     @Override
-    public void run(ApplicationArguments args) throws IOException{
-        final JacksonResources mapper = JacksonResources.create();
-        final ApplicationService service = getApplicationService();
-        final long applicationId = getApplicationId();
-
-        List<ApplicationCommandRequest> commands = extractApplicationCommandRequstList(mapper);
-        overwriteGlobalApplicationCommands(service, applicationId, commands);
+    public void run(ApplicationArguments args) throws IOException {
+        CommandRegistrarSpec commandRegistrarSpec = createRegistrarSpec();
+        overwriteGlobalApplicationCommands(commandRegistrarSpec);
     }
 
-    private String getLocationPattern() {
-        return parentFolder + "/*.json";
+    private CommandRegistrarSpec createRegistrarSpec() {
+        return CommandRegistrarSpec.builder()
+                .mapper(JacksonResources.create())
+                .service(getApplicationService())
+                .applicationId(getApplicationId())
+                .build();
     }
 
-    private List<ApplicationCommandRequest> extractApplicationCommandRequstList(JacksonResources jacksonResources) throws IOException {
-        List<ApplicationCommandRequest> commands = new ArrayList<>();
-        try {
-            for (Resource resource : pathMatcher.getResources(getLocationPattern())) {
-                ApplicationCommandRequest request = jacksonResources.getObjectMapper()
-                        .readValue(resource.getInputStream(), ApplicationCommandRequest.class);
-                commands.add(request);
-            }
-        } catch (IOException e) {
-            LOG.error("Error while trying to match locationPattern[%s]".formatted(getLocationPattern()), e);
-            throw e;
-        }
-
-        return commands;
-    }
-
-    private static void overwriteGlobalApplicationCommands(ApplicationService applicationService, long applicationId, List<ApplicationCommandRequest> commands) {
-        applicationService.bulkOverwriteGlobalApplicationCommand(applicationId, commands)
-                .doOnNext(data -> LOG.info("Successfully registered Global Command [%s]".formatted(data.name())))
-                .doOnError(e -> LOG.error("Failed to register global commands", e))
-                .subscribe();
+    private ApplicationService getApplicationService() {
+        return restClient.getApplicationService();
     }
 
     private Long getApplicationId() {
         return restClient.getApplicationId().block();
     }
 
-    private ApplicationService getApplicationService() {
-        return restClient.getApplicationService();
+    private void overwriteGlobalApplicationCommands(CommandRegistrarSpec registrarSpec) throws IOException {
+        List<ApplicationCommandRequest> commands = extractApplicationCommandRequests(registrarSpec);
+        registrarSpec.service()
+                .bulkOverwriteGlobalApplicationCommand(registrarSpec.applicationId(), commands)
+                .doOnNext(data -> LOG.info("Successfully registered Global Command [%s]".formatted(data.name())))
+                .doOnError(e -> LOG.error("Failed to register global commands", e))
+                .subscribe();
+    }
+
+    private List<ApplicationCommandRequest> extractApplicationCommandRequests(CommandRegistrarSpec commandRegistrarSpec) throws IOException {
+        return importCommands(commandRegistrarSpec.mapper());
+    }
+
+    private List<ApplicationCommandRequest> importCommands(JacksonResources jacksonResources) throws IOException {
+
+        return getResourceStream()
+                .map(resource -> readJsonValueOrThrow(jacksonResources, resource))
+                .collect(Collectors.toList());
+    }
+
+    private Stream<Resource> getResourceStream() throws IOException {
+        return Arrays.stream(pathMatcher.getResources(getLocationPattern()));
+    }
+
+    protected ApplicationCommandRequest readJsonValueOrThrow(JacksonResources jacksonResources, Resource resource) throws RuntimeException {
+        try {
+            return readJsonValue(jacksonResources, resource);
+        } catch (IOException e) {
+            LOG.error("Error while trying to match locationPattern[%s]".formatted(getLocationPattern()), e);
+            throw new RuntimeException(e);
+        }
+    }
+
+    private String getLocationPattern() {
+        return parentFolder + "/*.json";
+    }
+
+    protected ApplicationCommandRequest readJsonValue(JacksonResources jacksonResources, Resource resource) throws IOException {
+        return jacksonResources.getObjectMapper()
+                .readValue(resource.getInputStream(), ApplicationCommandRequest.class);
     }
 }
