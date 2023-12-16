@@ -23,9 +23,7 @@ public class AuthController {
     public ResponseEntity<AuthResponse> authenticate(@RequestBody AuthRequest request) {
         AuthResponse authResponse = authService.authenticate(request);
 
-        return ResponseEntity.ok()
-                .header(HttpHeaders.AUTHORIZATION, authResponse.token())
-                .body(authResponse);
+        return okResponse(authResponse);
     }
 
     @PostMapping("signup")
@@ -33,6 +31,12 @@ public class AuthController {
         AuthResponse authResponse = authService.signup(request);
         URI createdResourceLocation = URI.create("/api/users/" + authResponse.user().id());
         return ResponseEntity.created(createdResourceLocation)
+                .header(HttpHeaders.AUTHORIZATION, authResponse.token())
+                .body(authResponse);
+    }
+
+    private ResponseEntity<AuthResponse> okResponse(AuthResponse authResponse) {
+        return ResponseEntity.ok()
                 .header(HttpHeaders.AUTHORIZATION, authResponse.token())
                 .body(authResponse);
     }
