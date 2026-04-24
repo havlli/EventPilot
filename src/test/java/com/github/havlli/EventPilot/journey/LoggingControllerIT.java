@@ -44,7 +44,8 @@ class LoggingControllerIT extends TestDatabaseContainer {
         webTestClient.get().uri("/api/logging/stream-sse")
                 .accept(MediaType.TEXT_EVENT_STREAM)
                 .exchange()
-                .expectStatus().isUnauthorized();
+                .expectStatus().isUnauthorized()
+                .expectHeader().contentType(MediaType.APPLICATION_JSON);
     }
 
     @Test
@@ -74,7 +75,8 @@ class LoggingControllerIT extends TestDatabaseContainer {
                 .accept(MediaType.APPLICATION_JSON)
                 .header(HttpHeaders.AUTHORIZATION, bearerTokenFor(UserRole.Role.USER))
                 .exchange()
-                .expectStatus().is4xxClientError();
+                .expectStatus().isForbidden()
+                .expectHeader().contentType(MediaType.APPLICATION_JSON);
     }
 
     private String bearerTokenFor(UserRole.Role role) {

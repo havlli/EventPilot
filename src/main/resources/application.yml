@@ -19,9 +19,12 @@ spring:
       ddl-auto: validate
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
     show-sql: false
+  data:
+    redis:
+      repositories:
+        enabled: false
 
 cache:
   redis:
