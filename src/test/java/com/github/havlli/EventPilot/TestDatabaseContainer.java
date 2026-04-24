@@ -1,25 +1,29 @@
 package com.github.havlli.EventPilot;
 
 import com.github.havlli.EventPilot.entity.guild.Guild;
+import com.redis.testcontainers.RedisContainer;
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.BeforeAll;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.context.annotation.Import;
+import org.springframework.test.context.ActiveProfiles;
 import org.springframework.test.context.DynamicPropertyRegistry;
 import org.springframework.test.context.DynamicPropertySource;
 import org.testcontainers.containers.PostgreSQLContainer;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
+import org.testcontainers.lifecycle.Startables;
 
 import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.sql.*;
 import java.util.function.Function;
+import java.util.stream.Stream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@Testcontainers
+@ActiveProfiles("test")
+@Import(IntegrationTestConfig.class)
 public abstract class TestDatabaseContainer {
 
     private static final Logger LOG = LoggerFactory.getLogger(TestDatabaseContainer.class);
@@ -37,17 +41,26 @@ public abstract class TestDatabaseContainer {
         logContainerInfo();
     }
 
-    @Container
     protected static PostgreSQLContainer<?> postgresSQLContainer = new PostgreSQLContainer<>("postgres:15-alpine")
             .withDatabaseName("eventpilot")
             .withUsername("user")
             .withPassword("password");
 
+    protected static RedisContainer redisContainer = new RedisContainer("7.2.1-alpine");
+
+    static {
+        Startables.deepStart(Stream.of(postgresSQLContainer, redisContainer)).join();
+    }
+
     @DynamicPropertySource
-    private static void registerDatasourceProperties(DynamicPropertyRegistry registry) {
+    private static void registerContainerProperties(DynamicPropertyRegistry registry) {
         registry.add("spring.datasource.url", () -> postgresSQLContainer.getJdbcUrl());
         registry.add("spring.datasource.username", () -> postgresSQLContainer.getUsername());
         registry.add("spring.datasource.password", () -> postgresSQLContainer.getPassword());
+        registry.add("cache.redis.host", () -> redisContainer.getHost());
+        registry.add("cache.redis.port", () -> redisContainer.getFirstMappedPort());
+        registry.add("security.jwt.secret", () -> "MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDE=");
+        registry.add("discord.token", () -> "test");
     }
 
     protected static void executeSQLFile(String sqlResourcePath) throws SQLException, IOException {

@@ -36,7 +36,7 @@ public class UserRepositoryIT extends TestDatabaseContainer {
     @Test
     void saveUser_SavesUser_WhenUserNotExists() {
         // Arrange
-        User expected = new User("user", "email", "password");
+        User expected = new User("user", "user@example.test", "password");
 
         // Act
         underTest.save(expected);
@@ -49,7 +49,7 @@ public class UserRepositoryIT extends TestDatabaseContainer {
     @Test
     void saveUser_UpdatesUser_WhenUserAlreadyExists() {
         // Arrange
-        User old = new User("user", "email", "password");
+        User old = new User("user", "user@example.test", "password");
         underTest.save(old);
         Long oldUserId = underTest.findAll().stream()
                 .filter(user -> user.getUsername().equals(old.getUsername()))
@@ -57,7 +57,7 @@ public class UserRepositoryIT extends TestDatabaseContainer {
                 .findFirst()
                 .get();
 
-        User updated = new User(oldUserId,"user", "email", "newpassword");
+        User updated = new User(oldUserId,"user", "user@example.test", "newpassword");
 
         // Act
         underTest.save(updated);
@@ -70,8 +70,8 @@ public class UserRepositoryIT extends TestDatabaseContainer {
     @Test
     void findAll_ReturnsAllUsers_WhenUsersExist() {
         // Arrange
-        User user1 = new User("user1", "email", "password");
-        User user2 = new User("user2", "email2", "password");
+        User user1 = new User("user1", "user1@example.test", "password");
+        User user2 = new User("user2", "user2@example.test", "password");
         underTest.save(user1);
         underTest.save(user2);
 
@@ -94,7 +94,7 @@ public class UserRepositoryIT extends TestDatabaseContainer {
     @Test
     void deleteUserById_DeletesUser_WhenUserExists() {
         // Arrange
-        User user = new User("user", "email", "password");
+        User user = new User("user", "user@example.test", "password");
         underTest.save(user);
         Long userId = underTest.findAll().stream()
                 .filter(u -> u.getUsername().equals(user.getUsername()))
@@ -114,7 +114,7 @@ public class UserRepositoryIT extends TestDatabaseContainer {
     @Test
     void deleteUserById_DoNotDeletesUser_WhenUserNotExists() {
         // Arrange
-        User user = new User("user", "email", "password");
+        User user = new User("user", "user@example.test", "password");
         underTest.save(user);
 
         // Act
@@ -128,7 +128,7 @@ public class UserRepositoryIT extends TestDatabaseContainer {
     @Test
     void userExistsById_ReturnsTrue_WhenUserExists() {
         // Arrange
-        User user = new User("user", "email", "password");
+        User user = new User("user", "user@example.test", "password");
         underTest.save(user);
         Long userId = underTest.findAll().stream()
                 .filter(u -> u.getUsername().equals(user.getUsername()))
@@ -157,7 +157,7 @@ public class UserRepositoryIT extends TestDatabaseContainer {
     @Test
     void findUserById_ReturnsOptionalUser_WhenUserExists() {
         // Arrange
-        User user = new User("user", "email", "password");
+        User user = new User("user", "user@example.test", "password");
         underTest.save(user);
         Long userId = underTest.findAll().stream()
                 .filter(u -> u.getUsername().equals(user.getUsername()))
@@ -184,7 +184,7 @@ public class UserRepositoryIT extends TestDatabaseContainer {
     @Test
     void findByUsername_ReturnsOptionalUser_WhenUsernameExists() {
         // Arrange
-        User user = new User("user", "email", "password");
+        User user = new User("user", "user@example.test", "password");
         underTest.save(user);
         String username = user.getUsername();
 
@@ -210,7 +210,7 @@ public class UserRepositoryIT extends TestDatabaseContainer {
     @Test
     void existsByUsername_ReturnsTrue_WhenUsernameExists() {
         // Arrange
-        User user = new User("user", "email", "password");
+        User user = new User("user", "user@example.test", "password");
         underTest.save(user);
         String username = user.getUsername();
 
@@ -236,7 +236,7 @@ public class UserRepositoryIT extends TestDatabaseContainer {
     @Test
     void existsByEmail_ReturnsTrue_WhenEmailExists() {
         // Arrange
-        User user = new User("user", "email", "password");
+        User user = new User("user", "user@example.test", "password");
         underTest.save(user);
         String email = user.getEmail();
 

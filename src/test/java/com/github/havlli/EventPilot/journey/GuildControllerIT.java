@@ -49,7 +49,7 @@ public class GuildControllerIT extends TestDatabaseContainer {
         Guild guild = new Guild("1234", "guild");
         guildRepository.save(guild);
 
-        String bearerToken = signupUser("username", "password", "email");
+        String bearerToken = signupUser("username", "password", "user@example.test");
 
         // Act
         GuildDTO actual = webTestClient.get()
@@ -71,7 +71,7 @@ public class GuildControllerIT extends TestDatabaseContainer {
     @Test
     void getGuildById_ReturnsApiErrorResponse_WhenGuildDoesNotExists() {
         // Arrange
-        String bearerToken = signupUser("username", "password", "email");
+        String bearerToken = signupUser("username", "password", "user@example.test");
 
         // Act
         ApiErrorResponse actual = webTestClient.get()
@@ -93,7 +93,7 @@ public class GuildControllerIT extends TestDatabaseContainer {
     @Test
     void getAllGuilds_ReturnsListOfGuilds_WhenAuthenticatedUserRole() {
         // Arrange
-        String bearerToken = signupUser("username", "password", "email");
+        String bearerToken = signupUser("username", "password", "user@example.test");
         Guild guild = new Guild("1234", "guild");
         guildRepository.save(guild);
 
@@ -134,7 +134,7 @@ public class GuildControllerIT extends TestDatabaseContainer {
 
     // Helper methods
     private String signupUser(String username, String password, String email) {
-        UserSignupRequest signupRequest = new UserSignupRequest(username, password, email);
+        UserSignupRequest signupRequest = new UserSignupRequest(username, email, password);
         String jwtToken = webTestClient.post()
                 .uri("/api/auth/signup")
                 .contentType(MediaType.APPLICATION_JSON)

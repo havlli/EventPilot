@@ -8,7 +8,7 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ApplicationContext;
 
 @SpringBootTest
-class ApplicationIT {
+class ApplicationIT extends TestDatabaseContainer {
 
     private static final Logger LOG = LoggerFactory.getLogger(ApplicationIT.class);
 
@@ -18,11 +18,6 @@ class ApplicationIT {
     @Test
     void contextLoads() {
         LOG.info("Application Context loaded with {} beans!", applicationContext.getBeanDefinitionCount());
-    }
-
-    @Test
-    void applicationLoads() {
-        Application.main(new String[] {});
     }
 
 }

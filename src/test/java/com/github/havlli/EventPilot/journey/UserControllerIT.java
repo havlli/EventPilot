@@ -44,7 +44,7 @@ public class UserControllerIT extends TestDatabaseContainer {
     void deleteUser_deletesUser_WhenUserExists() {
         // Arrange
         String username = "username";
-        String bearerToken = signupUser(username, "password", "email");
+        String bearerToken = signupUser(username, "password", "user@example.test");
 
         User fetchedUser = userRepository.findAll()
                 .stream()
@@ -71,7 +71,7 @@ public class UserControllerIT extends TestDatabaseContainer {
     void deleteUser_ReturnsApiErrorResponse_WhenUserDoesNotExists() {
         // Arrange
         String username = "username";
-        String bearerToken = signupUser(username, "password", "email");
+        String bearerToken = signupUser(username, "password", "user@example.test");
 
         // Act
         ApiErrorResponse actual = webTestClient.delete()
@@ -94,7 +94,7 @@ public class UserControllerIT extends TestDatabaseContainer {
     void updateUser_UpdatesUser_WhenUserExists() {
         // Arrange
         String username = "username";
-        String bearerToken = signupUser(username, "password", "email");
+        String bearerToken = signupUser(username, "password", "user@example.test");
 
         User fetchedUser = userRepository.findAll()
                 .stream()
@@ -103,7 +103,7 @@ public class UserControllerIT extends TestDatabaseContainer {
                 .orElseThrow();
 
         String newUsername = "newUsername";
-        String newEmail = "newEmail";
+        String newEmail = "new@example.test";
         UserRole newRole = userRoleRepository.findByRole(UserRole.Role.ADMIN).orElseThrow();
         UserUpdateRequest updateRequest = new UserUpdateRequest(newUsername, newEmail, newRole);
 
@@ -129,7 +129,7 @@ public class UserControllerIT extends TestDatabaseContainer {
     void updateUser_ReturnsConflictResponse_WhenUsernameAlreadyExists() {
         // Arrange
         String username = "username";
-        String bearerToken = signupUser(username, "password", "email");
+        String bearerToken = signupUser(username, "password", "user@example.test");
 
         User fetchedUser = userRepository.findAll()
                 .stream()
@@ -138,11 +138,11 @@ public class UserControllerIT extends TestDatabaseContainer {
                 .orElseThrow();
 
         String existingUsername = "newUsername";
-        String newEmail = "newEmail";
+        String newEmail = "new@example.test";
         UserRole newRole = userRoleRepository.findByRole(UserRole.Role.ADMIN).orElseThrow();
         UserUpdateRequest updateRequest = new UserUpdateRequest(existingUsername, newEmail, newRole);
 
-        signupUser(existingUsername, "password", "anotherEmail");
+        signupUser(existingUsername, "password", "another@example.test");
 
         // Act
         ApiErrorResponse actual = webTestClient.post()
@@ -166,7 +166,7 @@ public class UserControllerIT extends TestDatabaseContainer {
     void updateUser_ReturnsConflictResponse_WhenEmailAlreadyExists() {
         // Arrange
         String username = "username";
-        String bearerToken = signupUser(username, "password", "email");
+        String bearerToken = signupUser(username, "password", "user@example.test");
 
         User fetchedUser = userRepository.findAll()
                 .stream()
@@ -175,7 +175,7 @@ public class UserControllerIT extends TestDatabaseContainer {
                 .orElseThrow();
 
         String newUsername = "newUsername";
-        String existingEmail = "existingEmail";
+        String existingEmail = "existing@example.test";
         UserRole newRole = userRoleRepository.findByRole(UserRole.Role.ADMIN).orElseThrow();
         UserUpdateRequest updateRequest = new UserUpdateRequest(newUsername, existingEmail, newRole);
 
@@ -203,7 +203,7 @@ public class UserControllerIT extends TestDatabaseContainer {
     void updateUser_ReturnsConflictResponse_WhenUsernameAndEmailAlreadyExists() {
         // Arrange
         String username = "username";
-        String bearerToken = signupUser(username, "password", "email");
+        String bearerToken = signupUser(username, "password", "user@example.test");
 
         User fetchedUser = userRepository.findAll()
                 .stream()
@@ -212,7 +212,7 @@ public class UserControllerIT extends TestDatabaseContainer {
                 .orElseThrow();
 
         String existingUsername = "existingUsername";
-        String existingEmail = "existingEmail";
+        String existingEmail = "existing@example.test";
         UserRole newRole = userRoleRepository.findByRole(UserRole.Role.ADMIN).orElseThrow();
         UserUpdateRequest updateRequest = new UserUpdateRequest(existingUsername, existingEmail, newRole);
 
@@ -240,10 +240,10 @@ public class UserControllerIT extends TestDatabaseContainer {
     void updateUser_Returns404Response_WhenUserDoesNotExists() {
         // Arrange
         String username = "username";
-        String bearerToken = signupUser(username, "password", "email");
+        String bearerToken = signupUser(username, "password", "user@example.test");
 
         String existingUsername = "existingUsername";
-        String existingEmail = "existingEmail";
+        String existingEmail = "existing@example.test";
         UserRole newRole = userRoleRepository.findByRole(UserRole.Role.ADMIN).orElseThrow();
         UserUpdateRequest updateRequest = new UserUpdateRequest(existingUsername, existingEmail, newRole);
 
@@ -268,9 +268,9 @@ public class UserControllerIT extends TestDatabaseContainer {
     @Test
     void getUserById_ReturnsUserDTO_WhenUserExists() {
         // Arrange
-        String bearerToken = signupUser("username", "password", "email");
+        String bearerToken = signupUser("username", "password", "user@example.test");
 
-        UserDTO expected = new UserDTO(null, "username", "email", null);
+        UserDTO expected = new UserDTO(null, "username", "user@example.test", null);
         List<User> actualUsers = webTestClient.get()
                 .uri(USER_CONTROLLER_BASE_URI)
                 .accept(MediaType.APPLICATION_JSON)
@@ -306,7 +306,7 @@ public class UserControllerIT extends TestDatabaseContainer {
     @Test
     void getUserById_Returns404Error_WhenUserDoesNotExist() {
         // Arrange
-        String bearerToken = signupUser("username", "password", "email");
+        String bearerToken = signupUser("username", "password", "user@example.test");
 
         long userId = 3L;
 
@@ -328,7 +328,7 @@ public class UserControllerIT extends TestDatabaseContainer {
     @Test
     void getAllUsers_ReturnsListOfUserDTOs_WhenAuthenticatedUserRole() {
         // Arrange
-        String bearerToken = signupUser("username", "password", "email");
+        String bearerToken = signupUser("username", "password", "user@example.test");
 
         // Act
         List<User> actualUsers = webTestClient.get()

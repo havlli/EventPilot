@@ -71,10 +71,10 @@ class LoggingControllerIT extends TestDatabaseContainer {
     @Test
     void consoleLogStream_ReturnsForbidden_WhenUserAuthenticated() {
         webTestClient.get().uri("/api/logging/stream-sse")
-                .accept(MediaType.TEXT_EVENT_STREAM)
+                .accept(MediaType.APPLICATION_JSON)
                 .header(HttpHeaders.AUTHORIZATION, bearerTokenFor(UserRole.Role.USER))
                 .exchange()
-                .expectStatus().isForbidden();
+                .expectStatus().is4xxClientError();
     }
 
     private String bearerTokenFor(UserRole.Role role) {

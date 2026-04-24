@@ -46,7 +46,7 @@ class AuthControllerIT extends TestDatabaseContainer {
     @Test
     void authenticate_AuthenticateUserAndReturnsAuthResponse_WhenValidUserCredentials() {
         // Arrange
-        UserSignupRequest signupRequest = UserSignupRequest.of("username",  "email", "password");
+        UserSignupRequest signupRequest = UserSignupRequest.of("username",  "user@example.test", "password");
 
         webTestClient.post()
                 .uri(BASE_URI + "/signup")
@@ -103,10 +103,10 @@ class AuthControllerIT extends TestDatabaseContainer {
     @Test
     void signup_RegisterUserAndReturnsAuthResponse_WhenValidUserCredentials() {
         // Arrange
-        UserSignupRequest signupRequest = UserSignupRequest.of("username", "password", "email");
+        UserSignupRequest signupRequest = UserSignupRequest.of("username", "user@example.test", "password");
 
         String endpoint = BASE_URI + "/signup";
-        String regexExpectedLocation = "/api/users/.";
+        String regexExpectedLocation = "/api/users/\\d+";
 
         // Act
         FluxExchangeResult<AuthResponse> fluxExchangeResult = webTestClient.post()
@@ -138,11 +138,11 @@ class AuthControllerIT extends TestDatabaseContainer {
         userRepository.save(new User(
                 null,
                 "username",
+                "existing@example.test",
                 "password",
-                "email",
                 Set.of(defaultUserRole)));
 
-        UserSignupRequest signupRequest = UserSignupRequest.of("username", "password", "email2");
+        UserSignupRequest signupRequest = UserSignupRequest.of("username", "different@example.test", "password");
 
         String endpoint = BASE_URI + "/signup";
 
@@ -172,11 +172,11 @@ class AuthControllerIT extends TestDatabaseContainer {
         userRepository.save(new User(
                 null,
                 "username",
+                "existing@example.test",
                 "password",
-                "email",
                 Set.of(defaultUserRole)));
 
-        UserSignupRequest signupRequest = UserSignupRequest.of("username1", "password", "email");
+        UserSignupRequest signupRequest = UserSignupRequest.of("username1", "existing@example.test", "password");
 
         String endpoint = BASE_URI + "/signup";
 

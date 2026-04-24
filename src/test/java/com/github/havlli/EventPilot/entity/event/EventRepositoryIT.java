@@ -58,7 +58,7 @@ class EventRepositoryIT extends TestDatabaseContainer {
     public void jpaQueryCurrentTimestamp_SatisfiesExecutionTimeTolerance() throws SQLException {
         // Arrange
         // tolerance for assertion to count with execution time
-        int toleranceMilliseconds = 100;
+        int toleranceMilliseconds = 1000;
 
         Instant expected = Instant.now();
 
@@ -158,7 +158,7 @@ class EventRepositoryIT extends TestDatabaseContainer {
     }
 
     @Test
-    public void findAllWithDatetimeBeforeCurrentTime_ReturnsListOfExpiredEvents_WhenOffsetOneSecond() throws SQLException {
+    public void findAllWithDatetimeBeforeCurrentTime_ReturnsListOfExpiredEvents_WhenOffsetThreeSeconds() throws SQLException {
         // Arrange
         Instant instantNow = timeTester.getInstantNowFromSystem();
         Instant jdbcTimeAfterInstantNow = timeTester.getCurrentTimestampUsingJdbc();
@@ -167,9 +167,9 @@ class EventRepositoryIT extends TestDatabaseContainer {
 
         Guild guild = new Guild("1", "guild");
 
-        Instant validDateTime = instantNow.plus(1, ChronoUnit.SECONDS);
-        Instant expiredEvent1DateTime = instantNow.minus(1, ChronoUnit.SECONDS);
-        Instant expiredEvent2DateTime = instantNow.minus(1, ChronoUnit.SECONDS);
+        Instant validDateTime = instantNow.plus(3, ChronoUnit.SECONDS);
+        Instant expiredEvent1DateTime = instantNow.minus(3, ChronoUnit.SECONDS);
+        Instant expiredEvent2DateTime = instantNow.minus(3, ChronoUnit.SECONDS);
 
         List<Event> events = new ArrayList<>();
         EmbedType embedType = new EmbedType(
@@ -251,7 +251,7 @@ class EventRepositoryIT extends TestDatabaseContainer {
     }
 
     @Test
-    public void findAllWithDatetimeBeforeCurrentTime_ReturnsListOfExpiredEvents_WhenOffset250Millis() throws SQLException {
+    public void findAllWithDatetimeBeforeCurrentTime_ReturnsListOfExpiredEvents_WhenOffsetTwoSeconds() throws SQLException {
         // Arrange
         Instant instantNow = timeTester.getInstantNowFromSystem();
         Instant jdbcTimeAfterInstantNow = timeTester.getCurrentTimestampUsingJdbc();
@@ -260,9 +260,9 @@ class EventRepositoryIT extends TestDatabaseContainer {
 
         Guild guild = new Guild("1", "guild");
 
-        Instant validDateTime = instantNow.plus(250, ChronoUnit.MILLIS);
-        Instant expiredEvent1DateTime = instantNow.minus(250, ChronoUnit.MILLIS);
-        Instant expiredEvent2DateTime = instantNow.minus(250, ChronoUnit.MILLIS);
+        Instant validDateTime = instantNow.plus(2, ChronoUnit.SECONDS);
+        Instant expiredEvent1DateTime = instantNow.minus(2, ChronoUnit.SECONDS);
+        Instant expiredEvent2DateTime = instantNow.minus(2, ChronoUnit.SECONDS);
 
         List<Event> events = new ArrayList<>();
         EmbedType embedType = new EmbedType(

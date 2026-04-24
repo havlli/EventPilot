@@ -4,6 +4,7 @@ import com.github.havlli.EventPilot.command.SlashCommand;
 import discord4j.core.GatewayDiscordClient;
 import jakarta.annotation.PostConstruct;
 import org.springframework.context.annotation.DependsOn;
+import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Flux;
 
@@ -11,6 +12,7 @@ import java.util.Comparator;
 import java.util.List;
 
 @Component
+@Profile("!test")
 @DependsOn({"restClient"})
 public class GlobalCommandListener {
 
