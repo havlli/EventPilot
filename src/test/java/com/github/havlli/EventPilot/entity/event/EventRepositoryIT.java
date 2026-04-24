@@ -6,7 +6,6 @@ import com.github.havlli.EventPilot.entity.embedtype.EmbedType;
 import com.github.havlli.EventPilot.entity.embedtype.EmbedTypeRepository;
 import com.github.havlli.EventPilot.entity.guild.Guild;
 import com.github.havlli.EventPilot.entity.guild.GuildRepository;
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -34,6 +33,7 @@ import static org.assertj.core.api.Assertions.assertThat;
 class EventRepositoryIT extends TestDatabaseContainer {
 
     private static final Logger LOG = LoggerFactory.getLogger(EventRepositoryIT.class);
+    private static final int TIMESTAMP_CLOCK_SKEW_TOLERANCE_SECONDS = 2;
     @Autowired
     private GuildRepository guildRepository;
     @Autowired
@@ -57,22 +57,25 @@ class EventRepositoryIT extends TestDatabaseContainer {
     @Test
     public void jpaQueryCurrentTimestamp_SatisfiesExecutionTimeTolerance() throws SQLException {
         // Arrange
-        // tolerance for assertion to count with execution time
-        int toleranceMilliseconds = 1000;
-
-        Instant expected = Instant.now();
+        Instant beforeQuery = Instant.now();
 
         // Act
         Instant actualJdbcQuery = timeTester.getCurrentTimestampUsingJdbc();
         Instant actualNativeQuery = timeTester.getCurrentTimestampUsingPersistence();
         Instant actualJPQLQuery = testRepository.selectCurrentTimestamp();
+        Instant afterQuery = Instant.now();
 
-        System.out.printf("expected = %s%nactualNative = %s%nactualJPQL = %s%nactualJdbc = %s%n",
-                expected, actualNativeQuery, actualJPQLQuery, actualJdbcQuery);
+        System.out.printf("beforeQuery = %s%nafterQuery = %s%nactualNative = %s%nactualJPQL = %s%nactualJdbc = %s%n",
+                beforeQuery, afterQuery, actualNativeQuery, actualJPQLQuery, actualJdbcQuery);
         // Assert
-        assertThat(actualNativeQuery).isCloseTo(expected, Assertions.within(toleranceMilliseconds, ChronoUnit.MILLIS));
-        assertThat(actualJPQLQuery).isCloseTo(expected, Assertions.within(toleranceMilliseconds, ChronoUnit.MILLIS));
-        assertThat(actualJdbcQuery).isCloseTo(expected, Assertions.within(toleranceMilliseconds, ChronoUnit.MILLIS));
+        assertTimestampWithinQueryWindow(actualNativeQuery, beforeQuery, afterQuery);
+        assertTimestampWithinQueryWindow(actualJPQLQuery, beforeQuery, afterQuery);
+        assertTimestampWithinQueryWindow(actualJdbcQuery, beforeQuery, afterQuery);
+    }
+
+    private static void assertTimestampWithinQueryWindow(Instant actual, Instant beforeQuery, Instant afterQuery) {
+        assertThat(actual).isAfterOrEqualTo(beforeQuery.minus(TIMESTAMP_CLOCK_SKEW_TOLERANCE_SECONDS, ChronoUnit.SECONDS));
+        assertThat(actual).isBeforeOrEqualTo(afterQuery.plus(TIMESTAMP_CLOCK_SKEW_TOLERANCE_SECONDS, ChronoUnit.SECONDS));
     }
 
     @Test
