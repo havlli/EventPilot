@@ -1,4 +1,9 @@
 target/
+.m2/
+.mise-cache/
+.mise-config/
+.mise-data/
+.mise-state/
 !.mvn/wrapper/maven-wrapper.jar
 !**/src/main/**/target/
 !**/src/test/**/target/
