@@ -6,7 +6,6 @@ import discord4j.core.object.component.Button;
 import org.junit.jupiter.api.Test;
 
 import java.util.List;
-import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.assertj.core.api.Assertions.assertThatThrownBy;
@@ -93,15 +92,15 @@ class ButtonRowTest {
         ActionRow actual = buttonRow.getActionRow();
 
         // Assert
-        List<Optional<String>> actualList = actual.getChildren().stream()
+        List<String> actualList = actual.getChildren().stream()
                 .filter(c -> c instanceof Button)
                 .map(c -> ((Button) c).getCustomId())
                 .toList();
 
         assertThat(actualList).containsOnly(
-                Optional.of(buttonOneCustomId),
-                Optional.of(buttonTwoCustomId),
-                Optional.of(buttonThreeCustomId)
+                buttonOneCustomId,
+                buttonTwoCustomId,
+                buttonThreeCustomId
         );
     }
 
@@ -118,12 +117,12 @@ class ButtonRowTest {
         ActionRow actual = buttonRow.getActionRow();
 
         // Assert
-        List<Optional<String>> actualList = actual.getChildren().stream()
+        List<String> actualList = actual.getChildren().stream()
                 .filter(c -> c instanceof Button)
                 .map(c -> ((Button) c).getCustomId())
                 .toList();
 
-        assertThat(actualList).containsOnly(Optional.of(buttonOneCustomId));
+        assertThat(actualList).containsOnly(buttonOneCustomId);
     }
 
     @Test

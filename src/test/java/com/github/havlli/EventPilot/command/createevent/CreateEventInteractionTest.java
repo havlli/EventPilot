@@ -22,7 +22,7 @@ import discord4j.core.event.domain.interaction.ChatInputInteractionEvent;
 import discord4j.core.event.domain.interaction.SelectMenuInteractionEvent;
 import discord4j.core.event.domain.message.MessageCreateEvent;
 import discord4j.core.object.command.Interaction;
-import discord4j.core.object.component.LayoutComponent;
+import discord4j.core.object.component.TopLevelMessageComponent;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.User;
 import discord4j.core.object.entity.channel.GuildChannel;
@@ -573,7 +573,7 @@ class CreateEventInteractionTest {
         when(privateChannelMono.flatMap(any())).thenReturn(Mono.empty());
 
         when(embedGeneratorMock.generateEmbed(eventMock)).thenReturn(EmbedCreateSpec.builder().build());
-        List<LayoutComponent> layoutComponents = List.of();
+        List<TopLevelMessageComponent> layoutComponents = List.of();
         when(embedGeneratorMock.generateComponents(eventMock)).thenReturn(layoutComponents);
 
         doNothing().when(embedGeneratorMock).subscribeInteractions(eventMock);

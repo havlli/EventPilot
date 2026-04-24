@@ -6,6 +6,7 @@ import com.github.havlli.EventPilot.session.UserSessionValidator;
 import discord4j.common.util.Snowflake;
 import discord4j.core.event.domain.Event;
 import discord4j.core.event.domain.interaction.ChatInputInteractionEvent;
+import discord4j.core.object.component.LayoutComponent;
 import discord4j.core.object.component.SelectMenu;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.User;
@@ -122,6 +123,8 @@ public class ClearExpiredCommand implements SlashCommand {
     public Predicate<Message> filterExpired() {
         String expiredCustomTag = expiredSelectMenu.getCustomId();
         return message -> message.getComponents().stream()
+                .filter(LayoutComponent.class::isInstance)
+                .map(LayoutComponent.class::cast)
                 .flatMap(layoutComponent -> layoutComponent.getChildren().stream())
                 .filter(messageComponent -> messageComponent instanceof SelectMenu)
                 .map(messageComponent -> (SelectMenu) messageComponent)

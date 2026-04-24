@@ -6,7 +6,7 @@ services:
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://database:5432/eventpilot
       CACHE_REDIS_HOST: cache
-      DISCORD_TOKEN: your-discord-bot-token
+      DISCORD_BOT_TOKEN: your-discord-bot-token
       JWT_SECRET: at-least-256bits-HS256-compliant-secret
     ports:
       - 8080:8080

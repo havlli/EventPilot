@@ -4,6 +4,7 @@ import com.github.havlli.EventPilot.entity.user.User;
 import com.github.havlli.EventPilot.entity.user.UserDTO;
 import com.github.havlli.EventPilot.entity.user.UserService;
 import com.github.havlli.EventPilot.entity.user.UserUpdateRequest;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -38,7 +39,7 @@ public class UserController {
     }
 
     @PostMapping("/{id}/edit")
-    public ResponseEntity<UserDTO> updateUser(@PathVariable Long id, @RequestBody UserUpdateRequest updateRequest) {
+    public ResponseEntity<UserDTO> updateUser(@PathVariable Long id, @Valid @RequestBody UserUpdateRequest updateRequest) {
         User updatedUser = userService.updateUser(id, updateRequest);
         UserDTO userDTO = UserDTO.of(updatedUser);
 

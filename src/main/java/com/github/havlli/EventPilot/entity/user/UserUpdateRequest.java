@@ -1,7 +1,13 @@
 package com.github.havlli.EventPilot.entity.user;
 
+import jakarta.validation.constraints.Email;
+import jakarta.validation.constraints.Size;
+
 public record UserUpdateRequest(
+        @Size(min = 3, max = 25)
         String username,
+        @Email
+        @Size(min = 4, max = 50)
         String email,
         UserRole role
 ) {

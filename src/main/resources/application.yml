@@ -1,10 +1,10 @@
 server:
   port: 8080
   error:
-    include-message: always
-    include-binding-errors: always
-    include-stacktrace: on_param
-    include-exception: true
+    include-message: never
+    include-binding-errors: never
+    include-stacktrace: never
+    include-exception: false
 
 spring:
   datasource:
@@ -32,10 +32,10 @@ security:
   jwt:
     secret: ${JWT_SECRET}
   cors:
-    allowed-origins: "*"
-    allowed-methods: "*"
-    allowed-headers: "*"
-    exposed-headers: "*"
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:5173}
+    allowed-methods: ${CORS_ALLOWED_METHODS:GET,POST,PUT,PATCH,DELETE,OPTIONS}
+    allowed-headers: ${CORS_ALLOWED_HEADERS:Authorization,Content-Type}
+    exposed-headers: ${CORS_EXPOSED_HEADERS:Authorization}
 
 discord:
   token: ${DISCORD_BOT_TOKEN}

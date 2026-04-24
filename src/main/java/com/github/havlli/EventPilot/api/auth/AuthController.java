@@ -1,5 +1,6 @@
 package com.github.havlli.EventPilot.api.auth;
 
+import jakarta.validation.Valid;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.PostMapping;
@@ -20,14 +21,14 @@ public class AuthController {
     }
 
     @PostMapping("authenticate")
-    public ResponseEntity<AuthResponse> authenticate(@RequestBody AuthRequest request) {
+    public ResponseEntity<AuthResponse> authenticate(@Valid @RequestBody AuthRequest request) {
         AuthResponse authResponse = authService.authenticate(request);
 
         return okResponse(authResponse);
     }
 
     @PostMapping("signup")
-    public ResponseEntity<AuthResponse> signup(@RequestBody UserSignupRequest request) {
+    public ResponseEntity<AuthResponse> signup(@Valid @RequestBody UserSignupRequest request) {
         AuthResponse authResponse = authService.signup(request);
         URI createdResourceLocation = URI.create("/api/users/" + authResponse.user().id());
         return ResponseEntity.created(createdResourceLocation)

@@ -7,7 +7,7 @@ import discord4j.core.event.domain.interaction.ButtonInteractionEvent;
 import discord4j.core.event.domain.interaction.ComponentInteractionEvent;
 import discord4j.core.event.domain.interaction.SelectMenuInteractionEvent;
 import discord4j.core.event.domain.message.MessageCreateEvent;
-import discord4j.core.object.component.LayoutComponent;
+import discord4j.core.object.component.TopLevelMessageComponent;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.spec.InteractionCallbackSpecDeferEditMono;
@@ -18,7 +18,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import reactor.core.publisher.Mono;
 
-import javax.validation.constraints.NotNull;
+import jakarta.validation.constraints.NotNull;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
@@ -131,7 +131,7 @@ public class TextPromptBuilder<T extends Event> {
     private Function<T, Mono<T>> defaultResponse() {
         return event -> {
             if (event instanceof SelectMenuInteractionEvent selectMenuEvent) {
-                List<LayoutComponent> components = List.of(actionRowComponent.getDisabledRow());
+                List<TopLevelMessageComponent> components = List.of(actionRowComponent.getDisabledRow());
                 return deferEditResponseThenEditWithComponents(event, selectMenuEvent, components);
             } else if (event instanceof ButtonInteractionEvent buttonEvent) {
                 return deferEditResponseThenEditWithComponents(event, buttonEvent, List.of());
@@ -166,7 +166,7 @@ public class TextPromptBuilder<T extends Event> {
         };
     }
 
-    private Mono<T> deferEditResponseThenEditWithComponents(T event, ComponentInteractionEvent interactionEvent, List<LayoutComponent> components) {
+    private Mono<T> deferEditResponseThenEditWithComponents(T event, ComponentInteractionEvent interactionEvent, List<TopLevelMessageComponent> components) {
         return deferEditResponse(interactionEvent)
                 .then(editResponseWithComponents(interactionEvent, components))
                 .then(just(event));
@@ -180,7 +180,7 @@ public class TextPromptBuilder<T extends Event> {
         return interactionEvent.deferReply();
     }
 
-    private Mono<Message> editResponseWithComponents(ComponentInteractionEvent interactionEvent, List<LayoutComponent> layoutComponents) {
+    private Mono<Message> editResponseWithComponents(ComponentInteractionEvent interactionEvent, List<TopLevelMessageComponent> layoutComponents) {
         return interactionEvent.editReply(InteractionReplyEditSpec.builder()
                 .components(layoutComponents)
                 .build());

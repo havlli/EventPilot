@@ -6,7 +6,7 @@ import com.github.havlli.EventPilot.entity.embedtype.EmbedTypeService;
 import com.github.havlli.EventPilot.entity.event.Event;
 import com.github.havlli.EventPilot.entity.guild.Guild;
 import com.github.havlli.EventPilot.entity.participant.Participant;
-import discord4j.core.object.component.LayoutComponent;
+import discord4j.core.object.component.TopLevelMessageComponent;
 import discord4j.core.spec.EmbedCreateFields;
 import discord4j.core.spec.EmbedCreateSpec;
 import org.slf4j.Logger;
@@ -194,7 +194,7 @@ public class EmbedGenerator {
             return EmbedCreateFields.Field.of(content, "", true);
     }
 
-    public List<LayoutComponent> generateComponents(Event event) {
+    public List<TopLevelMessageComponent> generateComponents(Event event) {
         return generator.eventButtons(DELIMITER, event);
     }
 
