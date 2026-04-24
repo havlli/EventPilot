@@ -19,9 +19,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
-public class UserRepositoryTest extends TestDatabaseContainer {
+public class UserRepositoryIT extends TestDatabaseContainer {
 
-    public static final Logger LOG = LoggerFactory.getLogger(UserRepositoryTest.class);
+    public static final Logger LOG = LoggerFactory.getLogger(UserRepositoryIT.class);
 
     @Autowired
     private ApplicationContext applicationContext;

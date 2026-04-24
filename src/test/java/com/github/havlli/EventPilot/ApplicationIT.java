@@ -8,9 +8,9 @@ import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.context.ApplicationContext;
 
 @SpringBootTest
-class ApplicationTest {
+class ApplicationIT {
 
-    private static final Logger LOG = LoggerFactory.getLogger(ApplicationTest.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ApplicationIT.class);
 
     @Autowired
     private ApplicationContext applicationContext;
