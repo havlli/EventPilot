@@ -115,9 +115,6 @@ class ComponentGeneratorTest {
                 .toList();
 
         actual.stream().map(LayoutComponent.class::cast).flatMap(layoutComponent -> layoutComponent.getChildren().stream())
-                .forEach(messageComponent -> System.out.println(messageComponent.getData().style()));
-
-        actual.stream().map(LayoutComponent.class::cast).flatMap(layoutComponent -> layoutComponent.getChildren().stream())
                 .forEach(messageComponent -> assertThat(messageComponent.getData().style().get()).isEqualTo(expectedStylePrimary));
 
         assertThat(actualCustomIds).containsExactlyInAnyOrderElementsOf(expectedCustomIds);
@@ -177,7 +174,6 @@ class ComponentGeneratorTest {
         List<TopLevelMessageComponent> actual = underTest.eventButtons(delimiter, eventMock);
 
         // Assert
-        System.out.println(actual);
         assertThat(actual).hasSize(0);
     }
 

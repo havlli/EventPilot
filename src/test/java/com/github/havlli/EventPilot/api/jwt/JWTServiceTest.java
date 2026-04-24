@@ -4,10 +4,9 @@ import com.github.havlli.EventPilot.api.auth.UserDetailsImpl;
 import com.github.havlli.EventPilot.entity.user.User;
 import com.github.havlli.EventPilot.entity.user.UserRole;
 import io.jsonwebtoken.JwtException;
+import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.MalformedJwtException;
-import io.jsonwebtoken.SignatureAlgorithm;
 import io.jsonwebtoken.io.Encoders;
-import io.jsonwebtoken.security.Keys;
 import io.jsonwebtoken.security.SignatureException;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -37,7 +36,7 @@ class JWTServiceTest {
     }
 
     private String generateKey() {
-        byte[] encodedSecret = Keys.secretKeyFor(SignatureAlgorithm.HS256).getEncoded();
+        byte[] encodedSecret = Jwts.SIG.HS256.key().build().getEncoded();
         return Encoders.BASE64.encode(encodedSecret);
     }
 
@@ -54,7 +53,6 @@ class JWTServiceTest {
         Map<String, Object> claims = Map.of("present-claim", "present-value");
 
         String jwtToken = underTest.generateToken(user, claims);
-        System.out.println(jwtToken);
 
         // Act
         boolean result = underTest.hasClaim(jwtToken, "present-claim");
@@ -111,7 +109,7 @@ class JWTServiceTest {
     }
 
     @Test
-    void hasClaim_ThrowsMalformedException_WhenTokenPayloadIsInvalid() {
+    void hasClaim_ThrowsJwtException_WhenTokenPayloadIsInvalid() {
         // Arrange
         UserRole userRole = new UserRole(UserRole.Role.USER);
         User user = new User(null, "username", "email", "password", Set.of(userRole));
@@ -126,7 +124,7 @@ class JWTServiceTest {
 
         // Act & Assert
         assertThatThrownBy(() -> underTestSpy.hasClaim(invalidPayloadToken, "not-existing-claim"))
-                .isInstanceOf(MalformedJwtException.class);
+                .isInstanceOf(JwtException.class);
     }
 
     @Test

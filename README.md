@@ -106,6 +106,19 @@ mise install
 mise exec -- mvn -ntp test
 ```
 
+On Windows, the repository also includes small wrappers around the mise command:
+
+```shell
+.\scripts\test.cmd
+.\scripts\test.cmd verify
+```
+
+To run a local dependency vulnerability report:
+
+```shell
+.\scripts\security-check.cmd
+```
+
 ### Run application locally in docker
 
 One of the approach to run bot locally is that we can use docker container to run both application
