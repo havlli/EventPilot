@@ -10,6 +10,7 @@ import org.springframework.boot.test.autoconfigure.jdbc.AutoConfigureTestDatabas
 import org.springframework.boot.test.autoconfigure.orm.jpa.DataJpaTest;
 import org.springframework.context.ApplicationContext;
 import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.jdbc.Sql;
 
 import java.util.Optional;
 
@@ -18,6 +19,14 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
+@Sql(statements = {
+        "DELETE FROM user_role",
+        "DELETE FROM users",
+        "DELETE FROM role",
+        "INSERT INTO role(name) VALUES('USER')",
+        "INSERT INTO role(name) VALUES('MODERATOR')",
+        "INSERT INTO role(name) VALUES('ADMIN')"
+})
 class UserRoleRepositoryIT extends TestDatabaseContainer {
 
     public static final Logger LOG = LoggerFactory.getLogger(UserRoleRepositoryIT.class);
