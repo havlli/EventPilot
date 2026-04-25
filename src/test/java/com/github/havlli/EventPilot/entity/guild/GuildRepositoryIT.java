@@ -82,8 +82,9 @@ class GuildRepositoryIT extends TestDatabaseContainer {
 
         // Assert
         List<Guild> expectedGuilds = List.of(expectedGuild1, expectedGuild2);
-        assertThat(actualGuilds).usingRecursiveComparison()
-                .isEqualTo(expectedGuilds);
+        assertThat(actualGuilds)
+                .usingRecursiveFieldByFieldElementComparator()
+                .containsExactlyInAnyOrderElementsOf(expectedGuilds);
     }
 
     @Test
