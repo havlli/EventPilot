@@ -29,9 +29,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
-class ParticipantRepositoryTest extends TestDatabaseContainer {
+class ParticipantRepositoryIT extends TestDatabaseContainer {
 
-    private static final Logger LOG = LoggerFactory.getLogger(ParticipantRepositoryTest.class);
+    private static final Logger LOG = LoggerFactory.getLogger(ParticipantRepositoryIT.class);
     @Autowired
     private ParticipantRepository underTest;
     @Autowired
@@ -221,7 +221,7 @@ class ParticipantRepositoryTest extends TestDatabaseContainer {
                     assertThat(e.getDestinationChannelId()).isEqualTo(event.getDestinationChannelId());
                     assertThat(e.getMemberSize()).isEqualTo(event.getMemberSize());
                     assertThat(e.getInstances()).isEqualTo(event.getInstances());
-                    assertThat(e.getParticipants()).isEqualTo(event.getParticipants());
+                    assertThat(e.getParticipants()).usingRecursiveComparison().isEqualTo(event.getParticipants());
                 });
 
         return actual.get();

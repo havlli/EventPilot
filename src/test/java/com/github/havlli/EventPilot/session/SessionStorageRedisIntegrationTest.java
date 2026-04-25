@@ -1,40 +1,25 @@
 package com.github.havlli.EventPilot.session;
 
-import com.redis.testcontainers.RedisContainer;
+import com.github.havlli.EventPilot.TestDatabaseContainer;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.data.redis.core.RedisTemplate;
-import org.springframework.test.context.DynamicPropertyRegistry;
-import org.springframework.test.context.DynamicPropertySource;
 import org.springframework.test.context.junit.jupiter.SpringExtension;
-import org.testcontainers.junit.jupiter.Container;
-import org.testcontainers.junit.jupiter.Testcontainers;
 
 import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 @ExtendWith(SpringExtension.class)
 @SpringBootTest
-@Testcontainers
-class SessionStorageRedisIntegrationTest {
-
-    @Container
-    public static RedisContainer redisContainer = new RedisContainer("7.2.1-alpine");
+class SessionStorageRedisIntegrationTest extends TestDatabaseContainer {
 
     @Autowired
     private SessionStorage underTest;
     @Autowired
     private RedisTemplate<String, String> redisTemplate;
-
-    @DynamicPropertySource
-    private static void registerDatasourceProperties(DynamicPropertyRegistry registry) {
-        registry.add("spring.data.redis.host", () -> redisContainer.getHost());
-        registry.add("spring.data.redis.port", () -> redisContainer.getFirstMappedPort());
-        System.out.printf("Redis host: %s, port: %d", redisContainer.getHost(), redisContainer.getFirstMappedPort());
-    }
 
     @BeforeEach
     void setUp() {
@@ -43,7 +28,7 @@ class SessionStorageRedisIntegrationTest {
 
     @Test
     void testConnection() {
-        assertTrue(redisContainer.isEnabled());
+        assertTrue(redisContainer.isRunning());
     }
 
     @Test

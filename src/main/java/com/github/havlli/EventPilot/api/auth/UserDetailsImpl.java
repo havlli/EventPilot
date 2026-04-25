@@ -95,7 +95,6 @@ public class UserDetailsImpl implements UserDetails {
                 "id=" + id +
                 ", username='" + username + '\'' +
                 ", email='" + email + '\'' +
-                ", password='" + password + '\'' +
                 ", authorities=" + authorities +
                 '}';
     }

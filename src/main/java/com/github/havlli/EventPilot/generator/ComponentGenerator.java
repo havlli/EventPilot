@@ -5,7 +5,7 @@ import com.github.havlli.EventPilot.entity.embedtype.EmbedTypeSerialization;
 import com.github.havlli.EventPilot.entity.event.Event;
 import discord4j.core.object.component.ActionRow;
 import discord4j.core.object.component.Button;
-import discord4j.core.object.component.LayoutComponent;
+import discord4j.core.object.component.TopLevelMessageComponent;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
@@ -23,7 +23,7 @@ public class ComponentGenerator {
         this.serialization = serialization;
     }
 
-    public List<LayoutComponent> eventButtons(String delimiter, Event event) {
+    public List<TopLevelMessageComponent> eventButtons(String delimiter, Event event) {
         try {
             HashMap<Integer, String> roles = serialization.deserializeMap(event.getEmbedType().getStructure());
             return Arrays.asList(

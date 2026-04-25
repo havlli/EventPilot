@@ -23,7 +23,6 @@ class UserDetailsImplTest {
                 "id=1, " +
                 "username='username', " +
                 "email='email', " +
-                "password='password', " +
                 "authorities=[]" +
                 "}";
 

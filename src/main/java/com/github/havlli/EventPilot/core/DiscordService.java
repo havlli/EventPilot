@@ -7,6 +7,7 @@ import com.github.havlli.EventPilot.entity.event.EventService;
 import com.github.havlli.EventPilot.generator.EmbedGenerator;
 import discord4j.common.util.Snowflake;
 import discord4j.core.GatewayDiscordClient;
+import discord4j.core.object.component.LayoutComponent;
 import discord4j.core.object.entity.Message;
 import discord4j.core.spec.MessageEditSpec;
 import discord4j.rest.http.client.ClientException;
@@ -83,6 +84,8 @@ public class DiscordService {
 
     private boolean isDeactivated(Message message) {
         return message.getComponents().stream()
+                .filter(LayoutComponent.class::isInstance)
+                .map(LayoutComponent.class::cast)
                 .flatMap(layoutComponent -> layoutComponent.getChildren().stream())
                 .map(messageComponent -> messageComponent.getData().customId().toOptional())
                 .anyMatch(id -> id.isPresent() && id.get().equals(getExpiredSelectMenu().getCustomId()));

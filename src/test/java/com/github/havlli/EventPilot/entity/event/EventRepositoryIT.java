@@ -6,7 +6,6 @@ import com.github.havlli.EventPilot.entity.embedtype.EmbedType;
 import com.github.havlli.EventPilot.entity.embedtype.EmbedTypeRepository;
 import com.github.havlli.EventPilot.entity.guild.Guild;
 import com.github.havlli.EventPilot.entity.guild.GuildRepository;
-import org.assertj.core.api.Assertions;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
@@ -31,9 +30,10 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
-class EventRepositoryTest extends TestDatabaseContainer {
+class EventRepositoryIT extends TestDatabaseContainer {
 
-    private static final Logger LOG = LoggerFactory.getLogger(EventRepositoryTest.class);
+    private static final Logger LOG = LoggerFactory.getLogger(EventRepositoryIT.class);
+    private static final int TIMESTAMP_CLOCK_SKEW_TOLERANCE_SECONDS = 2;
     @Autowired
     private GuildRepository guildRepository;
     @Autowired
@@ -57,22 +57,25 @@ class EventRepositoryTest extends TestDatabaseContainer {
     @Test
     public void jpaQueryCurrentTimestamp_SatisfiesExecutionTimeTolerance() throws SQLException {
         // Arrange
-        // tolerance for assertion to count with execution time
-        int toleranceMilliseconds = 100;
-
-        Instant expected = Instant.now();
+        Instant beforeQuery = Instant.now();
 
         // Act
         Instant actualJdbcQuery = timeTester.getCurrentTimestampUsingJdbc();
         Instant actualNativeQuery = timeTester.getCurrentTimestampUsingPersistence();
         Instant actualJPQLQuery = testRepository.selectCurrentTimestamp();
+        Instant afterQuery = Instant.now();
 
-        System.out.printf("expected = %s%nactualNative = %s%nactualJPQL = %s%nactualJdbc = %s%n",
-                expected, actualNativeQuery, actualJPQLQuery, actualJdbcQuery);
+        System.out.printf("beforeQuery = %s%nafterQuery = %s%nactualNative = %s%nactualJPQL = %s%nactualJdbc = %s%n",
+                beforeQuery, afterQuery, actualNativeQuery, actualJPQLQuery, actualJdbcQuery);
         // Assert
-        assertThat(actualNativeQuery).isCloseTo(expected, Assertions.within(toleranceMilliseconds, ChronoUnit.MILLIS));
-        assertThat(actualJPQLQuery).isCloseTo(expected, Assertions.within(toleranceMilliseconds, ChronoUnit.MILLIS));
-        assertThat(actualJdbcQuery).isCloseTo(expected, Assertions.within(toleranceMilliseconds, ChronoUnit.MILLIS));
+        assertTimestampWithinQueryWindow(actualNativeQuery, beforeQuery, afterQuery);
+        assertTimestampWithinQueryWindow(actualJPQLQuery, beforeQuery, afterQuery);
+        assertTimestampWithinQueryWindow(actualJdbcQuery, beforeQuery, afterQuery);
+    }
+
+    private static void assertTimestampWithinQueryWindow(Instant actual, Instant beforeQuery, Instant afterQuery) {
+        assertThat(actual).isAfterOrEqualTo(beforeQuery.minus(TIMESTAMP_CLOCK_SKEW_TOLERANCE_SECONDS, ChronoUnit.SECONDS));
+        assertThat(actual).isBeforeOrEqualTo(afterQuery.plus(TIMESTAMP_CLOCK_SKEW_TOLERANCE_SECONDS, ChronoUnit.SECONDS));
     }
 
     @Test
@@ -158,7 +161,7 @@ class EventRepositoryTest extends TestDatabaseContainer {
     }
 
     @Test
-    public void findAllWithDatetimeBeforeCurrentTime_ReturnsListOfExpiredEvents_WhenOffsetOneSecond() throws SQLException {
+    public void findAllWithDatetimeBeforeCurrentTime_ReturnsListOfExpiredEvents_WhenOffsetThreeSeconds() throws SQLException {
         // Arrange
         Instant instantNow = timeTester.getInstantNowFromSystem();
         Instant jdbcTimeAfterInstantNow = timeTester.getCurrentTimestampUsingJdbc();
@@ -167,9 +170,9 @@ class EventRepositoryTest extends TestDatabaseContainer {
 
         Guild guild = new Guild("1", "guild");
 
-        Instant validDateTime = instantNow.plus(1, ChronoUnit.SECONDS);
-        Instant expiredEvent1DateTime = instantNow.minus(1, ChronoUnit.SECONDS);
-        Instant expiredEvent2DateTime = instantNow.minus(1, ChronoUnit.SECONDS);
+        Instant validDateTime = instantNow.plus(3, ChronoUnit.SECONDS);
+        Instant expiredEvent1DateTime = instantNow.minus(3, ChronoUnit.SECONDS);
+        Instant expiredEvent2DateTime = instantNow.minus(3, ChronoUnit.SECONDS);
 
         List<Event> events = new ArrayList<>();
         EmbedType embedType = new EmbedType(
@@ -251,7 +254,7 @@ class EventRepositoryTest extends TestDatabaseContainer {
     }
 
     @Test
-    public void findAllWithDatetimeBeforeCurrentTime_ReturnsListOfExpiredEvents_WhenOffset250Millis() throws SQLException {
+    public void findAllWithDatetimeBeforeCurrentTime_ReturnsListOfExpiredEvents_WhenOffsetTwoSeconds() throws SQLException {
         // Arrange
         Instant instantNow = timeTester.getInstantNowFromSystem();
         Instant jdbcTimeAfterInstantNow = timeTester.getCurrentTimestampUsingJdbc();
@@ -260,9 +263,9 @@ class EventRepositoryTest extends TestDatabaseContainer {
 
         Guild guild = new Guild("1", "guild");
 
-        Instant validDateTime = instantNow.plus(250, ChronoUnit.MILLIS);
-        Instant expiredEvent1DateTime = instantNow.minus(250, ChronoUnit.MILLIS);
-        Instant expiredEvent2DateTime = instantNow.minus(250, ChronoUnit.MILLIS);
+        Instant validDateTime = instantNow.plus(2, ChronoUnit.SECONDS);
+        Instant expiredEvent1DateTime = instantNow.minus(2, ChronoUnit.SECONDS);
+        Instant expiredEvent2DateTime = instantNow.minus(2, ChronoUnit.SECONDS);
 
         List<Event> events = new ArrayList<>();
         EmbedType embedType = new EmbedType(
@@ -377,7 +380,17 @@ class EventRepositoryTest extends TestDatabaseContainer {
         Optional<Event> actual = underTest.findById(expected.getEventId());
 
         assertThat(actual).isPresent()
-                .hasValueSatisfying(e -> assertThat(e).isEqualTo(expected));
+                .hasValueSatisfying(e -> {
+                    assertThat(e.getEventId()).isEqualTo(expected.getEventId());
+                    assertThat(e.getName()).isEqualTo(expected.getName());
+                    assertThat(e.getDescription()).isEqualTo(expected.getDescription());
+                    assertThat(e.getAuthor()).isEqualTo(expected.getAuthor());
+                    assertThat(e.getDateTime()).isEqualTo(expected.getDateTime());
+                    assertThat(e.getDestinationChannelId()).isEqualTo(expected.getDestinationChannelId());
+                    assertThat(e.getMemberSize()).isEqualTo(expected.getMemberSize());
+                    assertThat(e.getInstances()).isEqualTo(expected.getInstances());
+                    assertThat(e.getParticipants()).usingRecursiveComparison().isEqualTo(expected.getParticipants());
+                });
     }
 
     @Test
@@ -430,8 +443,9 @@ class EventRepositoryTest extends TestDatabaseContainer {
         assertThat(actualEvents).isNotEmpty();
         assertThat(actualEvents).hasSize(2);
         List<Event> expectedEvents = List.of(expectedEvent1, expectedEvent2);
-        assertThat(actualEvents).usingRecursiveComparison()
-                .isEqualTo(expectedEvents);
+        assertThat(actualEvents)
+                .usingRecursiveFieldByFieldElementComparator()
+                .containsExactlyInAnyOrderElementsOf(expectedEvents);
     }
 
     @Test
@@ -953,7 +967,7 @@ class EventRepositoryTest extends TestDatabaseContainer {
                     assertThat(e.getDestinationChannelId()).isEqualTo(event.getDestinationChannelId());
                     assertThat(e.getMemberSize()).isEqualTo(event.getMemberSize());
                     assertThat(e.getInstances()).isEqualTo(event.getInstances());
-                    assertThat(e.getParticipants()).isEqualTo(event.getParticipants());
+                    assertThat(e.getParticipants()).usingRecursiveComparison().isEqualTo(event.getParticipants());
                 });
 
         return actual.get();

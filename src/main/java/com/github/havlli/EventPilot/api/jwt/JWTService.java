@@ -11,7 +11,7 @@ import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
-import java.security.Key;
+import javax.crypto.SecretKey;
 import java.util.Date;
 import java.util.HashMap;
 import java.util.Map;
@@ -58,11 +58,11 @@ public class JWTService {
     }
 
     private Claims extractAllClaims(String token) {
-        return Jwts.parserBuilder()
-                .setSigningKey(getKey())
+        return Jwts.parser()
+                .verifyWith(getKey())
                 .build()
-                .parseClaimsJws(token)
-                .getBody();
+                .parseSignedClaims(token)
+                .getPayload();
     }
 
     public String generateToken(UserDetails userDetails) {
@@ -83,12 +83,12 @@ public class JWTService {
 
     private String createToken(Map<String, Object> claims, UserDetails userDetails) {
         return Jwts.builder()
-                .setClaims(claims)
-                .setSubject(userDetails.getUsername())
+                .claims(claims)
+                .subject(userDetails.getUsername())
                 .claim("authorities", userDetails.getAuthorities())
-                .setIssuedAt(new Date(System.currentTimeMillis()))
-                .setExpiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 10))
-                .signWith(getKey(), SignatureAlgorithm.HS256)
+                .issuedAt(new Date(System.currentTimeMillis()))
+                .expiration(new Date(System.currentTimeMillis() + 1000 * 60 * 60 * 10))
+                .signWith(getKey())
                 .compact();
     }
 
@@ -97,7 +97,7 @@ public class JWTService {
                 .before(new Date(System.currentTimeMillis()));
     }
 
-    private Key getKey() {
+    private SecretKey getKey() {
         return Keys.hmacShaKeyFor(Decoders.BASE64.decode(jwtSecret));
     }
 }

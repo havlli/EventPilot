@@ -21,6 +21,7 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Mono;
 
@@ -34,6 +35,7 @@ import static org.springframework.boot.test.context.SpringBootTest.WebEnvironmen
 @SpringBootTest(webEnvironment = RANDOM_PORT)
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
+@TestPropertySource(properties = "spring.jpa.open-in-view=false")
 public class EventControllerIT extends TestDatabaseContainer {
 
     @Autowired
@@ -79,7 +81,7 @@ public class EventControllerIT extends TestDatabaseContainer {
 
         guild.getEvents().add(event);
 
-        String bearerToken = signupUser("username", "password", "email");
+        String bearerToken = signupUser("username", "password", "user@example.test");
 
         // Act
         EventDTO actual = webTestClient.get()
@@ -103,7 +105,7 @@ public class EventControllerIT extends TestDatabaseContainer {
     @Test
     void getEventById_ReturnsApiErrorResponse_WhenEventDoesNotExists() {
         // Arrange
-        String bearerToken = signupUser("username", "password", "email");
+        String bearerToken = signupUser("username", "password", "user@example.test");
 
         // Act
         ApiErrorResponse actual = webTestClient.get()
@@ -146,7 +148,7 @@ public class EventControllerIT extends TestDatabaseContainer {
         guild.getEvents().add(event);
         List<EventDTO> expected = Stream.of(event).map(EventDTO::fromEvent).toList();
 
-        String bearerToken = signupUser("username", "password", "email");
+        String bearerToken = signupUser("username", "password", "user@example.test");
 
         // Act
         List<EventDTO> actual = webTestClient.get()
@@ -202,7 +204,7 @@ public class EventControllerIT extends TestDatabaseContainer {
                 .build();
         eventRepository.save(event);
 
-        String bearerToken = signupUser("username", "password", "email");
+        String bearerToken = signupUser("username", "password", "user@example.test");
         String endpoint = BASE_URI + "/" + eventId;
 
         // Act
@@ -240,7 +242,7 @@ public class EventControllerIT extends TestDatabaseContainer {
                 .build();
         eventRepository.save(event);
 
-        String bearerToken = signupUser("username", "password", "email");
+        String bearerToken = signupUser("username", "password", "user@example.test");
         String nonExistentEventId = "111111";
         String endpoint = BASE_URI + "/" + nonExistentEventId;
 
@@ -325,7 +327,7 @@ public class EventControllerIT extends TestDatabaseContainer {
         List<EventDTO> expected = Stream.of(event1, event2)
                 .map(EventDTO::fromEvent).toList();
 
-        String bearerToken = signupUser("username", "password", "email");
+        String bearerToken = signupUser("username", "password", "user@example.test");
 
         // Act
         List<EventDTO> actual = webTestClient.get()
@@ -364,7 +366,7 @@ public class EventControllerIT extends TestDatabaseContainer {
                 .build();
         eventRepository.save(event);
 
-        String authorizationToken = signupUser("username", "password", "email");
+        String authorizationToken = signupUser("username", "password", "user@example.test");
 
         String expectedName = "updatedName";
         String expectedDesc = "updatedDescription";
@@ -414,7 +416,7 @@ public class EventControllerIT extends TestDatabaseContainer {
                 .build();
         eventRepository.save(event);
 
-        String authorizationToken = signupUser("username", "password", "email");
+        String authorizationToken = signupUser("username", "password", "user@example.test");
 
         String expectedName = null;
         String expectedDesc = "updatedDescription";
@@ -462,7 +464,7 @@ public class EventControllerIT extends TestDatabaseContainer {
                 .build();
         eventRepository.save(event);
 
-        String authorizationToken = signupUser("username", "password", "email");
+        String authorizationToken = signupUser("username", "password", "user@example.test");
 
         String expectedName = "updatedName";
         String expectedDesc = "updatedDescription";
@@ -500,7 +502,7 @@ public class EventControllerIT extends TestDatabaseContainer {
 
     // Helper methods
     private String signupUser(String username, String password, String email) {
-        UserSignupRequest signupRequest = new UserSignupRequest(username, password, email);
+        UserSignupRequest signupRequest = new UserSignupRequest(username, email, password);
         String jwtToken = webTestClient.post()
                 .uri("/api/auth/signup")
                 .contentType(MediaType.APPLICATION_JSON)

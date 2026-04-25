@@ -8,14 +8,21 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.junit.jupiter.api.Assumptions.assumeTrue;
 
-class ClientTest extends DiscordBotTestConfig {
+class ClientIT extends DiscordBotTestConfig {
 
     private Client underTest;
 
     @BeforeEach
     void setUp() {
-        underTest = new Client(getToken());
+        String token = getToken();
+        assumeTrue(isRealBotToken(token), "TEST_DISCORD_BOT_TOKEN is not configured with a real bot token");
+        underTest = new Client(token);
+    }
+
+    private boolean isRealBotToken(String token) {
+        return token != null && token.split("\\.").length == 3;
     }
 
     @Test

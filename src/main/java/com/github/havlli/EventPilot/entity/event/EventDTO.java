@@ -29,7 +29,7 @@ public record EventDTO(
                 event.getDestinationChannelId(),
                 event.getMemberSize(),
                 ParticipantDTO.fromParticipants(event.getParticipants()),
-                GuildDTO.fromGuild(event.getGuild()),
+                GuildDTO.fromGuildSummary(event.getGuild()),
                 EmbedTypeDTO.fromEmbedType(event.getEmbedType())
         );
     }

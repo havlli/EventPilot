@@ -11,6 +11,7 @@ import discord4j.core.object.command.Interaction;
 import discord4j.core.object.component.LayoutComponent;
 import discord4j.core.object.component.MessageComponent;
 import discord4j.core.object.component.SelectMenu;
+import discord4j.core.object.component.TopLevelMessageComponent;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.User;
 import discord4j.core.object.entity.channel.MessageChannel;
@@ -166,7 +167,7 @@ class ClearExpiredCommandTest {
         // Arrange
         Message messageMock = mock(Message.class);
         LayoutComponent layoutComponentMock = mock(LayoutComponent.class);
-        List<LayoutComponent> layoutComponentList = List.of(layoutComponentMock);
+        List<TopLevelMessageComponent> layoutComponentList = List.of(layoutComponentMock);
         when(messageMock.getComponents()).thenReturn(layoutComponentList);
 
         SelectMenu selectComponentMock = mock(SelectMenu.class);
@@ -187,7 +188,7 @@ class ClearExpiredCommandTest {
         // Arrange
         Message messageMock = mock(Message.class);
         LayoutComponent layoutComponentMock = mock(LayoutComponent.class);
-        List<LayoutComponent> layoutComponentList = List.of(layoutComponentMock);
+        List<TopLevelMessageComponent> layoutComponentList = List.of(layoutComponentMock);
         when(messageMock.getComponents()).thenReturn(layoutComponentList);
 
         SelectMenu selectComponentMock = mock(SelectMenu.class);
@@ -208,7 +209,7 @@ class ClearExpiredCommandTest {
         // Arrange
         Message messageMock = mock(Message.class);
         LayoutComponent layoutComponentMock = mock(LayoutComponent.class);
-        List<LayoutComponent> layoutComponentList = List.of(layoutComponentMock);
+        List<TopLevelMessageComponent> layoutComponentList = List.of(layoutComponentMock);
         when(messageMock.getComponents()).thenReturn(layoutComponentList);
 
         List<MessageComponent> messageComponentList = List.of();
@@ -225,7 +226,7 @@ class ClearExpiredCommandTest {
     void filterExpiredPredicate_ReturnsFalse_WhenNoLayoutComponentsExistsInMessage() {
         // Arrange
         Message messageMock = mock(Message.class);
-        List<LayoutComponent> layoutComponentList = List.of();
+        List<TopLevelMessageComponent> layoutComponentList = List.of();
         when(messageMock.getComponents()).thenReturn(layoutComponentList);
 
         // Act

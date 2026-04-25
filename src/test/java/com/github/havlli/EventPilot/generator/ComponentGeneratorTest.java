@@ -5,6 +5,7 @@ import com.github.havlli.EventPilot.entity.embedtype.EmbedType;
 import com.github.havlli.EventPilot.entity.embedtype.EmbedTypeSerialization;
 import com.github.havlli.EventPilot.entity.event.Event;
 import discord4j.core.object.component.LayoutComponent;
+import discord4j.core.object.component.TopLevelMessageComponent;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -66,10 +67,11 @@ class ComponentGeneratorTest {
                 .toList();
 
         // Act
-        List<LayoutComponent> actual = underTest.eventButtons(delimiter, eventMock);
+        List<TopLevelMessageComponent> actual = underTest.eventButtons(delimiter, eventMock);
 
         // Assert
         List<String> actualCustomIds = actual.stream()
+                .map(LayoutComponent.class::cast)
                 .flatMap(layoutComponent -> layoutComponent.getChildren().stream())
                 .map(messageComponent -> messageComponent.getData().customId().get())
                 .toList();
@@ -103,18 +105,16 @@ class ComponentGeneratorTest {
         Integer expectedStylePrimary = 1;
 
         // Act
-        List<LayoutComponent> actual = underTest.eventButtons(delimiter, eventMock);
+        List<TopLevelMessageComponent> actual = underTest.eventButtons(delimiter, eventMock);
 
         // Assert
         List<String> actualCustomIds = actual.stream()
+                .map(LayoutComponent.class::cast)
                 .flatMap(layoutComponent -> layoutComponent.getChildren().stream())
                 .map(messageComponent -> messageComponent.getData().customId().get())
                 .toList();
 
-        actual.stream().flatMap(layoutComponent -> layoutComponent.getChildren().stream())
-                .forEach(messageComponent -> System.out.println(messageComponent.getData().style()));
-
-        actual.stream().flatMap(layoutComponent -> layoutComponent.getChildren().stream())
+        actual.stream().map(LayoutComponent.class::cast).flatMap(layoutComponent -> layoutComponent.getChildren().stream())
                 .forEach(messageComponent -> assertThat(messageComponent.getData().style().get()).isEqualTo(expectedStylePrimary));
 
         assertThat(actualCustomIds).containsExactlyInAnyOrderElementsOf(expectedCustomIds);
@@ -146,15 +146,16 @@ class ComponentGeneratorTest {
         Integer expectedStyleSecondary = 2;
 
         // Act
-        List<LayoutComponent> actual = underTest.eventButtons(delimiter, eventMock);
+        List<TopLevelMessageComponent> actual = underTest.eventButtons(delimiter, eventMock);
 
         // Assert
         List<String> actualCustomIds = actual.stream()
+                .map(LayoutComponent.class::cast)
                 .flatMap(layoutComponent -> layoutComponent.getChildren().stream())
                 .map(messageComponent -> messageComponent.getData().customId().get())
                 .toList();
 
-        actual.stream().flatMap(layoutComponent -> layoutComponent.getChildren().stream())
+        actual.stream().map(LayoutComponent.class::cast).flatMap(layoutComponent -> layoutComponent.getChildren().stream())
                 .forEach(messageComponent -> assertThat(messageComponent.getData().style().get()).isEqualTo(expectedStyleSecondary));
         assertThat(actualCustomIds).containsExactlyInAnyOrderElementsOf(expectedCustomIds);
     }
@@ -170,10 +171,9 @@ class ComponentGeneratorTest {
         when(serializationMock.deserializeMap(mapStructure)).thenThrow(JsonProcessingException.class);
 
         // Act
-        List<LayoutComponent> actual = underTest.eventButtons(delimiter, eventMock);
+        List<TopLevelMessageComponent> actual = underTest.eventButtons(delimiter, eventMock);
 
         // Assert
-        System.out.println(actual);
         assertThat(actual).hasSize(0);
     }
 

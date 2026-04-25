@@ -23,7 +23,7 @@ class UserTest {
     void testHashCode() {
         // Arrange
         User user = new User(1L,"test", "test", "test", new HashSet<>());
-        int expectedHash = Objects.hash(1L, "test", "test", "test", new HashSet<>());
+        int expectedHash = Objects.hash(1L, "test", "test", new HashSet<>());
 
         // Act
         int actualHash = user.hashCode();
@@ -45,7 +45,6 @@ class UserTest {
                 "id=" + userId +
                 ", username='" + username + '\'' +
                 ", email='" + email + '\'' +
-                ", password='" + password + '\'' +
                 ", roles=" + roles +
                 '}';
 

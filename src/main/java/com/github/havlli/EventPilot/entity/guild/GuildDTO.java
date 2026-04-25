@@ -15,7 +15,16 @@ public record GuildDTO(
                 guild.getName(),
                 guild.getEvents().stream()
                         .map(Event::getEventId)
+                        .distinct()
                         .toList()
+        );
+    }
+
+    public static GuildDTO fromGuildSummary(Guild guild) {
+        return new GuildDTO(
+                guild.getId(),
+                guild.getName(),
+                List.of()
         );
     }
 }

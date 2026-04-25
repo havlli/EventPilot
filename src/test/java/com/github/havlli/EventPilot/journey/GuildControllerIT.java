@@ -16,8 +16,11 @@ import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.MediaType;
 import org.springframework.test.annotation.DirtiesContext;
+import org.springframework.test.context.TestPropertySource;
 import org.springframework.test.web.reactive.server.WebTestClient;
 import reactor.core.publisher.Mono;
+
+import java.util.List;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.springframework.boot.test.context.SpringBootTest.WebEnvironment.RANDOM_PORT;
@@ -26,6 +29,7 @@ import static org.springframework.boot.test.context.SpringBootTest.WebEnvironmen
 @SpringBootTest(webEnvironment = RANDOM_PORT)
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
+@TestPropertySource(properties = "spring.jpa.open-in-view=false")
 public class GuildControllerIT extends TestDatabaseContainer {
 
     @Autowired
@@ -49,7 +53,7 @@ public class GuildControllerIT extends TestDatabaseContainer {
         Guild guild = new Guild("1234", "guild");
         guildRepository.save(guild);
 
-        String bearerToken = signupUser("username", "password", "email");
+        String bearerToken = signupUser("username", "password", "user@example.test");
 
         // Act
         GuildDTO actual = webTestClient.get()
@@ -66,12 +70,13 @@ public class GuildControllerIT extends TestDatabaseContainer {
         assertThat(actual).isNotNull();
         assertThat(actual.id()).isEqualTo(guild.getId());
         assertThat(actual.name()).isEqualTo(guild.getName());
+        assertThat(actual.events()).isEmpty();
     }
 
     @Test
     void getGuildById_ReturnsApiErrorResponse_WhenGuildDoesNotExists() {
         // Arrange
-        String bearerToken = signupUser("username", "password", "email");
+        String bearerToken = signupUser("username", "password", "user@example.test");
 
         // Act
         ApiErrorResponse actual = webTestClient.get()
@@ -93,21 +98,28 @@ public class GuildControllerIT extends TestDatabaseContainer {
     @Test
     void getAllGuilds_ReturnsListOfGuilds_WhenAuthenticatedUserRole() {
         // Arrange
-        String bearerToken = signupUser("username", "password", "email");
+        String bearerToken = signupUser("username", "password", "user@example.test");
         Guild guild = new Guild("1234", "guild");
         guildRepository.save(guild);
 
-        // Act & Assert
-        webTestClient.get()
+        // Act
+        List<GuildDTO> actual = webTestClient.get()
                 .uri(BASE_URI)
                 .accept(MediaType.APPLICATION_JSON)
                 .header(HttpHeaders.AUTHORIZATION, bearerToken)
                 .exchange()
                 .expectStatus()
                 .isOk()
-                .expectBodyList(Guild.class)
-                .hasSize(1)
-                .contains(guild);
+                .expectBodyList(GuildDTO.class)
+                .returnResult()
+                .getResponseBody();
+
+        // Assert
+        assertThat(actual).hasSize(1);
+        GuildDTO actualGuild = actual.get(0);
+        assertThat(actualGuild.id()).isEqualTo(guild.getId());
+        assertThat(actualGuild.name()).isEqualTo(guild.getName());
+        assertThat(actualGuild.events()).isEmpty();
     }
 
     @Test
@@ -134,7 +146,7 @@ public class GuildControllerIT extends TestDatabaseContainer {
 
     // Helper methods
     private String signupUser(String username, String password, String email) {
-        UserSignupRequest signupRequest = new UserSignupRequest(username, password, email);
+        UserSignupRequest signupRequest = new UserSignupRequest(username, email, password);
         String jwtToken = webTestClient.post()
                 .uri("/api/auth/signup")
                 .contentType(MediaType.APPLICATION_JSON)

@@ -19,9 +19,9 @@ import static org.assertj.core.api.Assertions.assertThat;
 @DataJpaTest
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
-class GuildRepositoryTest extends TestDatabaseContainer {
+class GuildRepositoryIT extends TestDatabaseContainer {
 
-    private static final Logger LOG = LoggerFactory.getLogger(GuildRepositoryTest.class);
+    private static final Logger LOG = LoggerFactory.getLogger(GuildRepositoryIT.class);
 
     @Autowired
     private ApplicationContext applicationContext;
@@ -82,8 +82,9 @@ class GuildRepositoryTest extends TestDatabaseContainer {
 
         // Assert
         List<Guild> expectedGuilds = List.of(expectedGuild1, expectedGuild2);
-        assertThat(actualGuilds).usingRecursiveComparison()
-                .isEqualTo(expectedGuilds);
+        assertThat(actualGuilds)
+                .usingRecursiveFieldByFieldElementComparator()
+                .containsExactlyInAnyOrderElementsOf(expectedGuilds);
     }
 
     @Test

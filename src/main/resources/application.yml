@@ -1,16 +1,14 @@
 server:
   port: 8080
   error:
-    include-message: always
-    include-binding-errors: always
-    include-stacktrace: on_param
-    include-exception: true
+    include-message: never
+    include-binding-errors: never
+    include-stacktrace: never
+    include-exception: false
 
 spring:
   datasource:
     url: jdbc:postgresql://localhost:5555/eventpilot
-    username: havlli
-    password: password
     driver-class-name: org.postgresql.Driver
   main:
     web-application-type: servlet
@@ -19,9 +17,12 @@ spring:
       ddl-auto: validate
     properties:
       hibernate:
-        dialect: org.hibernate.dialect.PostgreSQLDialect
         format_sql: true
     show-sql: false
+  data:
+    redis:
+      repositories:
+        enabled: false
 
 cache:
   redis:
@@ -32,10 +33,10 @@ security:
   jwt:
     secret: ${JWT_SECRET}
   cors:
-    allowed-origins: "*"
-    allowed-methods: "*"
-    allowed-headers: "*"
-    exposed-headers: "*"
+    allowed-origins: ${CORS_ALLOWED_ORIGINS:http://localhost:3000,http://localhost:5173}
+    allowed-methods: ${CORS_ALLOWED_METHODS:GET,POST,PUT,PATCH,DELETE,OPTIONS}
+    allowed-headers: ${CORS_ALLOWED_HEADERS:Authorization,Content-Type}
+    exposed-headers: ${CORS_EXPOSED_HEADERS:Authorization}
 
 discord:
   token: ${DISCORD_BOT_TOKEN}

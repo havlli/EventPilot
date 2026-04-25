@@ -5,6 +5,7 @@ import com.github.havlli.EventPilot.entity.event.Event;
 import com.github.havlli.EventPilot.entity.event.EventDTO;
 import com.github.havlli.EventPilot.entity.event.EventService;
 import com.github.havlli.EventPilot.entity.event.EventUpdateRequest;
+import jakarta.validation.Valid;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -56,7 +57,7 @@ public class EventController {
     }
 
     @PostMapping("/{id}")
-    public ResponseEntity<EventDTO> updateEvent(@PathVariable String id, @RequestBody EventUpdateRequest updateRequest) {
+    public ResponseEntity<EventDTO> updateEvent(@PathVariable String id, @Valid @RequestBody EventUpdateRequest updateRequest) {
         Event updatedEvent = eventService.updateEvent(id, updateRequest);
         discordService.updateEventMessage(updatedEvent).subscribe();
 

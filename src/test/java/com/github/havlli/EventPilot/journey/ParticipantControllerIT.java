@@ -177,7 +177,7 @@ class ParticipantControllerIT extends TestDatabaseContainer {
     }
 
     private String signupUser(String username, String password, String email) {
-        UserSignupRequest signupRequest = new UserSignupRequest(username, password, email);
+        UserSignupRequest signupRequest = new UserSignupRequest(username, email, password);
         String jwtToken = webTestClient.post()
                 .uri("/api/auth/signup")
                 .contentType(MediaType.APPLICATION_JSON)
