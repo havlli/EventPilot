@@ -13,7 +13,7 @@
         <java.version>17</java.version>
         <commons-io.version>2.21.0</commons-io.version>
         <log4j2.version>2.25.4</log4j2.version>
-        <protobuf-java.version>3.25.9</protobuf-java.version>
+        <protobuf-java.version>4.34.1</protobuf-java.version>
     </properties>
     <groupId>com.github.havlli</groupId>
     <artifactId>eventpilot</artifactId>
