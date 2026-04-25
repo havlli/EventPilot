@@ -4,6 +4,7 @@ import com.github.havlli.EventPilot.entity.guild.Guild;
 import com.redis.testcontainers.RedisContainer;
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.context.annotation.Import;
@@ -38,6 +39,7 @@ public abstract class TestDatabaseContainer {
                 postgresSQLContainer.getUsername(),
                 postgresSQLContainer.getPassword()
         ).load();
+        flyway.migrate();
         logContainerInfo();
     }
 
@@ -118,6 +120,11 @@ public abstract class TestDatabaseContainer {
 
     protected void clearAllData() throws SQLException, IOException {
         executeSQLFile(CLEANUP_SQL);
+    }
+
+    @BeforeEach
+    void resetDatabaseState() throws SQLException, IOException {
+        clearAllData();
     }
 
 
