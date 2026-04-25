@@ -136,6 +136,8 @@ services:
     image: havlli/eventpilot:latest
     environment:
       SPRING_DATASOURCE_URL: jdbc:postgresql://database:5432/eventpilot
+      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
+      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
       CACHE_REDIS_HOST: cache
       DISCORD_BOT_TOKEN: your-discord-bot-token
       JWT_SECRET: at-least-256bits-HS256-compliant-secret
@@ -148,9 +150,9 @@ services:
     container_name: eventpilot-postgres
     image: postgres:15-alpine
     environment:
-      POSTGRES_DB: eventpilot
-      POSTGRES_USER: havlli
-      POSTGRES_PASSWORD: password
+      POSTGRES_DB: ${POSTGRES_DB}
+      POSTGRES_USER: ${POSTGRES_USER}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
     volumes:
       - database:/data/postgres
     ports:
@@ -170,14 +172,15 @@ volumes:
 
 1. Create or download docker-compose.yml file with same structure presented above.
 
-Make sure you replace `DISCORD_BOT_TOKEN` environmental variable with your discord bot token. If you're
+Make sure you replace `DISCORD_BOT_TOKEN` environmental variable with your discord bot token and set
+`POSTGRES_DB`, `POSTGRES_USER`, and `POSTGRES_PASSWORD` in your `.env` file. If you're
 unsure how to obtain the discord bot token
 check [FAQ: How to acquire Discord Bot Token.](#how-to-acquire-discord-bot-token)
 Make sure that your `JWT_SECRET` is compliant with HS256 algorithm, if you are unsure how to create 
 such secret just create random 32 characters long `String`. Generating secrets using online tools
 is, from security reasons, not advised.
 
-2. Once you set your `DISCORD_BOT_TOKEN` variable simply run in same directory:
+2. Once you set your required environment variables, simply run in same directory:
 
 ```shell
 docker compose up -d
