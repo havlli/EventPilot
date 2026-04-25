@@ -11,7 +11,7 @@
     <properties>
         <application.version>0.1.0</application.version>
         <java.version>17</java.version>
-        <commons-io.version>2.21.0</commons-io.version>
+        <commons-io.version>2.22.0</commons-io.version>
         <log4j2.version>2.25.4</log4j2.version>
         <protobuf-java.version>3.25.9</protobuf-java.version>
     </properties>
