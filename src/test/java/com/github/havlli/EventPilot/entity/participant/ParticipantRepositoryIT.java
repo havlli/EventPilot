@@ -221,7 +221,7 @@ class ParticipantRepositoryIT extends TestDatabaseContainer {
                     assertThat(e.getDestinationChannelId()).isEqualTo(event.getDestinationChannelId());
                     assertThat(e.getMemberSize()).isEqualTo(event.getMemberSize());
                     assertThat(e.getInstances()).isEqualTo(event.getInstances());
-                    assertThat(e.getParticipants()).isEqualTo(event.getParticipants());
+                    assertThat(e.getParticipants()).usingRecursiveComparison().isEqualTo(event.getParticipants());
                 });
 
         return actual.get();

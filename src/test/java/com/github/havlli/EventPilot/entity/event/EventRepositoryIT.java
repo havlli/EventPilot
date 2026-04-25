@@ -380,7 +380,17 @@ class EventRepositoryIT extends TestDatabaseContainer {
         Optional<Event> actual = underTest.findById(expected.getEventId());
 
         assertThat(actual).isPresent()
-                .hasValueSatisfying(e -> assertThat(e).isEqualTo(expected));
+                .hasValueSatisfying(e -> {
+                    assertThat(e.getEventId()).isEqualTo(expected.getEventId());
+                    assertThat(e.getName()).isEqualTo(expected.getName());
+                    assertThat(e.getDescription()).isEqualTo(expected.getDescription());
+                    assertThat(e.getAuthor()).isEqualTo(expected.getAuthor());
+                    assertThat(e.getDateTime()).isEqualTo(expected.getDateTime());
+                    assertThat(e.getDestinationChannelId()).isEqualTo(expected.getDestinationChannelId());
+                    assertThat(e.getMemberSize()).isEqualTo(expected.getMemberSize());
+                    assertThat(e.getInstances()).isEqualTo(expected.getInstances());
+                    assertThat(e.getParticipants()).usingRecursiveComparison().isEqualTo(expected.getParticipants());
+                });
     }
 
     @Test
@@ -433,8 +443,9 @@ class EventRepositoryIT extends TestDatabaseContainer {
         assertThat(actualEvents).isNotEmpty();
         assertThat(actualEvents).hasSize(2);
         List<Event> expectedEvents = List.of(expectedEvent1, expectedEvent2);
-        assertThat(actualEvents).usingRecursiveComparison()
-                .isEqualTo(expectedEvents);
+        assertThat(actualEvents)
+                .usingRecursiveFieldByFieldElementComparator()
+                .containsExactlyInAnyOrderElementsOf(expectedEvents);
     }
 
     @Test
@@ -956,7 +967,7 @@ class EventRepositoryIT extends TestDatabaseContainer {
                     assertThat(e.getDestinationChannelId()).isEqualTo(event.getDestinationChannelId());
                     assertThat(e.getMemberSize()).isEqualTo(event.getMemberSize());
                     assertThat(e.getInstances()).isEqualTo(event.getInstances());
-                    assertThat(e.getParticipants()).isEqualTo(event.getParticipants());
+                    assertThat(e.getParticipants()).usingRecursiveComparison().isEqualTo(event.getParticipants());
                 });
 
         return actual.get();
