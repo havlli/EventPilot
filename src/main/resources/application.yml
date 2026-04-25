@@ -9,8 +9,6 @@ server:
 spring:
   datasource:
     url: jdbc:postgresql://localhost:5555/eventpilot
-    username: ${SPRING_DATASOURCE_USERNAME}
-    password: ${SPRING_DATASOURCE_PASSWORD}
     driver-class-name: org.postgresql.Driver
   main:
     web-application-type: servlet
