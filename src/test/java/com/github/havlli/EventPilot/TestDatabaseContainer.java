@@ -46,7 +46,7 @@ public abstract class TestDatabaseContainer {
             .withUsername("user")
             .withPassword("password");
 
-    protected static RedisContainer redisContainer = new RedisContainer("7.2.1-alpine");
+    protected static RedisContainer redisContainer = new RedisContainer("redis:7.2.1-alpine");
 
     static {
         Startables.deepStart(Stream.of(postgresSQLContainer, redisContainer)).join();

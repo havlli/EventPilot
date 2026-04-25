@@ -5,18 +5,35 @@
     <parent>
         <groupId>org.springframework.boot</groupId>
         <artifactId>spring-boot-starter-parent</artifactId>
-        <version>3.5.13</version>
+        <version>3.5.14</version>
         <relativePath/> <!-- lookup parent from repository -->
     </parent>
     <properties>
         <application.version>0.1.0</application.version>
         <java.version>17</java.version>
+        <commons-io.version>2.21.0</commons-io.version>
+        <log4j2.version>2.25.4</log4j2.version>
+        <protobuf-java.version>3.25.9</protobuf-java.version>
     </properties>
     <groupId>com.github.havlli</groupId>
     <artifactId>eventpilot</artifactId>
     <version>0.1.0</version>
     <name>EventPilot</name>
     <description>Discord Bot for handling and managing events</description>
+    <dependencyManagement>
+        <dependencies>
+            <dependency>
+                <groupId>com.google.protobuf</groupId>
+                <artifactId>protobuf-java</artifactId>
+                <version>${protobuf-java.version}</version>
+            </dependency>
+            <dependency>
+                <groupId>commons-io</groupId>
+                <artifactId>commons-io</artifactId>
+                <version>${commons-io.version}</version>
+            </dependency>
+        </dependencies>
+    </dependencyManagement>
     <dependencies>
         <!-- 	Spring Web 		-->
         <dependency>
@@ -87,12 +104,6 @@
             <artifactId>flyway-database-postgresql</artifactId>
             <scope>runtime</scope>
         </dependency>
-        <!-- 	Spring Cloud Bindings		-->
-        <dependency>
-            <groupId>org.springframework.cloud</groupId>
-            <artifactId>spring-cloud-bindings</artifactId>
-            <version>2.0.4</version>
-        </dependency>
         <!-- 	Spring Test 	-->
         <dependency>
             <groupId>org.springframework.boot</groupId>
@@ -128,9 +139,9 @@
             <scope>test</scope>
         </dependency>
         <dependency>
-            <groupId>com.redis.testcontainers</groupId>
-            <artifactId>testcontainers-redis-junit</artifactId>
-            <version>1.6.4</version>
+            <groupId>com.redis</groupId>
+            <artifactId>testcontainers-redis</artifactId>
+            <version>2.2.4</version>
             <scope>test</scope>
         </dependency>
         <!--	Reactor Test	-->
