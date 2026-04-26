@@ -110,4 +110,18 @@ class GlobalCommandRegistrarTest {
 
         verifyNoInteractions(applicationServiceMock);
     }
+
+    @Test
+    void run_ShouldThrow_WhenBulkOverwriteFails() {
+        // Arrange
+        when(mockClient.getApplicationService()).thenReturn(applicationServiceMock);
+        when(mockClient.getApplicationId()).thenReturn(Mono.just(123L));
+        when(applicationServiceMock.bulkOverwriteGlobalApplicationCommand(anyLong(), anyList()))
+                .thenReturn(Flux.error(new RuntimeException("registration failed")));
+
+        // Assert
+        assertThatThrownBy(() -> underTest.run(applicationArguments))
+                .isInstanceOf(RuntimeException.class)
+                .hasMessageContaining("registration failed");
+    }
 }

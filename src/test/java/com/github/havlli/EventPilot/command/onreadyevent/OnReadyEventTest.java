@@ -44,7 +44,7 @@ class OnReadyEventTest {
         Guild guildMock = mock(Guild.class);
         when(startupTaskMock.handleNewGuilds()).thenReturn(Flux.just(guildMock));
         when(startupTaskMock.subscribeEventInteractions()).thenReturn(Mono.empty());
-        when(scheduledTaskMock.getSchedulersFlux()).thenReturn(Flux.empty());
+        when(scheduledTaskMock.start()).thenReturn(Mono.empty());
 
         // Act
         Mono<?> actualMono = underTest.handle(readyEventMock);
@@ -52,7 +52,7 @@ class OnReadyEventTest {
         // Assert
         verify(startupTaskMock, times(1)).handleNewGuilds();
         verify(startupTaskMock, times(1)).subscribeEventInteractions();
-        verify(scheduledTaskMock, times(1)).getSchedulersFlux();
+        verify(scheduledTaskMock, times(1)).start();
         StepVerifier.create(actualMono)
                 .verifyComplete();
     }
