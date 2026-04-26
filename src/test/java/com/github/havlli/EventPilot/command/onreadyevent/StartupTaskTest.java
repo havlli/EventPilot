@@ -81,6 +81,26 @@ class StartupTaskTest {
     }
 
     @Test
+    void subscribeEventInteractions_subscribesOnlyOnce_WhenCalledRepeatedly() {
+        // Arrange
+        Event eventMock = mock(Event.class);
+        List<Event> events = List.of(eventMock);
+        when(eventServiceMock.getAllEvents()).thenReturn(events);
+
+        // Act
+        StepVerifier.create(underTest.subscribeEventInteractions())
+                .expectSubscription()
+                .verifyComplete();
+        StepVerifier.create(underTest.subscribeEventInteractions())
+                .expectSubscription()
+                .verifyComplete();
+
+        // Assert
+        verify(eventServiceMock, times(1)).getAllEvents();
+        verify(embedGeneratorMock, times(1)).subscribeInteractions(eventMock);
+    }
+
+    @Test
     void handleNewGuilds_CallsGuildServiceForEachGuild_WhenOneOrMoreGuildsRetrievedFromClient() {
         // Arrange
         Guild guildOneMock = mock(Guild.class);

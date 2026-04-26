@@ -16,8 +16,10 @@ import org.springframework.core.io.support.PathMatchingResourcePatternResolver;
 import org.springframework.stereotype.Component;
 
 import java.io.IOException;
+import java.time.Duration;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Objects;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
 
@@ -26,6 +28,7 @@ import java.util.stream.Stream;
 @DependsOn("restClient")
 public class GlobalCommandRegistrar implements ApplicationRunner {
 
+    private static final Duration COMMAND_REGISTRATION_TIMEOUT = Duration.ofSeconds(30);
     private static final Logger LOG = LoggerFactory.getLogger(GlobalCommandRegistrar.class);
     private final RestClient restClient;
     private final PathMatchingResourcePatternResolver pathMatcher;
@@ -60,7 +63,10 @@ public class GlobalCommandRegistrar implements ApplicationRunner {
     }
 
     private Long getApplicationId() {
-        return restClient.getApplicationId().block();
+        return Objects.requireNonNull(
+                restClient.getApplicationId().block(COMMAND_REGISTRATION_TIMEOUT),
+                "Application id must be available before registering global commands"
+        );
     }
 
     private void overwriteGlobalApplicationCommands(CommandRegistrarSpec registrarSpec) throws IOException {
@@ -69,7 +75,8 @@ public class GlobalCommandRegistrar implements ApplicationRunner {
                 .bulkOverwriteGlobalApplicationCommand(registrarSpec.applicationId(), commands)
                 .doOnNext(data -> LOG.info("Successfully registered Global Command [%s]".formatted(data.name())))
                 .doOnError(e -> LOG.error("Failed to register global commands", e))
-                .subscribe();
+                .then()
+                .block(COMMAND_REGISTRATION_TIMEOUT);
     }
 
     private List<ApplicationCommandRequest> extractApplicationCommandRequests(CommandRegistrarSpec commandRegistrarSpec) throws IOException {

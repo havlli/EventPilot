@@ -8,6 +8,7 @@ import com.github.havlli.EventPilot.command.onreadyevent.StartupTask;
 import com.github.havlli.EventPilot.command.test.TestCommand;
 import discord4j.core.GatewayDiscordClient;
 import discord4j.core.event.domain.interaction.ChatInputInteractionEvent;
+import org.reactivestreams.Publisher;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -19,6 +20,7 @@ import reactor.test.StepVerifier;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.ArgumentMatchers.any;
@@ -123,7 +125,7 @@ class GlobalCommandListenerTest {
     }
 
     @Test
-    void constructListeners_WithCommandHandlingError_ShouldHandleErrorGracefully() {
+    void constructListeners_WithListenerError_ShouldHandleErrorGracefully() {
         // Arrange
         SlashCommand errorCommand = mock(SlashCommand.class);
         errorCommand.setEventType(ChatInputInteractionEvent.class);
@@ -137,7 +139,32 @@ class GlobalCommandListenerTest {
         // Assert
         StepVerifier.create(actual)
                 .expectSubscription()
-                .expectError(RuntimeException.class)
-                .verify();
+                .verifyComplete();
+    }
+
+    @Test
+    void constructListeners_WithCommandHandlingError_ShouldHandleErrorGracefully() {
+        // Arrange
+        SlashCommand errorCommand = mock(SlashCommand.class);
+        ChatInputInteractionEvent event = mock(ChatInputInteractionEvent.class);
+        when(errorCommand.getName()).thenReturn("error-command");
+        doReturn(ChatInputInteractionEvent.class).when(errorCommand).getEventType();
+        when(errorCommand.handle(event)).thenReturn(Mono.error(new RuntimeException("Command handling error")));
+        when(client.on(eq(ChatInputInteractionEvent.class), any())).thenAnswer(invocation -> {
+            Function<ChatInputInteractionEvent, Publisher<?>> handler = invocation.getArgument(1);
+            return Flux.just(event)
+                    .flatMap(nextEvent -> Mono.from(handler.apply(nextEvent)));
+        });
+
+        slashCommands.add(errorCommand);
+
+        // Act
+        Flux<?> actual = underTest.createListeners();
+
+        // Assert
+        StepVerifier.create(actual)
+                .expectSubscription()
+                .verifyComplete();
+        verify(errorCommand, times(1)).handle(event);
     }
 }
