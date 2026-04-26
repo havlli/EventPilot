@@ -1,6 +1,7 @@
 package com.github.havlli.EventPilot.api.auth;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import com.github.havlli.EventPilot.api.ApiErrorResponse;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
@@ -35,6 +36,8 @@ public class DelegatedAuthEntryPoint implements AuthenticationEntryPoint {
 
         response.setStatus(HttpStatus.UNAUTHORIZED.value());
         response.setContentType(MediaType.APPLICATION_JSON_VALUE);
-        objectMapper.writeValue(response.getOutputStream(), errorResponse);
+        objectMapper.copy()
+                .enable(SerializationFeature.WRITE_ENUMS_USING_TO_STRING)
+                .writeValue(response.getOutputStream(), errorResponse);
     }
 }
