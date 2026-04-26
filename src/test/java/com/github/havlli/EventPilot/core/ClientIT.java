@@ -18,7 +18,11 @@ class ClientIT extends DiscordBotTestConfig {
     void setUp() {
         String token = getToken();
         assumeTrue(isRealBotToken(token), "TEST_DISCORD_BOT_TOKEN is not configured with a real bot token");
-        underTest = new Client(token);
+        underTest = new Client(new DiscordProperties(
+                token,
+                new DiscordProperties.Commands("commands"),
+                new DiscordProperties.Scheduler(60)
+        ));
     }
 
     private boolean isRealBotToken(String token) {

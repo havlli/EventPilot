@@ -44,7 +44,7 @@ class GlobalCommandRegistrarTest {
         underTest = new GlobalCommandRegistrar(
                 mockClient,
                 new PathMatchingResourcePatternResolver(),
-                "commands"
+                discordProperties("commands")
         );
     }
 
@@ -82,7 +82,7 @@ class GlobalCommandRegistrarTest {
         underTest = new GlobalCommandRegistrar(
                 mockClient,
                 new PathMatchingResourcePatternResolver(),
-                "impossible-folder"
+                discordProperties("impossible-folder")
         );
 
         // Assert
@@ -123,5 +123,13 @@ class GlobalCommandRegistrarTest {
         assertThatThrownBy(() -> underTest.run(applicationArguments))
                 .isInstanceOf(RuntimeException.class)
                 .hasMessageContaining("registration failed");
+    }
+
+    private DiscordProperties discordProperties(String commandsFolder) {
+        return new DiscordProperties(
+                "token",
+                new DiscordProperties.Commands(commandsFolder),
+                new DiscordProperties.Scheduler(60)
+        );
     }
 }

@@ -1,5 +1,6 @@
 package com.github.havlli.EventPilot.api.jwt;
 
+import com.github.havlli.EventPilot.api.security.ApiSecurityProperties;
 import com.github.havlli.EventPilot.api.auth.UserDetailsImpl;
 import com.github.havlli.EventPilot.entity.user.User;
 import io.jsonwebtoken.*;
@@ -7,7 +8,6 @@ import io.jsonwebtoken.io.Decoders;
 import io.jsonwebtoken.security.Keys;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Component;
 
@@ -23,8 +23,8 @@ public class JWTService {
     private static final Logger LOG = LoggerFactory.getLogger(JWTService.class);
     private final String jwtSecret;
 
-    public JWTService(@Value("${security.jwt.secret}") String jwtSecret) {
-        this.jwtSecret = jwtSecret;
+    public JWTService(ApiSecurityProperties securityProperties) {
+        this.jwtSecret = securityProperties.jwt().secret();
     }
 
     public boolean hasClaim(String token, String claimName) {

@@ -1,11 +1,11 @@
 package com.github.havlli.EventPilot.command.onreadyevent;
 
 import com.github.havlli.EventPilot.core.DiscordService;
+import com.github.havlli.EventPilot.core.DiscordProperties;
 import com.github.havlli.EventPilot.entity.event.Event;
 import com.github.havlli.EventPilot.entity.event.EventService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Component;
 import reactor.core.Disposable;
 import reactor.core.publisher.Flux;
@@ -30,11 +30,11 @@ public class ScheduledTask {
     public ScheduledTask(
             EventService eventService,
             DiscordService discordService,
-            @Value("${discord.scheduler.interval-seconds}") Integer intervalSeconds
+            DiscordProperties discordProperties
     ) {
         this.eventService = eventService;
         this.discordService = discordService;
-        this.intervalSeconds = intervalSeconds;
+        this.intervalSeconds = discordProperties.scheduler().intervalSeconds();
     }
 
     public Flux<Void> getSchedulersFlux() {

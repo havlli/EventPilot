@@ -1,5 +1,6 @@
 package com.github.havlli.EventPilot.api.jwt;
 
+import com.github.havlli.EventPilot.api.security.ApiSecurityProperties;
 import com.github.havlli.EventPilot.api.auth.UserDetailsImpl;
 import com.github.havlli.EventPilot.entity.user.User;
 import com.github.havlli.EventPilot.entity.user.UserRole;
@@ -14,6 +15,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.MockitoAnnotations;
 
 import java.util.Date;
+import java.util.List;
 import java.util.Map;
 import java.util.Optional;
 import java.util.Set;
@@ -32,12 +34,24 @@ class JWTServiceTest {
     void setUp() {
         autoCloseable = MockitoAnnotations.openMocks(this);
         jwtSecret = generateKey();
-        underTest = new JWTService(jwtSecret);
+        underTest = createJwtService(jwtSecret);
     }
 
     private String generateKey() {
         byte[] encodedSecret = Jwts.SIG.HS256.key().build().getEncoded();
         return Encoders.BASE64.encode(encodedSecret);
+    }
+
+    private JWTService createJwtService(String jwtSecret) {
+        return new JWTService(new ApiSecurityProperties(
+                new ApiSecurityProperties.Jwt(jwtSecret),
+                new ApiSecurityProperties.Cors(
+                        List.of("http://localhost:3000"),
+                        List.of("GET"),
+                        List.of("Authorization"),
+                        List.of("Authorization")
+                )
+        ));
     }
 
     @AfterEach
@@ -83,7 +97,7 @@ class JWTServiceTest {
         User user = new User(null, "username", "email", "password", Set.of(userRole));
 
         String jwtSecret = generateKey();
-        JWTService underTestSpy = spy(new JWTService(jwtSecret));
+        JWTService underTestSpy = spy(createJwtService(jwtSecret));
         String jwtToken = underTestSpy.generateToken(user);
         String invalidSignatureToken = jwtToken.substring(0, jwtToken.length() - 5);
 
@@ -99,7 +113,7 @@ class JWTServiceTest {
         User user = new User(null, "username", "email", "password", Set.of(userRole));
 
         String jwtSecret = generateKey();
-        JWTService underTestSpy = spy(new JWTService(jwtSecret));
+        JWTService underTestSpy = spy(createJwtService(jwtSecret));
         String jwtToken = underTestSpy.generateToken(user);
         String invalidHeaderToken = jwtToken.substring(5);
 
@@ -115,7 +129,7 @@ class JWTServiceTest {
         User user = new User(null, "username", "email", "password", Set.of(userRole));
 
         String jwtSecret = generateKey();
-        JWTService underTestSpy = spy(new JWTService(jwtSecret));
+        JWTService underTestSpy = spy(createJwtService(jwtSecret));
         String jwtToken = underTestSpy.generateToken(user);
 
         String[] splitToken = jwtToken.split("\\.");
@@ -134,7 +148,7 @@ class JWTServiceTest {
         User user = new User(null, "username", "email", "password", Set.of(userRole));
 
         String jwtSecret = generateKey();
-        JWTService underTestSpy = spy(new JWTService(jwtSecret));
+        JWTService underTestSpy = spy(createJwtService(jwtSecret));
         String validToken = underTestSpy.generateToken(user);
 
         UserDetailsImpl userDetails = UserDetailsImpl.of(user);
@@ -153,7 +167,7 @@ class JWTServiceTest {
         User user = new User(null, "username", "email", "password", Set.of(userRole));
 
         String jwtSecret = generateKey();
-        JWTService underTestSpy = spy(new JWTService(jwtSecret));
+        JWTService underTestSpy = spy(createJwtService(jwtSecret));
         String validToken = underTestSpy.generateToken(user);
 
         User differentUser = new User(null, "username1", "email", "password", Set.of(userRole));
@@ -173,7 +187,7 @@ class JWTServiceTest {
         User user = new User(null, "username", "email", "password", Set.of(userRole));
 
         String jwtSecret = generateKey();
-        JWTService underTestSpy = spy(new JWTService(jwtSecret));
+        JWTService underTestSpy = spy(createJwtService(jwtSecret));
         String validToken = underTestSpy.generateToken(user);
         String[] splitToken = validToken.split("\\.");
         splitToken[1] = "eyJzdWIiOiJ1c2VybmFtZSIsImF1dGhvcml0aWVzIjpboiJhdXRob3JpdHkiOiJVU0VSIn1dLCJpYXQiOjE2OTczOTIxMzMsImV4cCI6MTY5NzQyODEzM30";
