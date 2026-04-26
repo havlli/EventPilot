@@ -1,6 +1,7 @@
 package com.github.havlli.EventPilot.command.onreadyevent;
 
 import com.github.havlli.EventPilot.core.DiscordService;
+import com.github.havlli.EventPilot.core.DiscordProperties;
 import com.github.havlli.EventPilot.entity.event.Event;
 import com.github.havlli.EventPilot.entity.event.EventService;
 import org.junit.jupiter.api.AfterEach;
@@ -30,7 +31,11 @@ class ScheduledTaskTest {
     @BeforeEach
     public void setUp() {
         autoCloseable = MockitoAnnotations.openMocks(this);
-        underTest = new ScheduledTask(eventServiceMock, discordServiceMock, intervalSeconds);
+        underTest = new ScheduledTask(eventServiceMock, discordServiceMock, new DiscordProperties(
+                "token",
+                new DiscordProperties.Commands("commands"),
+                new DiscordProperties.Scheduler(intervalSeconds)
+        ));
     }
 
     @AfterEach

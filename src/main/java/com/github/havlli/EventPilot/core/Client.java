@@ -5,7 +5,6 @@ import discord4j.core.GatewayDiscordClient;
 import discord4j.core.object.presence.ClientActivity;
 import discord4j.core.object.presence.ClientPresence;
 import discord4j.rest.RestClient;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Profile;
 import org.springframework.stereotype.Component;
@@ -13,15 +12,15 @@ import org.springframework.stereotype.Component;
 @Component
 @Profile("!test")
 public class Client {
-    private final String token;
+    private final DiscordProperties discordProperties;
 
-    public Client(@Value("${discord.token}") String token) {
-        this.token = token;
+    public Client(DiscordProperties discordProperties) {
+        this.discordProperties = discordProperties;
     }
 
     @Bean
     public GatewayDiscordClient createDiscordClient() {
-        return DiscordClient.create(token)
+        return DiscordClient.create(discordProperties.token())
                 .gateway()
                 .setInitialPresence(__ -> ClientPresence.online(ClientActivity.listening("to /commands")))
                 .login()

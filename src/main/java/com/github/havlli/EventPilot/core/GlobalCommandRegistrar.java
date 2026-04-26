@@ -6,7 +6,6 @@ import discord4j.rest.RestClient;
 import discord4j.rest.service.ApplicationService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-import org.springframework.beans.factory.annotation.Value;
 import org.springframework.boot.ApplicationArguments;
 import org.springframework.boot.ApplicationRunner;
 import org.springframework.context.annotation.DependsOn;
@@ -32,16 +31,16 @@ public class GlobalCommandRegistrar implements ApplicationRunner {
     private static final Logger LOG = LoggerFactory.getLogger(GlobalCommandRegistrar.class);
     private final RestClient restClient;
     private final PathMatchingResourcePatternResolver pathMatcher;
-    private final String parentFolder;
+    private final DiscordProperties discordProperties;
 
     public GlobalCommandRegistrar(
             RestClient restClient,
             PathMatchingResourcePatternResolver pathMatcher,
-            @Value(value = "${discord.commands.folder}") String parentFolder
+            DiscordProperties discordProperties
     ) {
         this.restClient = restClient;
         this.pathMatcher = pathMatcher;
-        this.parentFolder = parentFolder;
+        this.discordProperties = discordProperties;
     }
 
     @Override
@@ -104,7 +103,7 @@ public class GlobalCommandRegistrar implements ApplicationRunner {
     }
 
     private String getLocationPattern() {
-        return parentFolder + "/*.json";
+        return discordProperties.commands().folder() + "/*.json";
     }
 
     protected ApplicationCommandRequest readJsonValue(JacksonResources jacksonResources, Resource resource) throws IOException {
