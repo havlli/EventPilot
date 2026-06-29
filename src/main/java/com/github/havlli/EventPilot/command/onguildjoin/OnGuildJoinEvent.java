@@ -4,11 +4,15 @@ import com.github.havlli.EventPilot.command.SlashCommand;
 import com.github.havlli.EventPilot.entity.guild.GuildService;
 import discord4j.core.event.domain.Event;
 import discord4j.core.event.domain.guild.GuildCreateEvent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
 
 @Component
 public class OnGuildJoinEvent implements SlashCommand {
+
+    private static final Logger LOG = LoggerFactory.getLogger(OnGuildJoinEvent.class);
 
     private final GuildService guildService;
     private Class<? extends Event> eventType = GuildCreateEvent.class;
@@ -41,7 +45,7 @@ public class OnGuildJoinEvent implements SlashCommand {
     }
 
     private Mono<Void> createGuildIfNotExists(String name, String id) {
-        System.out.println("guild join event triggered");
+        LOG.debug("Guild create event received for guild {}", id);
         guildService.createGuildIfNotExists(id, name);
         return Mono.empty();
     }

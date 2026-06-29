@@ -6,6 +6,7 @@ import com.github.havlli.EventPilot.entity.embedtype.EmbedTypeService;
 import com.github.havlli.EventPilot.entity.event.Event;
 import com.github.havlli.EventPilot.entity.guild.Guild;
 import com.github.havlli.EventPilot.entity.participant.Participant;
+import com.github.havlli.EventPilot.entity.participant.ParticipantStatus;
 import discord4j.core.object.component.TopLevelMessageComponent;
 import discord4j.core.spec.EmbedCreateFields;
 import discord4j.core.spec.EmbedCreateSpec;
@@ -27,20 +28,17 @@ public class EmbedGenerator {
     private final EmbedFormatter formatter;
     private final ComponentGenerator generator;
     private final EmbedTypeService embedTypeService;
-    private final EmbedInteractionGenerator interactionGenerator;
 
     private final static String DELIMITER = ",";
 
     public EmbedGenerator(
             EmbedFormatter formatter,
             ComponentGenerator generator,
-            EmbedTypeService embedTypeService,
-            EmbedInteractionGenerator interactionGenerator
+            EmbedTypeService embedTypeService
     ) {
         this.formatter = formatter;
         this.generator = generator;
         this.embedTypeService = embedTypeService;
-        this.interactionGenerator = interactionGenerator;
     }
 
     public EmbedCreateSpec generatePreview(EmbedPreviewable embedPreviewable) {
@@ -105,9 +103,10 @@ public class EmbedGenerator {
     public EmbedCreateSpec generateEmbed(Event event) {
         String empty = "";
         String leaderWithEmbedId = formatter.leaderWithId(event.getAuthor(), event.getEventId());
-        String raidSize = formatter.raidSize(event.getParticipants().size(), event.getMemberSize());
+        String raidSize = formatter.raidSize(signedUpParticipantCount(event.getParticipants()), event.getMemberSize());
         String date = formatter.date(event.getDateTime());
         String time = formatter.time(event.getDateTime());
+        String status = formatter.status(event.getStatus());
 
         return EmbedCreateSpec.builder()
                 .addField(empty, leaderWithEmbedId, false)
@@ -116,6 +115,29 @@ public class EmbedGenerator {
                 .addField(empty, date, true)
                 .addField(empty, time, true)
                 .addField(empty, raidSize, true)
+                .addField("Status", status, true)
+                .addAllFields(constructPopulatedFields(event))
+                .build();
+    }
+
+    public EmbedCreateSpec generateReminderEmbed(Event event) {
+        String startsAt = "%s (%s)".formatted(
+                formatter.dateTime(event.getDateTime()),
+                formatter.relativeTime(event.getDateTime())
+        );
+        String rosterSummary = formatter.rosterSummary(
+                signedUpParticipantCount(event.getParticipants()),
+                event.getMemberSize(),
+                waitlistedParticipantCount(event.getParticipants())
+        );
+
+        return EmbedCreateSpec.builder()
+                .title("Event reminder: %s".formatted(event.getName()))
+                .description(event.getDescription())
+                .addField("Starts", startsAt, true)
+                .addField("Leader", event.getAuthor(), true)
+                .addField("Status", formatter.status(event.getStatus()), true)
+                .addField("Roster", rosterSummary, false)
                 .addAllFields(constructPopulatedFields(event))
                 .build();
     }
@@ -154,15 +176,34 @@ public class EmbedGenerator {
     public List<EmbedCreateFields.Field> constructPopulatedFields(Event event) {
         EmbedType embedType = event.getEmbedType();
         List<Participant> eventParticipants = event.getParticipants();
+        List<Participant> signedUpParticipants = eventParticipants.stream()
+                .filter(this::isSignedUp)
+                .toList();
 
         try {
-            return embedTypeService.getDeserializedMap(embedType)
+            HashMap<Integer, String> roleNames = embedTypeService.getDeserializedMap(embedType);
+            List<EmbedCreateFields.Field> fields = roleNames
                     .entrySet()
                     .stream()
                     .sorted(sortFieldKeys())
-                    .filter(entry -> optimizedFilter(eventParticipants).test(entry))
-                    .map(mapEntryToField(eventParticipants))
+                    .filter(entry -> optimizedFilter(signedUpParticipants).test(entry))
+                    .map(mapEntryToField(signedUpParticipants))
                     .collect(Collectors.toList());
+
+            List<Participant> waitlistedParticipants = eventParticipants.stream()
+                    .filter(this::isWaitlisted)
+                    .sorted(Comparator.comparing(Participant::getPosition))
+                    .toList();
+
+            if (!waitlistedParticipants.isEmpty()) {
+                fields.add(EmbedCreateFields.Field.of(
+                        "Waitlist (%d)".formatted(waitlistedParticipants.size()),
+                        formatter.createWaitlistField(waitlistedParticipants, roleNames),
+                        false
+                ));
+            }
+
+            return fields;
         } catch (JsonProcessingException e) {
             LOG.error("Serialization error - %s".formatted(e.getMessage()));
         }
@@ -198,11 +239,33 @@ public class EmbedGenerator {
         return generator.eventButtons(DELIMITER, event);
     }
 
-    public void subscribeInteractions(Event event) {
-        interactionGenerator.subscribeInteractions(event, this);
-    }
-
     public String getDelimiter() {
         return DELIMITER;
+    }
+
+    private int signedUpParticipantCount(List<Participant> participants) {
+        return (int) participants.stream()
+                .filter(this::countsTowardCapacity)
+                .count();
+    }
+
+    private int waitlistedParticipantCount(List<Participant> participants) {
+        return (int) participants.stream()
+                .filter(this::isWaitlisted)
+                .count();
+    }
+
+    private boolean countsTowardCapacity(Participant participant) {
+        return isSignedUp(participant)
+                && participant.getRoleIndex() != null
+                && participant.getRoleIndex() > 0;
+    }
+
+    private boolean isSignedUp(Participant participant) {
+        return participant.getStatus() == null || participant.getStatus() == ParticipantStatus.SIGNED_UP;
+    }
+
+    private boolean isWaitlisted(Participant participant) {
+        return participant.getStatus() == ParticipantStatus.WAITLISTED;
     }
 }

@@ -11,6 +11,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import java.time.Duration;
 import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
@@ -95,6 +96,112 @@ class EventServiceTest {
     }
 
     @Test
+    void getReminderCandidates_DelegatesWithLeadTimeCutoff() {
+        // Arrange
+        Duration reminderLeadTime = Duration.ofMinutes(60);
+        Instant beforeCall = Instant.now();
+
+        // Act
+        underTest.getReminderCandidates(reminderLeadTime);
+
+        // Assert
+        verify(eventDAO, times(1)).getReminderCandidates(argThat(cutoff ->
+                !cutoff.isBefore(beforeCall.plus(reminderLeadTime))
+                        && !cutoff.isAfter(Instant.now().plus(reminderLeadTime))
+        ));
+    }
+
+    @Test
+    void updateStatusIfExists_UpdatesStatusAndReturnsEvent_WhenEventExists() {
+        // Arrange
+        var eventId = "1";
+        Event event = createEvent(eventId, createGuild(), createEmbedType());
+        when(eventDAO.findById(eventId)).thenReturn(Optional.of(event));
+
+        // Act
+        Optional<Event> actual = underTest.updateStatusIfExists(eventId, EventStatus.CLOSED);
+
+        // Assert
+        assertThat(actual).contains(event);
+        assertThat(event.getStatus()).isEqualTo(EventStatus.CLOSED);
+        verify(eventDAO, times(1)).saveEvent(event);
+    }
+
+    @Test
+    void updateStatusIfExists_ReturnsEmpty_WhenEventDoesNotExist() {
+        // Arrange
+        var eventId = "1";
+        when(eventDAO.findById(eventId)).thenReturn(Optional.empty());
+
+        // Act
+        Optional<Event> actual = underTest.updateStatusIfExists(eventId, EventStatus.CLOSED);
+
+        // Assert
+        assertThat(actual).isEmpty();
+        verify(eventDAO, never()).saveEvent(any());
+    }
+
+    @Test
+    void markExpiredIfExists_ReturnsTrueAndMarksExpired_WhenEventExists() {
+        // Arrange
+        var eventId = "1";
+        Event event = createEvent(eventId, createGuild(), createEmbedType());
+        when(eventDAO.findById(eventId)).thenReturn(Optional.of(event));
+
+        // Act
+        boolean actual = underTest.markExpiredIfExists(eventId);
+
+        // Assert
+        assertThat(actual).isTrue();
+        assertThat(event.getStatus()).isEqualTo(EventStatus.EXPIRED);
+        verify(eventDAO, times(1)).saveEvent(event);
+    }
+
+    @Test
+    void markExpiredIfExists_ReturnsFalse_WhenEventDoesNotExist() {
+        // Arrange
+        var eventId = "1";
+        when(eventDAO.findById(eventId)).thenReturn(Optional.empty());
+
+        // Act
+        boolean actual = underTest.markExpiredIfExists(eventId);
+
+        // Assert
+        assertThat(actual).isFalse();
+        verify(eventDAO, never()).saveEvent(any());
+    }
+
+    @Test
+    void markReminderSentIfExists_ReturnsTrueAndMarksReminderSent_WhenEventExists() {
+        // Arrange
+        var eventId = "1";
+        Event event = createEvent(eventId, createGuild(), createEmbedType());
+        when(eventDAO.findById(eventId)).thenReturn(Optional.of(event));
+
+        // Act
+        boolean actual = underTest.markReminderSentIfExists(eventId);
+
+        // Assert
+        assertThat(actual).isTrue();
+        assertThat(event.isReminderSent()).isTrue();
+        verify(eventDAO, times(1)).saveEvent(event);
+    }
+
+    @Test
+    void markReminderSentIfExists_ReturnsFalse_WhenEventDoesNotExist() {
+        // Arrange
+        var eventId = "1";
+        when(eventDAO.findById(eventId)).thenReturn(Optional.empty());
+
+        // Act
+        boolean actual = underTest.markReminderSentIfExists(eventId);
+
+        // Assert
+        assertThat(actual).isFalse();
+        verify(eventDAO, never()).saveEvent(any());
+    }
+
+    @Test
     void deleteEventById_deletesEvent_WhenEventExists() {
         // Arrange
         var eventId = "1";
@@ -116,6 +223,34 @@ class EventServiceTest {
         // Assert
         assertThatThrownBy(() -> underTest.deleteEventById(eventId))
                 .isInstanceOf(ResourceNotFoundException.class);
+        verify(eventDAO, never()).deleteById(eventId);
+    }
+
+    @Test
+    void deleteEventIfExists_ReturnsTrueAndDeletesEvent_WhenEventExists() {
+        // Arrange
+        var eventId = "1";
+        when(eventDAO.existsById(eventId)).thenReturn(true);
+
+        // Act
+        boolean actual = underTest.deleteEventIfExists(eventId);
+
+        // Assert
+        assertThat(actual).isTrue();
+        verify(eventDAO, times(1)).deleteById(eventId);
+    }
+
+    @Test
+    void deleteEventIfExists_ReturnsFalse_WhenEventDoesNotExist() {
+        // Arrange
+        var eventId = "1";
+        when(eventDAO.existsById(eventId)).thenReturn(false);
+
+        // Act
+        boolean actual = underTest.deleteEventIfExists(eventId);
+
+        // Assert
+        assertThat(actual).isFalse();
         verify(eventDAO, never()).deleteById(eventId);
     }
 

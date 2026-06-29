@@ -4,9 +4,9 @@ services:
     container_name: eventpilot-postgres
     image: postgres:15-alpine
     environment:
-      POSTGRES_USER: havlli
-      POSTGRES_PASSWORD: password
-      POSTGRES_DB: eventpilot
+      POSTGRES_USER: ${POSTGRES_USER:-eventpilot}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-eventpilot}
+      POSTGRES_DB: ${POSTGRES_DB:-eventpilot}
     volumes:
       - postgres:/data/postgres
     ports:

@@ -22,9 +22,12 @@ CREATE TABLE event
     date_time    TIMESTAMP WITH TIME ZONE   NOT NULL,
     dest_channel VARCHAR(30) NOT NULL,
     member_size  VARCHAR(5)  NOT NULL,
+    status       VARCHAR(20) NOT NULL DEFAULT 'OPEN',
+    reminder_sent BOOLEAN    NOT NULL DEFAULT FALSE,
     guild_id     VARCHAR(30) NOT NULL,
     embed_type   BIGINT         NOT NULL,
     PRIMARY KEY (id),
+    CONSTRAINT event_status_check CHECK (status IN ('OPEN', 'CLOSED', 'CANCELLED', 'EXPIRED')),
     FOREIGN KEY (guild_id) REFERENCES guild(id) ON DELETE CASCADE,
     FOREIGN KEY (embed_type) REFERENCES embed_type(id) ON DELETE CASCADE
 );
@@ -36,9 +39,12 @@ CREATE TABLE participant
     username     VARCHAR(45) NOT NULL,
     position     INT         NOT NULL,
     role_index   INT         NOT NULL,
+    status       VARCHAR(20) NOT NULL DEFAULT 'SIGNED_UP',
     event_id     VARCHAR(30) NOT NULL,
     PRIMARY KEY (id),
-    FOREIGN KEY (event_id) REFERENCES event(id) ON DELETE CASCADE
+    FOREIGN KEY (event_id) REFERENCES event(id) ON DELETE CASCADE,
+    CONSTRAINT participant_status_check CHECK (status IN ('SIGNED_UP', 'WAITLISTED')),
+    CONSTRAINT participant_event_user_unique UNIQUE (event_id, user_id)
 );
 
 INSERT INTO embed_type (name, structure)

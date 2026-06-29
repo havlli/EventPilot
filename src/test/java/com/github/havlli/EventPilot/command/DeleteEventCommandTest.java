@@ -1,6 +1,7 @@
 package com.github.havlli.EventPilot.command;
 
 import com.github.havlli.EventPilot.core.SimplePermissionValidator;
+import com.github.havlli.EventPilot.entity.event.EventService;
 import com.github.havlli.EventPilot.session.UserSessionValidator;
 import discord4j.common.util.Snowflake;
 import discord4j.core.GatewayDiscordClient;
@@ -13,7 +14,9 @@ import discord4j.core.object.entity.User;
 import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.spec.InteractionCallbackSpecDeferReplyMono;
 import discord4j.core.spec.InteractionFollowupCreateMono;
+import discord4j.rest.http.client.ClientException;
 import discord4j.rest.util.Permission;
+import io.netty.handler.codec.http.HttpResponseStatus;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -47,11 +50,13 @@ class DeleteEventCommandTest {
     private UserSessionValidator sessionValidatorMock;
     @Mock
     private MessageSource messageSourceMock;
+    @Mock
+    private EventService eventServiceMock;
 
     @BeforeEach
     void setUp() {
         autoCloseable = MockitoAnnotations.openMocks(this);
-        underTest = new DeleteEventCommand(permissionChecker, sessionValidatorMock, messageSourceMock);
+        underTest = new DeleteEventCommand(permissionChecker, sessionValidatorMock, messageSourceMock, eventServiceMock);
     }
 
     @AfterEach
@@ -101,11 +106,38 @@ class DeleteEventCommandTest {
     }
 
     @Test
-    void deleteEventInteraction_ReturnsEventNotFoundMessage_WhenExceptionThrown() {
+    void deleteEventInteraction_ReturnsEventDeletedMessage_WhenMessageMissingAndDatabaseEventExists() {
         // Arrange
         when(interactionEvent.getInteraction()).thenReturn(interaction);
         when(interaction.getChannel()).thenReturn(Mono.just(messageChannel));
-        when(messageChannel.getMessageById(any())).thenReturn(Mono.error(new RuntimeException("Event not found")));
+        ClientException notFoundError = clientExceptionWithStatus(HttpResponseStatus.NOT_FOUND);
+        when(messageChannel.getMessageById(any())).thenReturn(Mono.error(notFoundError));
+        when(eventServiceMock.deleteEventIfExists("0")).thenReturn(true);
+
+        DeleteEventCommand underTestSpy = spy(underTest);
+        doReturn(Mono.empty()).when(underTestSpy).sendMessage(interactionEvent, "Event deleted!");
+        when(messageSourceMock.getMessage("interaction.delete-event.event-deleted", null, Locale.ENGLISH))
+                .thenReturn("Event deleted!");
+
+        // Act
+        Mono<Message> actual = underTestSpy.deleteEventInteraction(interactionEvent);
+
+        // Assert
+        StepVerifier.create(actual)
+                .expectSubscription()
+                .verifyComplete();
+        verify(eventServiceMock, times(1)).deleteEventIfExists("0");
+        verify(underTestSpy, times(1)).sendMessage(interactionEvent, "Event deleted!");
+    }
+
+    @Test
+    void deleteEventInteraction_ReturnsEventNotFoundMessage_WhenMessageMissingAndDatabaseEventDoesNotExist() {
+        // Arrange
+        when(interactionEvent.getInteraction()).thenReturn(interaction);
+        when(interaction.getChannel()).thenReturn(Mono.just(messageChannel));
+        ClientException notFoundError = clientExceptionWithStatus(HttpResponseStatus.NOT_FOUND);
+        when(messageChannel.getMessageById(any())).thenReturn(Mono.error(notFoundError));
+        when(eventServiceMock.deleteEventIfExists("0")).thenReturn(false);
 
         DeleteEventCommand underTestSpy = spy(underTest);
         doReturn(Mono.empty()).when(underTestSpy).sendMessage(interactionEvent, "Event not found!");
@@ -119,7 +151,26 @@ class DeleteEventCommandTest {
         StepVerifier.create(actual)
                 .expectSubscription()
                 .verifyComplete();
+        verify(eventServiceMock, times(1)).deleteEventIfExists("0");
         verify(underTestSpy, times(1)).sendMessage(interactionEvent, "Event not found!");
+    }
+
+    @Test
+    void deleteEventInteraction_PropagatesDiscordErrorAndDoesNotDeleteDatabase_WhenMessageFetchFailsForNonNotFound() {
+        // Arrange
+        when(interactionEvent.getInteraction()).thenReturn(interaction);
+        when(interaction.getChannel()).thenReturn(Mono.just(messageChannel));
+        ClientException discordError = clientExceptionWithStatus(HttpResponseStatus.INTERNAL_SERVER_ERROR);
+        when(messageChannel.getMessageById(any())).thenReturn(Mono.error(discordError));
+
+        // Act
+        Mono<Message> actual = underTest.deleteEventInteraction(interactionEvent);
+
+        // Assert
+        StepVerifier.create(actual)
+                .expectError(ClientException.class)
+                .verify();
+        verifyNoInteractions(eventServiceMock);
     }
 
     @Test
@@ -159,6 +210,7 @@ class DeleteEventCommandTest {
         when(messageChannel.getMessageById(any())).thenReturn(Mono.just(messageMock));
         User userMock = mock(User.class);
         when(messageMock.getAuthor()).thenReturn(Optional.of(userMock));
+        when(messageMock.getId()).thenReturn(Snowflake.of("9999"));
         when(userMock.getId()).thenReturn(Snowflake.of("2345"));
 
         GatewayDiscordClient clientMock = mock(GatewayDiscordClient.class);
@@ -179,6 +231,7 @@ class DeleteEventCommandTest {
                 .expectSubscription()
                 .verifyComplete();
         verify(underTestSpy, times(1)).sendMessage(interactionEvent, "Event not found, already deleted or not posted by this bot!");
+        verifyNoInteractions(eventServiceMock);
     }
 
     @Test
@@ -225,6 +278,8 @@ class DeleteEventCommandTest {
         // Arrange
         Message messageMock = mock(Message.class);
         when(messageMock.delete()).thenReturn(Mono.empty());
+        when(messageMock.getId()).thenReturn(Snowflake.of("1234"));
+        when(eventServiceMock.deleteEventIfExists("1234")).thenReturn(false);
 
         DeleteEventCommand underTestSpy = spy(underTest);
         when(messageSourceMock.getMessage("interaction.delete-event.event-deleted", null, Locale.ENGLISH))
@@ -238,6 +293,7 @@ class DeleteEventCommandTest {
                 .expectSubscription()
                 .verifyComplete();
         verify(messageMock, times(1)).delete();
+        verify(eventServiceMock, times(1)).deleteEventIfExists("1234");
     }
 
     @Test
@@ -275,5 +331,11 @@ class DeleteEventCommandTest {
         // Assert
         Class<? extends Event> actual = underTest.getEventType();
         assertThat(actual).isEqualTo(expected);
+    }
+
+    private ClientException clientExceptionWithStatus(HttpResponseStatus status) {
+        ClientException exception = mock(ClientException.class);
+        when(exception.getStatus()).thenReturn(status);
+        return exception;
     }
 }

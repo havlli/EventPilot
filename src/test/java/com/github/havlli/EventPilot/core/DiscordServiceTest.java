@@ -10,7 +10,9 @@ import discord4j.core.GatewayDiscordClient;
 import discord4j.core.object.component.LayoutComponent;
 import discord4j.core.object.component.MessageComponent;
 import discord4j.core.object.entity.Message;
+import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.spec.EmbedCreateSpec;
+import discord4j.core.spec.MessageCreateSpec;
 import discord4j.core.spec.MessageEditSpec;
 import discord4j.discordjson.json.ComponentData;
 import discord4j.discordjson.possible.Possible;
@@ -104,6 +106,7 @@ class DiscordServiceTest {
         when(messageMock.edit(any(MessageEditSpec.class))).thenReturn(Mono.just(messageMock));
         EmbedCreateSpec embedCreateSpecMock = mock(EmbedCreateSpec.class);
         when(embedGeneratorMock.generateEmbed(eventMock)).thenReturn(embedCreateSpecMock);
+        when(embedGeneratorMock.generateComponents(eventMock)).thenReturn(List.of());
 
         // Act
         Mono<Message> actual = underTest.updateEventMessage(eventMock);
@@ -122,6 +125,7 @@ class DiscordServiceTest {
         when(eventMock.getEventId()).thenReturn("12345");
         Message messageMock = mock(Message.class);
         when(clientMock.getMessageById(any(), any())).thenReturn(Mono.just(messageMock));
+        when(embedGeneratorMock.generateComponents(eventMock)).thenReturn(List.of());
         when(messageMock.edit(any(MessageEditSpec.class))).thenThrow(ClientException.class);
 
         // Act
@@ -131,6 +135,30 @@ class DiscordServiceTest {
         StepVerifier.create(actual)
                 .expectError(ClientException.class)
                 .verify();
+    }
+
+    @Test
+    void sendEventReminders_CreatesChannelMessageAndMarksReminderSent_WhenSendSucceeds() {
+        // Arrange
+        Event eventMock = mock(Event.class);
+        when(eventMock.getEventId()).thenReturn("12345");
+        when(eventMock.getDestinationChannelId()).thenReturn("123456789");
+
+        MessageChannel messageChannelMock = mock(MessageChannel.class);
+        Message messageMock = mock(Message.class);
+        EmbedCreateSpec embedCreateSpecMock = mock(EmbedCreateSpec.class);
+        when(clientMock.getChannelById(Snowflake.of("123456789"))).thenReturn(Mono.just(messageChannelMock));
+        when(embedGeneratorMock.generateReminderEmbed(eventMock)).thenReturn(embedCreateSpecMock);
+        when(messageChannelMock.createMessage(any(MessageCreateSpec.class))).thenReturn(Mono.just(messageMock));
+
+        // Act
+        Flux<Message> actual = underTest.sendEventReminders(List.of(eventMock));
+
+        // Assert
+        StepVerifier.create(actual)
+                .expectNext(messageMock)
+                .verifyComplete();
+        verify(eventServiceMock, times(1)).markReminderSentIfExists("12345");
     }
 
     @Test
@@ -150,6 +178,7 @@ class DiscordServiceTest {
         ComponentData componentDataMock = mock(ComponentData.class);
         when(messageComponentMock.getData()).thenReturn(componentDataMock);
         when(componentDataMock.customId()).thenReturn(Possible.of("expired"));
+        when(messageOneMock.getId()).thenReturn(Snowflake.of(eventOneId));
 
         when(clientMock.getMessageById(Snowflake.of(eventOneChannel), Snowflake.of(eventOneId)))
                 .thenReturn(Mono.just(messageOneMock));
@@ -161,7 +190,7 @@ class DiscordServiceTest {
         StepVerifier.create(actual)
                 .expectSubscription()
                 .verifyComplete();
-        verifyNoInteractions(eventServiceMock);
+        verify(eventServiceMock, times(1)).markExpiredIfExists(eventOneId);
     }
 
     @Test
@@ -196,7 +225,7 @@ class DiscordServiceTest {
                 .expectSubscription()
                 .expectNext(messageOneMock)
                 .verifyComplete();
-        verify(eventServiceMock, times(1)).deleteEventById(anyString());
+        verify(eventServiceMock, times(1)).markExpiredIfExists(anyString());
     }
 
     @Test
@@ -243,7 +272,7 @@ class DiscordServiceTest {
                 .expectSubscription()
                 .expectNext(messageOneMock, messageTwoMock)
                 .verifyComplete();
-        verify(eventServiceMock, times(2)).deleteEventById(anyString());
+        verify(eventServiceMock, times(2)).markExpiredIfExists(anyString());
     }
 
     @Test
@@ -278,6 +307,7 @@ class DiscordServiceTest {
         ComponentData componentDataSecondMock = mock(ComponentData.class);
         when(messageComponentSecondMock.getData()).thenReturn(componentDataSecondMock);
         when(componentDataSecondMock.customId()).thenReturn(Possible.of("expired"));
+        when(messageTwoMock.getId()).thenReturn(Snowflake.of(eventTwoId));
 
         when(messageOneMock.edit(any(MessageEditSpec.class))).thenReturn(Mono.just(messageOneMock));
         when(messageTwoMock.edit(any(MessageEditSpec.class))).thenReturn(Mono.just(messageTwoMock));
@@ -297,7 +327,7 @@ class DiscordServiceTest {
                 .expectSubscription()
                 .expectNext(messageOneMock)
                 .verifyComplete();
-        verify(eventServiceMock, times(1)).deleteEventById(anyString());
+        verify(eventServiceMock, times(2)).markExpiredIfExists(anyString());
     }
 
     @Test
@@ -332,6 +362,6 @@ class DiscordServiceTest {
         StepVerifier.create(actual)
                 .expectSubscription()
                 .verifyComplete();
-        verifyNoInteractions(eventServiceMock);
+        verify(eventServiceMock, times(1)).markExpiredIfExists(eventOneId);
     }
 }

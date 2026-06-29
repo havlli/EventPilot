@@ -1,6 +1,7 @@
 package com.github.havlli.EventPilot.command;
 
 import com.github.havlli.EventPilot.core.SimplePermissionValidator;
+import com.github.havlli.EventPilot.entity.event.EventService;
 import com.github.havlli.EventPilot.session.UserSessionValidator;
 import discord4j.common.util.Snowflake;
 import discord4j.core.event.domain.Event;
@@ -9,10 +10,12 @@ import discord4j.core.object.command.ApplicationCommandInteractionOption;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.User;
 import discord4j.core.spec.InteractionCallbackSpecDeferReplyMono;
+import discord4j.rest.http.client.ClientException;
 import discord4j.rest.util.Permission;
 import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 import java.util.Locale;
 import java.util.Optional;
@@ -27,15 +30,18 @@ public class DeleteEventCommand implements SlashCommand {
     private final SimplePermissionValidator permissionChecker;
     private final UserSessionValidator userSessionValidator;
     private final MessageSource messageSource;
+    private final EventService eventService;
 
     public DeleteEventCommand(
             SimplePermissionValidator permissionChecker,
             UserSessionValidator userSessionValidator,
-            MessageSource messageSource
+            MessageSource messageSource,
+            EventService eventService
     ) {
         this.permissionChecker = permissionChecker;
         this.userSessionValidator = userSessionValidator;
         this.messageSource = messageSource;
+        this.eventService = eventService;
     }
 
     @Override
@@ -91,13 +97,12 @@ public class DeleteEventCommand implements SlashCommand {
                     Snowflake targetMessageId = getTargetMessageId(event);
                     return messageChannel.getMessageById(targetMessageId)
                             .flatMap(handleMessageFound(event))
-                            .onErrorResume(handleMessageNotFound(event));
+                            .onErrorResume(ClientException.isStatusCode(404), handleMessageNotFound(event, targetMessageId));
                 });
     }
 
-    private Function<Throwable, Mono<? extends Message>> handleMessageNotFound(ChatInputInteractionEvent event) {
-        String message = messageSource.getMessage("interaction.delete-event.event-not-found", null, Locale.ENGLISH);
-        return e -> sendMessage(event, message);
+    private Function<Throwable, Mono<? extends Message>> handleMessageNotFound(ChatInputInteractionEvent event, Snowflake targetMessageId) {
+        return e -> sendDeletionResult(event, targetMessageId.asString());
     }
 
     private Function<Message, Mono<? extends Message>> handleMessageFound(ChatInputInteractionEvent event) {
@@ -126,8 +131,22 @@ public class DeleteEventCommand implements SlashCommand {
     }
 
     public Mono<Message> deleteMessage(ChatInputInteractionEvent event, Message message) {
-        String eventDeletedMessage = messageSource.getMessage("interaction.delete-event.event-deleted", null, Locale.ENGLISH);
         return message.delete()
-                .then(sendMessage(event, eventDeletedMessage));
+                .then(deleteEventFromDatabase(message.getId().asString()))
+                .then(sendMessage(event, messageSource.getMessage("interaction.delete-event.event-deleted", null, Locale.ENGLISH)));
+    }
+
+    private Mono<Message> sendDeletionResult(ChatInputInteractionEvent event, String eventId) {
+        return deleteEventFromDatabase(eventId)
+                .flatMap(deleted -> {
+                    String messageKey = deleted ? "interaction.delete-event.event-deleted" : "interaction.delete-event.event-not-found";
+                    String message = messageSource.getMessage(messageKey, null, Locale.ENGLISH);
+                    return sendMessage(event, message);
+                });
+    }
+
+    private Mono<Boolean> deleteEventFromDatabase(String eventId) {
+        return Mono.fromSupplier(() -> eventService.deleteEventIfExists(eventId))
+                .subscribeOn(Schedulers.boundedElastic());
     }
 }

@@ -31,7 +31,8 @@ class ParticipantDTOTest {
                 participant.getUserId(),
                 participant.getUsername(),
                 participant.getPosition(),
-                participant.getRoleIndex()
+                participant.getRoleIndex(),
+                participant.getStatus()
         );
 
         // Act

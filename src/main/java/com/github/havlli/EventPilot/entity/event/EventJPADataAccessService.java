@@ -2,6 +2,7 @@ package com.github.havlli.EventPilot.entity.event;
 
 import org.springframework.stereotype.Repository;
 
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -45,6 +46,11 @@ public class EventJPADataAccessService implements EventDAO {
     }
 
     @Override
+    public List<Event> getReminderCandidates(Instant reminderCutoff) {
+        return eventRepository.findReminderCandidates(reminderCutoff);
+    }
+
+    @Override
     public boolean existsById(String id) {
         return eventRepository.existsById(id);
     }
@@ -57,5 +63,10 @@ public class EventJPADataAccessService implements EventDAO {
     @Override
     public Optional<Event> findById(String id) {
         return eventRepository.findById(id);
+    }
+
+    @Override
+    public Optional<Event> findByIdForUpdate(String id) {
+        return eventRepository.findByIdForUpdate(id);
     }
 }

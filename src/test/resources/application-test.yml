@@ -1,0 +1,12 @@
+server:
+  shutdown: immediate
+
+spring:
+  main:
+    banner-mode: off
+  jpa:
+    open-in-view: false
+    show-sql: false
+    properties:
+      hibernate:
+        format_sql: false

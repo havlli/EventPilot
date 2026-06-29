@@ -62,7 +62,6 @@ class ParticipantControllerIT extends TestDatabaseContainer {
         String authorizationToken = signupUser("userOne", "password", "ama@ama.am");
 
         // Act
-        System.out.println(participantOne.getId());
         webTestClient.delete()
                 .uri(BASE_URI + "/" + participantOne.getId())
                 .accept(MediaType.APPLICATION_JSON)
@@ -156,18 +155,6 @@ class ParticipantControllerIT extends TestDatabaseContainer {
         Participant participant = new Participant(userId, username, 1, 1, event);
         event.getParticipants().add(participant);
         return participantRepository.save(participant);
-    }
-
-    private void printAll() {
-        System.out.println("Printing all...");
-        System.out.println("Guilds =====================");
-        guildRepository.findAll().forEach(System.out::println);
-        System.out.println("Embed Types =====================");
-        embedTypeRepository.findAll().forEach(System.out::println);
-        System.out.println("Events =================");
-        eventRepository.findAll().forEach(System.out::println);
-        System.out.println("Participants ===============");
-        participantRepository.findAll().forEach(System.out::println);
     }
 
     private void deleteAll() {

@@ -1,0 +1,12 @@
+{
+  "name": "close-event",
+  "description": "Close an event signup without deleting it.",
+  "options": [
+    {
+      "name": "message-id",
+      "description": "Discord message ID of the event signup",
+      "type": 3,
+      "required": true
+    }
+  ]
+}

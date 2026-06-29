@@ -18,6 +18,9 @@ class SessionRedisAccessServiceTest {
     private SessionRedisAccessService underTest;
     @Mock
     private StringRedisTemplate redisTemplateMock;
+    @Mock
+    private ValueOperations<String, String> valueOperationsMock;
+
     @BeforeEach
     void setUp() {
         autoCloseable = MockitoAnnotations.openMocks(this);
@@ -34,7 +37,6 @@ class SessionRedisAccessServiceTest {
         // Arrange
         String key = "key";
         String value = "value";
-        ValueOperations<String, String> valueOperationsMock = mock(ValueOperations.class);
         when(redisTemplateMock.opsForValue()).thenReturn(valueOperationsMock);
 
         // Act

@@ -388,8 +388,6 @@ public class EventControllerIT extends TestDatabaseContainer {
                 .returnResult()
                 .getResponseBody();
 
-        System.out.println(actual);
-
         // Assert
         assertThat(actual).hasFieldOrPropertyWithValue("name", expectedName);
         assertThat(actual).hasFieldOrPropertyWithValue("description", expectedDesc);

@@ -10,12 +10,14 @@ import discord4j.core.spec.MessageEditSpec;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.mockito.ArgumentCaptor;
 import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
 
+import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -27,6 +29,12 @@ class ParticipantServiceTest {
 
     @Mock
     private ParticipantDAO participantDAO;
+    @Mock
+    private EmbedGenerator embedGenerator;
+    @Mock
+    private EventService eventService;
+    @Mock
+    private GatewayDiscordClient client;
     @InjectMocks
     private ParticipantService underTest;
     private AutoCloseable autoCloseable;
@@ -112,6 +120,34 @@ class ParticipantServiceTest {
     }
 
     @Test
+    public void removeParticipantFromDiscordEvent_PromotesWaitlistedParticipant_WhenConfirmedSlotOpens() {
+        // Arrange
+        Event event = createEvent("1");
+        Participant confirmedParticipant = new Participant(1L, "1", "confirmed", 1, 1, event);
+        Participant waitlistedParticipant = new Participant(2L, "2", "waitlisted", 2, 2, event);
+        waitlistedParticipant.setStatus(ParticipantStatus.WAITLISTED);
+        event.getParticipants().addAll(List.of(confirmedParticipant, waitlistedParticipant));
+        when(participantDAO.findById(1L)).thenReturn(Optional.of(confirmedParticipant));
+
+        ParticipantService underTestSpy = spy(underTest);
+        doReturn(Mono.empty()).when(underTestSpy).updateDiscordMessage(any(Event.class));
+
+        // Act
+        boolean actual = underTestSpy.removeParticipantFromDiscordEvent(1L);
+
+        // Assert
+        assertThat(actual).isTrue();
+
+        ArgumentCaptor<Event> eventCaptor = ArgumentCaptor.forClass(Event.class);
+        verify(eventService, times(1)).saveEvent(eventCaptor.capture());
+
+        Event savedEvent = eventCaptor.getValue();
+        assertThat(savedEvent.getParticipants()).containsExactly(waitlistedParticipant);
+        assertThat(waitlistedParticipant.getStatus()).isEqualTo(ParticipantStatus.SIGNED_UP);
+        verify(underTestSpy, times(1)).updateDiscordMessage(any(Event.class));
+    }
+
+    @Test
     public void updateDiscordMessage() {
         // Arrange
         EventService eventServiceMock = mock(EventService.class);
@@ -134,5 +170,21 @@ class ParticipantServiceTest {
         StepVerifier.create(actual)
                 .expectSubscription()
                 .verifyComplete();
+    }
+
+    private Event createEvent(String memberSize) {
+        return new Event(
+                "10",
+                "name",
+                "description",
+                "author",
+                Instant.now().plusSeconds(3600),
+                "123456",
+                null,
+                memberSize,
+                new ArrayList<>(),
+                null,
+                null
+        );
     }
 }

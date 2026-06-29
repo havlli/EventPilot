@@ -1,10 +1,10 @@
 {
   "name": "delete-event",
-  "description": "Delete event by message ID",
+  "description": "Delete an event signup by message ID.",
   "options": [
     {
       "name": "message-id",
-      "description": "Message ID of the event",
+      "description": "Discord message ID of the event signup",
       "type": 3,
       "required": true
     }

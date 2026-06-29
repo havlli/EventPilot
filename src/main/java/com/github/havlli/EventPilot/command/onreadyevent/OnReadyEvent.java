@@ -39,16 +39,11 @@ public class OnReadyEvent implements SlashCommand {
     @Override
     public Mono<?> handle(Event event) {
         return initiateSequence()
-                .then(subscribeExistingInteractions())
                 .then(subscribeSchedulers());
     }
 
     private Mono<Void> subscribeSchedulers() {
         return scheduledTask.start();
-    }
-
-    private Mono<Void> subscribeExistingInteractions() {
-        return startupTask.subscribeEventInteractions();
     }
 
     private Flux<Guild> initiateSequence() {

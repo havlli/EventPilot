@@ -30,6 +30,11 @@ public class Event {
     private String instances;
     @Column(name = "member_size", nullable = false)
     private String memberSize;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status", nullable = false)
+    private EventStatus status = EventStatus.OPEN;
+    @Column(name = "reminder_sent", nullable = false)
+    private boolean reminderSent = false;
     @OneToMany(mappedBy = "event", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private List<Participant> participants;
     @ManyToOne
@@ -61,6 +66,8 @@ public class Event {
         this.destinationChannelId = destinationChannelId;
         this.instances = instances;
         this.memberSize = memberSize;
+        this.status = EventStatus.OPEN;
+        this.reminderSent = false;
         this.participants = participants;
         this.guild = guild;
         this.embedType = embedType;
@@ -75,6 +82,8 @@ public class Event {
         this.destinationChannelId = builder.destinationChannelId;
         this.instances = builder.instances;
         this.memberSize = builder.memberSize;
+        this.status = builder.status == null ? EventStatus.OPEN : builder.status;
+        this.reminderSent = builder.reminderSent;
         this.guild = builder.guild;
         this.embedType = builder.embedType;
         this.participants = builder.participants;
@@ -112,6 +121,22 @@ public class Event {
         return memberSize;
     }
 
+    public EventStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(EventStatus status) {
+        this.status = status;
+    }
+
+    public boolean isReminderSent() {
+        return reminderSent;
+    }
+
+    public void setReminderSent(boolean reminderSent) {
+        this.reminderSent = reminderSent;
+    }
+
     public List<Participant> getParticipants() {
         return participants;
     }
@@ -129,12 +154,12 @@ public class Event {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Event event = (Event) o;
-        return Objects.equals(eventId, event.eventId) && Objects.equals(name, event.name) && Objects.equals(description, event.description) && Objects.equals(author, event.author) && Objects.equals(dateTime, event.dateTime) && Objects.equals(destinationChannelId, event.destinationChannelId) && Objects.equals(instances, event.instances) && Objects.equals(memberSize, event.memberSize) && Objects.equals(participants, event.participants) && Objects.equals(guild, event.guild) && Objects.equals(embedType, event.embedType);
+        return reminderSent == event.reminderSent && Objects.equals(eventId, event.eventId) && Objects.equals(name, event.name) && Objects.equals(description, event.description) && Objects.equals(author, event.author) && Objects.equals(dateTime, event.dateTime) && Objects.equals(destinationChannelId, event.destinationChannelId) && Objects.equals(instances, event.instances) && Objects.equals(memberSize, event.memberSize) && status == event.status && Objects.equals(participants, event.participants) && Objects.equals(guild, event.guild) && Objects.equals(embedType, event.embedType);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(eventId, name, description, author, dateTime, destinationChannelId, instances, memberSize, participants, guild, embedType);
+        return Objects.hash(eventId, name, description, author, dateTime, destinationChannelId, instances, memberSize, status, reminderSent, participants, guild, embedType);
     }
 
     @Override
@@ -148,6 +173,8 @@ public class Event {
                 ", destinationChannelId='" + destinationChannelId + '\'' +
                 ", instances='" + instances + '\'' +
                 ", memberSize='" + memberSize + '\'' +
+                ", status=" + status +
+                ", reminderSent=" + reminderSent +
                 ", participants=" + participants.size() +
                 ", guild=" + guild.getId() +
                 ", embedType=" + embedType.getName() +
@@ -168,6 +195,8 @@ public class Event {
         private String destinationChannelId;
         private String instances;
         private String memberSize;
+        private EventStatus status = EventStatus.OPEN;
+        private boolean reminderSent = false;
         private Guild guild;
         private EmbedType embedType;
         private List<Participant> participants;
@@ -214,6 +243,16 @@ public class Event {
             return this;
         }
 
+        public Builder withStatus(EventStatus status) {
+            this.status = status;
+            return this;
+        }
+
+        public Builder withReminderSent(boolean reminderSent) {
+            this.reminderSent = reminderSent;
+            return this;
+        }
+
         public Builder withGuild(Guild guild) {
             this.guild = guild;
             return this;
@@ -246,6 +285,8 @@ public class Event {
             this.destinationChannelId = event.getDestinationChannelId();
             this.instances = event.getInstances();
             this.memberSize = event.getMemberSize();
+            this.status = event.getStatus();
+            this.reminderSent = event.isReminderSent();
             this.guild = event.getGuild();
             this.embedType = event.getEmbedType();
             this.participants = event.getParticipants();

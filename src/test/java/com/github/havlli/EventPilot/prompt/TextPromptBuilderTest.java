@@ -84,7 +84,7 @@ class TextPromptBuilderTest {
                 .messageCreateSpec(messageCreateSpec)
                 .withMessageCollector(messageCollectorMock)
                 .eventPredicate(event -> true)
-                .eventProcessor(event -> System.out.println("event processing..."))
+                .eventProcessor(event -> { })
                 .build();
 
         // Act
@@ -120,7 +120,7 @@ class TextPromptBuilderTest {
         ActionRow actionRow = mock(ActionRow.class);
         Mono<Message> selectMenuMessageMono = Mono.just(selectMenuMessage);
         when(interactionCallbackSpecDeferEditMono.then(selectMenuInteractionEventMock.editReply(InteractionReplyEditSpec.builder()
-                .components(List.of(actionRow))
+                .addAllComponents(List.of(actionRow))
                 .build()))
         ).thenReturn(selectMenuMessageMono);
 
@@ -133,7 +133,7 @@ class TextPromptBuilderTest {
                 .messageCreateSpec(messageCreateSpec)
                 .withMessageCollector(messageCollectorMock)
                 .eventPredicate(event -> true)
-                .eventProcessor(event -> System.out.println("event processing..."))
+                .eventProcessor(event -> { })
                 .build();
 
         // Act
@@ -178,7 +178,7 @@ class TextPromptBuilderTest {
                 .messageCreateSpec(messageCreateSpec)
                 .withMessageCollector(messageCollectorMock)
                 .eventPredicate(event -> true)
-                .eventProcessor(event -> System.out.println("event processing..."))
+                .eventProcessor(event -> { })
                 .build();
 
         // Act
@@ -220,7 +220,7 @@ class TextPromptBuilderTest {
                 .messageCreateSpec(messageCreateSpec)
                 .withMessageCollector(messageCollectorMock)
                 .eventPredicate(event -> true)
-                .eventProcessor(event -> System.out.println("event processing..."))
+                .eventProcessor(event -> { })
                 .build();
 
         // Act
@@ -262,7 +262,7 @@ class TextPromptBuilderTest {
                 .messageCreateSpec(messageCreateSpec)
                 .withMessageCollector(messageCollectorMock)
                 .eventPredicate(event -> true)
-                .eventProcessor(event -> System.out.println("event processing..."))
+                .eventProcessor(event -> { })
                 .build();
 
         // Act
@@ -297,7 +297,7 @@ class TextPromptBuilderTest {
         Message buttonMenuMessage = mock(Message.class);
         Mono<Message> buttonMenuMessageMono = Mono.just(buttonMenuMessage);
         when(interactionCallbackSpecDeferEditMono.then(buttonInteractionEventMock.editReply(InteractionReplyEditSpec.builder()
-                .components(List.of())
+                .addAllComponents(List.of())
                 .build()))
         ).thenReturn(buttonMenuMessageMono);
 
@@ -307,7 +307,7 @@ class TextPromptBuilderTest {
                 .messageCreateSpec(messageCreateSpec)
                 .withMessageCollector(messageCollectorMock)
                 .eventPredicate(event -> true)
-                .eventProcessor(event -> System.out.println("event processing..."))
+                .eventProcessor(event -> { })
                 .build();
 
         // Act
@@ -351,7 +351,7 @@ class TextPromptBuilderTest {
                 .messageCreateSpec(messageCreateSpec)
                 .withMessageCollector(messageCollectorMock)
                 .eventPredicate(event -> true)
-                .eventProcessor(event -> System.out.println("event processing..."))
+                .eventProcessor(event -> { })
                 .build();
 
         // Act
@@ -393,7 +393,7 @@ class TextPromptBuilderTest {
                 .messageCreateSpec(messageCreateSpec)
                 .withMessageCollector(messageCollectorMock)
                 .eventPredicate(event -> true)
-                .eventProcessor(event -> System.out.println("event processing..."))
+                .eventProcessor(event -> { })
                 .build();
 
         // Act
@@ -435,7 +435,7 @@ class TextPromptBuilderTest {
                 .messageCreateSpec(messageCreateSpec)
                 .withMessageCollector(messageCollectorMock)
                 .eventPredicate(event -> true)
-                .eventProcessor(event -> System.out.println("event processing..."))
+                .eventProcessor(event -> { })
                 .build();
 
         // Act
@@ -457,7 +457,7 @@ class TextPromptBuilderTest {
                 .messageCreateSpec(messageCreateSpec)
                 .withMessageCollector(messageCollectorMock)
                 .eventPredicate(event -> true)
-                .eventProcessor(event -> System.out.println("event processing..."))
+                .eventProcessor(event -> { })
                 .build();
 
         // Assert
@@ -479,7 +479,7 @@ class TextPromptBuilderTest {
                 .withMessageCollector(messageCollectorMock)
                 .actionRowComponent(actionRowComponentMock)
                 .eventPredicate(event -> true)
-                .eventProcessor(event -> System.out.println("event processing..."))
+                .eventProcessor(event -> { })
                 .build();
 
         // Assert
@@ -499,7 +499,7 @@ class TextPromptBuilderTest {
                 .messageCreateSpec(messageCreateSpec)
                 .withMessageCollector(messageCollectorMock)
                 .eventPredicate(event -> true)
-                .eventProcessor(event -> System.out.println("event processing..."))
+                .eventProcessor(event -> { })
                 .build();
 
         // Assert
@@ -519,7 +519,7 @@ class TextPromptBuilderTest {
                 .messageCreateSpec(messageCreateSpec)
                 .withMessageCollector(messageCollectorMock)
                 .eventPredicate(event -> true)
-                .eventProcessor(event -> System.out.println("event processing..."))
+                .eventProcessor(event -> { })
                 .build())
                 .isInstanceOf(NullPointerException.class)
                 .hasMessage("messageChannel is required");
@@ -533,7 +533,7 @@ class TextPromptBuilderTest {
                 .messageChannel(messageChannelMono)
                 .withMessageCollector(messageCollectorMock)
                 .eventPredicate(event -> true)
-                .eventProcessor(event -> System.out.println("event processing..."))
+                .eventProcessor(event -> { })
                 .build())
                 .isInstanceOf(NullPointerException.class)
                 .hasMessage("messageCreateSpec is required");
@@ -561,7 +561,7 @@ class TextPromptBuilderTest {
                 .messageChannel(messageChannelMono)
                 .messageCreateSpec(messageCreateSpec)
                 .withMessageCollector(messageCollectorMock)
-                .eventProcessor(event -> System.out.println("Processing..."))
+                .eventProcessor(event -> { })
                 .build())
                 .isInstanceOf(NullPointerException.class)
                 .hasMessage("eventPredicate is required");
@@ -574,7 +574,7 @@ class TextPromptBuilderTest {
                 .messageChannel(messageChannelMono)
                 .messageCreateSpec(messageCreateSpec)
                 .withMessageCollector(messageCollectorMock)
-                .eventProcessor(event -> System.out.println("Processing..."))
+                .eventProcessor(event -> { })
                 .eventPredicate(event -> true)
                 .build())
                 .isInstanceOf(NullPointerException.class)
@@ -589,7 +589,7 @@ class TextPromptBuilderTest {
                 .messageChannel(messageChannelMono)
                 .messageCreateSpec(messageCreateSpec)
                 .withMessageCollector(messageCollectorMock)
-                .eventProcessor(event -> System.out.println("Processing..."))
+                .eventProcessor(event -> { })
                 .eventPredicate(event -> true)
                 .build())
                 .isInstanceOf(NullPointerException.class)
@@ -609,7 +609,7 @@ class TextPromptBuilderTest {
                 .messageCreateSpec(messageCreateSpec)
                 .withMessageCollector(messageCollectorMock)
                 .eventPredicate(event -> true)
-                .eventProcessor(event -> System.out.println("event processing..."))
+                .eventProcessor(event -> { })
                 .build())
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("%s not supported operation for %s".formatted(promptTypeDeferReply, messageCreateEventClass));
@@ -621,7 +621,7 @@ class TextPromptBuilderTest {
                 .messageCreateSpec(messageCreateSpec)
                 .withMessageCollector(messageCollectorMock)
                 .eventPredicate(event -> true)
-                .eventProcessor(event -> System.out.println("event processing..."))
+                .eventProcessor(event -> { })
                 .build())
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("%s not supported operation for %s".formatted(promptTypeDeferEdit, messageCreateEventClass));
@@ -633,13 +633,14 @@ class TextPromptBuilderTest {
                 .messageCreateSpec(messageCreateSpec)
                 .withMessageCollector(messageCollectorMock)
                 .eventPredicate(event -> true)
-                .eventProcessor(event -> System.out.println("event processing..."))
+                .eventProcessor(event -> { })
                 .build())
                 .isInstanceOf(IllegalStateException.class)
                 .hasMessage("%s not supported operation for %s".formatted(promptTypeDeleteOnResponse, messageCreateEventClass));
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     void handleErrorThenRepeatInteraction() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         // Arrange
         Class<?> underTestClass = TextPromptBuilder.class;
@@ -659,7 +660,7 @@ class TextPromptBuilderTest {
                 .withMessageCollector(messageCollectorMock)
                 .onErrorRepeat(RuntimeException.class, "errormessage")
                 .eventPredicate(event -> true)
-                .eventProcessor(event -> System.out.println("event processing..."))
+                .eventProcessor(event -> { })
                 .build();
 
         TextPromptBuilder<MessageCreateEvent> underTestSpy = spy(textPromptBuilder);
@@ -677,6 +678,7 @@ class TextPromptBuilderTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     void handleResponse_AppendsErrorHandler_WhenErrorMessageIsSet() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         // Arrange
         Class<MessageCreateEvent> eventClass = MessageCreateEvent.class;
@@ -692,7 +694,7 @@ class TextPromptBuilderTest {
                 .withMessageCollector(messageCollectorMock)
                 .onErrorRepeat(RuntimeException.class, "errormessage")
                 .eventPredicate(event -> true)
-                .eventProcessor(event -> System.out.println("event processing..."))
+                .eventProcessor(event -> { })
                 .build();
 
         TextPromptBuilder<MessageCreateEvent> underTestSpy = spy(textPromptBuilder);

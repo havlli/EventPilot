@@ -7,15 +7,18 @@ import com.github.havlli.EventPilot.entity.event.EventService;
 import com.github.havlli.EventPilot.generator.EmbedGenerator;
 import discord4j.common.util.Snowflake;
 import discord4j.core.GatewayDiscordClient;
+import discord4j.core.object.entity.channel.MessageChannel;
 import discord4j.core.object.component.LayoutComponent;
 import discord4j.core.object.entity.Message;
 import discord4j.core.spec.MessageEditSpec;
+import discord4j.core.spec.MessageCreateSpec;
 import discord4j.rest.http.client.ClientException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import reactor.core.publisher.Flux;
 import reactor.core.publisher.Mono;
+import reactor.core.scheduler.Schedulers;
 
 import java.util.List;
 import java.util.function.Function;
@@ -46,10 +49,16 @@ public class DiscordService {
                 .flatMap(this::deactivateEvent);
     }
 
+    public Flux<Message> sendEventReminders(List<Event> events) {
+        return Flux.fromIterable(events)
+                .flatMap(this::sendEventReminder);
+    }
+
     public Mono<Message> updateEventMessage(Event event) {
         return client.getMessageById(Snowflake.of(event.getDestinationChannelId()), Snowflake.of(event.getEventId()))
                 .flatMap(message -> message.edit(MessageEditSpec.builder()
                         .addEmbed(embedGenerator.generateEmbed(event))
+                        .addAllComponents(embedGenerator.generateComponents(event))
                         .build()));
     }
 
@@ -58,6 +67,19 @@ public class DiscordService {
                 .flatMap(Message::delete)
                 .onErrorResume(error -> {
                     LOG.error("Could not delete message %s in channel %s".formatted(event.getEventId(), event.getDestinationChannelId()));
+                    return Mono.empty();
+                });
+    }
+
+    private Mono<Message> sendEventReminder(Event event) {
+        return client.getChannelById(Snowflake.of(event.getDestinationChannelId()))
+                .ofType(MessageChannel.class)
+                .flatMap(channel -> channel.createMessage(MessageCreateSpec.builder()
+                        .addEmbed(embedGenerator.generateReminderEmbed(event))
+                        .build()))
+                .flatMap(message -> markReminderSent(event.getEventId()).thenReturn(message))
+                .onErrorResume(error -> {
+                    LOG.error("Could not send reminder for event %s".formatted(event.getEventId()), error);
                     return Mono.empty();
                 });
     }
@@ -72,13 +94,13 @@ public class DiscordService {
     }
 
     private Mono<Message> handleMessage(Message message) {
-        return isDeactivated(message) ? completeSignal() : deactivateMessage(message);
+        return isDeactivated(message) ? markEventExpired(message).then(completeSignal()) : deactivateMessage(message);
     }
 
     private Function<ClientException, Mono<? extends Message>> handleMessageNotFound(Snowflake messageId, Snowflake channelId) {
         return e -> {
             LOG.error("Message %s was not found in channel %s".formatted(messageId.asString(), channelId.asString()));
-            return completeSignal();
+            return markEventExpired(messageId.asString()).then(completeSignal());
         };
     }
 
@@ -97,11 +119,21 @@ public class DiscordService {
 
     private Mono<Message> deactivateMessage(Message message) {
         return message.edit(editMessageWithDeactivatedComponent())
-                .doOnSuccess(this::deleteEventFromDatabase);
+                .flatMap(updatedMessage -> markEventExpired(updatedMessage).thenReturn(updatedMessage));
     }
 
-    private void deleteEventFromDatabase(Message message) {
-        eventService.deleteEventById(message.getId().asString());
+    private Mono<Boolean> markEventExpired(Message message) {
+        return markEventExpired(message.getId().asString());
+    }
+
+    private Mono<Boolean> markEventExpired(String eventId) {
+        return Mono.fromSupplier(() -> eventService.markExpiredIfExists(eventId))
+                .subscribeOn(Schedulers.boundedElastic());
+    }
+
+    private Mono<Boolean> markReminderSent(String eventId) {
+        return Mono.fromSupplier(() -> eventService.markReminderSentIfExists(eventId))
+                .subscribeOn(Schedulers.boundedElastic());
     }
 
     private MessageEditSpec editMessageWithDeactivatedComponent() {

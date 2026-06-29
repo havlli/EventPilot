@@ -7,6 +7,7 @@ import org.mockito.InjectMocks;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
+import java.time.Instant;
 import java.util.List;
 
 import static org.mockito.Mockito.*;
@@ -86,6 +87,18 @@ class EventJPADataAccessServiceTest {
     }
 
     @Test
+    void fetchReminderCandidates() {
+        // Arrange
+        Instant reminderCutoff = Instant.now();
+
+        // Act
+        underTest.getReminderCandidates(reminderCutoff);
+
+        // Assert
+        verify(eventRepository, times(1)).findReminderCandidates(reminderCutoff);
+    }
+
+    @Test
     void deleteById() {
         // Arrange
         String eventId = "1234";
@@ -119,5 +132,17 @@ class EventJPADataAccessServiceTest {
 
         // Assert
         verify(eventRepository, times(1)).findById(eventId);
+    }
+
+    @Test
+    void findByIdForUpdate() {
+        // Arrange
+        String eventId = "1234";
+
+        // Act
+        underTest.findByIdForUpdate(eventId);
+
+        // Assert
+        verify(eventRepository, times(1)).findByIdForUpdate(eventId);
     }
 }

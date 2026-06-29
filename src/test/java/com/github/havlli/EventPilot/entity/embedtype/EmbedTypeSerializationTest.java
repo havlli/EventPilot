@@ -44,13 +44,13 @@ class EmbedTypeSerializationTest {
     @Test
     void serializeMap() throws JsonProcessingException {
         // Arrange
-        HashMap<Integer, String> mapMock = mock(HashMap.class);
+        HashMap<Integer, String> map = new HashMap<>();
 
         // Act
-        underTest.serializeMap(mapMock);
+        underTest.serializeMap(map);
 
         // Assert
-        verify(objectMapperMock, only()).writeValueAsString(mapMock);
+        verify(objectMapperMock, only()).writeValueAsString(map);
     }
 
     @Test
@@ -62,6 +62,9 @@ class EmbedTypeSerializationTest {
         underTest.deserializeMap(structure);
 
         // Assert
-        verify(objectMapperMock, only()).readValue(eq(structure), any(TypeReference.class));
+        verify(objectMapperMock, only()).readValue(
+                eq(structure),
+                org.mockito.ArgumentMatchers.<TypeReference<HashMap<Integer, String>>>any()
+        );
     }
 }

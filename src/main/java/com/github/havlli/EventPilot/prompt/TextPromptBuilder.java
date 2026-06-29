@@ -182,7 +182,7 @@ public class TextPromptBuilder<T extends Event> {
 
     private Mono<Message> editResponseWithComponents(ComponentInteractionEvent interactionEvent, List<TopLevelMessageComponent> layoutComponents) {
         return interactionEvent.editReply(InteractionReplyEditSpec.builder()
-                .components(layoutComponents)
+                .addAllComponents(layoutComponents)
                 .build());
     }
 

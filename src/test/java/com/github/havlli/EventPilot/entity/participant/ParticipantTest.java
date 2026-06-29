@@ -27,7 +27,7 @@ class ParticipantTest {
     void Participant_toString() {
         // Arrange
         when(eventMock.getEventId()).thenReturn("12345");
-        String expected = "Participant{id=1, userId='12345', username='username', position=1, roleIndex=1, event=12345}";
+        String expected = "Participant{id=1, userId='12345', username='username', position=1, roleIndex=1, status=SIGNED_UP, event=12345}";
 
         // Act
         String actual = underTest.toString();

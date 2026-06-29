@@ -45,7 +45,7 @@ public class LogbackConfig {
     }
 
     private void buildLayoutEncoder(LoggerContext loggerContext) {
-        layoutEncoder.setPattern("%clr(%d{yyyy-MM-dd HH:mm:ss.SSS}){faint} %clr(%5p) %clr(18971){magenta} %clr(---){faint} %clr([%15.15t]){faint} %clr(%-40.40logger{39}){cyan} %clr(:){faint} %m%n%wEx");
+        layoutEncoder.setPattern("%d{yyyy-MM-dd HH:mm:ss.SSS} %5p --- [%15.15t] %-40.40logger{39} : %m%n%ex");
         layoutEncoder.setContext(loggerContext);
         layoutEncoder.start();
     }

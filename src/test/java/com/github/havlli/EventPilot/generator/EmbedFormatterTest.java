@@ -1,6 +1,7 @@
 package com.github.havlli.EventPilot.generator;
 
 import com.github.havlli.EventPilot.entity.event.Event;
+import com.github.havlli.EventPilot.entity.event.EventStatus;
 import com.github.havlli.EventPilot.entity.participant.Participant;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -10,6 +11,7 @@ import org.mockito.MockitoAnnotations;
 import java.time.Instant;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -73,6 +75,21 @@ class EmbedFormatterTest {
 
         // Assert
         assertThat(actual).isEqualTo(expected);
+    }
+
+    @Test
+    void status_ReturnsHumanReadableStatus() {
+        assertThat(underTest.status(EventStatus.OPEN)).isEqualTo("Open");
+        assertThat(underTest.status(EventStatus.CLOSED)).isEqualTo("Closed");
+        assertThat(underTest.status(EventStatus.CANCELLED)).isEqualTo("Cancelled");
+        assertThat(underTest.status(EventStatus.EXPIRED)).isEqualTo("Expired");
+        assertThat(underTest.status(null)).isEqualTo("Open");
+    }
+
+    @Test
+    void rosterSummary_ReturnsConfirmedCapacityAndWaitlistCount() {
+        assertThat(underTest.rosterSummary(8, "10", 2))
+                .isEqualTo("8/10 confirmed, 2 waitlisted");
     }
 
     @Test
@@ -217,5 +234,24 @@ class EmbedFormatterTest {
 
         assertThat(numberOfBreaks).isEqualTo(1L);
         assertThat(actual).contains(fieldName + " (0):");
+    }
+
+    @Test
+    void createWaitlistField_ReturnsPositionUsernameAndPreferredRole() {
+        // Arrange
+        Event eventMock = mock(Event.class);
+        Participant participantOne = new Participant(1L, "123", "userOne", 1, 1, eventMock);
+        Participant participantTwo = new Participant(2L, "234", "userTwo", 2, 99, eventMock);
+
+        // Act
+        String actual = underTest.createWaitlistField(
+                List.of(participantOne, participantTwo),
+                Map.of(1, "Tank")
+        );
+
+        // Assert
+        assertThat(actual).contains("`1`userOne - Tank");
+        assertThat(actual).contains("`2`userTwo - Role 99");
+        assertThat(actual.lines()).hasSize(2);
     }
 }

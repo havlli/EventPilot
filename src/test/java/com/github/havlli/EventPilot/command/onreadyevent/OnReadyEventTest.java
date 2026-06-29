@@ -43,7 +43,6 @@ class OnReadyEventTest {
         // Arrange
         Guild guildMock = mock(Guild.class);
         when(startupTaskMock.handleNewGuilds()).thenReturn(Flux.just(guildMock));
-        when(startupTaskMock.subscribeEventInteractions()).thenReturn(Mono.empty());
         when(scheduledTaskMock.start()).thenReturn(Mono.empty());
 
         // Act
@@ -51,7 +50,6 @@ class OnReadyEventTest {
 
         // Assert
         verify(startupTaskMock, times(1)).handleNewGuilds();
-        verify(startupTaskMock, times(1)).subscribeEventInteractions();
         verify(scheduledTaskMock, times(1)).start();
         StepVerifier.create(actualMono)
                 .verifyComplete();

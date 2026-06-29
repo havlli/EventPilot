@@ -1,9 +1,6 @@
 package com.github.havlli.EventPilot.command.onreadyevent;
 
-import com.github.havlli.EventPilot.entity.event.Event;
-import com.github.havlli.EventPilot.entity.event.EventService;
 import com.github.havlli.EventPilot.entity.guild.GuildService;
-import com.github.havlli.EventPilot.generator.EmbedGenerator;
 import discord4j.common.util.Snowflake;
 import discord4j.core.GatewayDiscordClient;
 import discord4j.core.object.entity.Guild;
@@ -13,10 +10,7 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import reactor.core.publisher.Flux;
-import reactor.core.publisher.Mono;
 import reactor.test.StepVerifier;
-
-import java.util.List;
 
 import static org.mockito.Mockito.*;
 
@@ -25,79 +19,19 @@ class StartupTaskTest {
     private AutoCloseable autoCloseable;
     private StartupTask underTest;
     @Mock
-    private EventService eventServiceMock;
-    @Mock
     private GuildService guildServiceMock;
-    @Mock
-    private EmbedGenerator embedGeneratorMock;
     @Mock
     private GatewayDiscordClient clientMock;
 
     @BeforeEach
     void setUp() {
         autoCloseable = MockitoAnnotations.openMocks(this);
-        underTest = new StartupTask(eventServiceMock, guildServiceMock, embedGeneratorMock, clientMock);
+        underTest = new StartupTask(guildServiceMock, clientMock);
     }
 
     @AfterEach
     void tearDown() throws Exception {
         autoCloseable.close();
-    }
-
-    @Test
-    void subscribeEventInteractions_subscribeInteractionRunsForEachEvent_WhenMultipleEventsPassed() {
-        // Arrange
-        Event eventOneMock = mock(Event.class);
-        Event eventTwoMock = mock(Event.class);
-        Event eventThreeMock = mock(Event.class);
-        Event eventFourMock = mock(Event.class);
-        List<Event> events = List.of(eventOneMock, eventTwoMock, eventThreeMock, eventFourMock);
-        when(eventServiceMock.getAllEvents()).thenReturn(events);
-
-        // Act
-        Mono<Void> actualMono = underTest.subscribeEventInteractions();
-
-        // Assert
-        StepVerifier.create(actualMono)
-                .expectSubscription()
-                .verifyComplete();
-        verify(embedGeneratorMock, times(events.size())).subscribeInteractions(any());
-    }
-
-    @Test
-    void subscribeEventInteractions_subscribeInteractionDoesNotRun_WhenNoEventPassed() {
-        // Arrange
-        List<Event> events = List.of();
-        when(eventServiceMock.getAllEvents()).thenReturn(events);
-
-        // Act
-        Mono<Void> actualMono = underTest.subscribeEventInteractions();
-
-        // Assert
-        StepVerifier.create(actualMono)
-                .expectSubscription()
-                .verifyComplete();
-        verifyNoInteractions(embedGeneratorMock);
-    }
-
-    @Test
-    void subscribeEventInteractions_subscribesOnlyOnce_WhenCalledRepeatedly() {
-        // Arrange
-        Event eventMock = mock(Event.class);
-        List<Event> events = List.of(eventMock);
-        when(eventServiceMock.getAllEvents()).thenReturn(events);
-
-        // Act
-        StepVerifier.create(underTest.subscribeEventInteractions())
-                .expectSubscription()
-                .verifyComplete();
-        StepVerifier.create(underTest.subscribeEventInteractions())
-                .expectSubscription()
-                .verifyComplete();
-
-        // Assert
-        verify(eventServiceMock, times(1)).getAllEvents();
-        verify(embedGeneratorMock, times(1)).subscribeInteractions(eventMock);
     }
 
     @Test

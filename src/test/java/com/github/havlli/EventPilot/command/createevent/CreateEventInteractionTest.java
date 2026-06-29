@@ -341,6 +341,7 @@ class CreateEventInteractionTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     void promptName() {
         // Arrange
         TextPromptBuilder.Builder<MessageCreateEvent> promptBuilderMock = mock(TextPromptBuilder.Builder.class);
@@ -366,6 +367,7 @@ class CreateEventInteractionTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     void promptDescription() {
         // Arrange
         TextPromptBuilder.Builder<MessageCreateEvent> promptBuilderMock = mock(TextPromptBuilder.Builder.class);
@@ -391,6 +393,7 @@ class CreateEventInteractionTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     void promptDateTime() {
         // Arrange
         TextPromptBuilder.Builder<MessageCreateEvent> promptBuilderMock = mock(TextPromptBuilder.Builder.class);
@@ -419,6 +422,7 @@ class CreateEventInteractionTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     void promptEmbedType_CollectsAllEmbedTypesAndCreatesPrompt() {
         // Arrange
         EmbedType embedType = EmbedType.builder().withName("test").withStructure("test").build();
@@ -448,6 +452,7 @@ class CreateEventInteractionTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     void promptMemberSize() {
         // Arrange
         TextPromptBuilder.Builder<SelectMenuInteractionEvent> promptBuilderMock = mock(TextPromptBuilder.Builder.class);
@@ -474,6 +479,7 @@ class CreateEventInteractionTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     void promptDestinationChannel() {
         // Arrange
         TextPromptBuilder.Builder<SelectMenuInteractionEvent> promptBuilderMock = mock(TextPromptBuilder.Builder.class);
@@ -513,6 +519,7 @@ class CreateEventInteractionTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     void promptConfirmationAndDeferReply() {
         // Arrange
         TextPromptBuilder.Builder<ButtonInteractionEvent> promptBuilderMock = mock(TextPromptBuilder.Builder.class);
@@ -541,6 +548,7 @@ class CreateEventInteractionTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     void finalizeProcess() {
         // Arrange
         Event.Builder builderMock = mock(Event.Builder.class);
@@ -576,7 +584,6 @@ class CreateEventInteractionTest {
         List<TopLevelMessageComponent> layoutComponents = List.of();
         when(embedGeneratorMock.generateComponents(eventMock)).thenReturn(layoutComponents);
 
-        doNothing().when(embedGeneratorMock).subscribeInteractions(eventMock);
         doNothing().when(eventServiceMock).saveEvent(eventMock);
 
         when(messageMock.edit(any(MessageEditSpec.class))).thenReturn(Mono.empty());
@@ -592,6 +599,7 @@ class CreateEventInteractionTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     void testPrivateProcessingMethods() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         // Arrange
         Class<?> underTestClass = CreateEventInteraction.class;
@@ -649,6 +657,7 @@ class CreateEventInteractionTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     void testSendMessageToUserAndRepeatOnException() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         // Arrange
         Class<?> underTestClass = CreateEventInteraction.class;

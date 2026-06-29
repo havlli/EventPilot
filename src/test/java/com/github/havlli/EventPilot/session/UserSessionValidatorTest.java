@@ -67,7 +67,7 @@ class UserSessionValidatorTest {
     @Test
     void validate_ReturnsSessionAlreadyActiveMessage_WhenUserSessionIsEmpty() {
         // Arrange
-        Mono<Message> followupMessageMock = mock(Mono.class);
+        Mono<Message> followupMessage = Mono.empty();
         ChatInputInteractionEvent eventMock = mock(ChatInputInteractionEvent.class);
         Interaction interactionMock = mock(Interaction.class);
         when(eventMock.getInteraction()).thenReturn(interactionMock);
@@ -79,7 +79,7 @@ class UserSessionValidatorTest {
         when(userSessionServiceMock.createUserSession("1234", "test")).thenReturn(Optional.empty());
 
         // Act
-        underTest.validateThenWrap(followupMessageMock, eventMock);
+        underTest.validateThenWrap(followupMessage, eventMock);
 
         // Assert
         verify(messageCreatorMock, times(1)).sessionAlreadyActive(eventMock);

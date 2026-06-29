@@ -23,11 +23,10 @@ import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.stream.Collectors;
 
 import static org.assertj.core.api.Assertions.assertThat;
 
-@DataJpaTest
+@DataJpaTest(showSql = false)
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
 class EventRepositoryIT extends TestDatabaseContainer {
@@ -65,8 +64,6 @@ class EventRepositoryIT extends TestDatabaseContainer {
         Instant actualJPQLQuery = testRepository.selectCurrentTimestamp();
         Instant afterQuery = Instant.now();
 
-        System.out.printf("beforeQuery = %s%nafterQuery = %s%nactualNative = %s%nactualJPQL = %s%nactualJdbc = %s%n",
-                beforeQuery, afterQuery, actualNativeQuery, actualJPQLQuery, actualJdbcQuery);
         // Assert
         assertTimestampWithinQueryWindow(actualNativeQuery, beforeQuery, afterQuery);
         assertTimestampWithinQueryWindow(actualJPQLQuery, beforeQuery, afterQuery);
@@ -145,17 +142,6 @@ class EventRepositoryIT extends TestDatabaseContainer {
         // Act
         List<Event> actual = underTest.findAllWithDatetimeBeforeCurrentTime();
 
-        String collectActual = actual.stream()
-                .map(e -> String.format("\t{ %s - %s }", e.getName(), e.getDateTime()))
-                .collect(Collectors.joining(", \n"));
-        String actualPrint = String.format("""
-                        instantNow = { %s }
-                        actualList = [%n %s %n]
-                        """,
-                instantNow,
-                collectActual);
-        System.out.println(actualPrint);
-
         assertThat(actual).containsOnly(fetchedExpiredEvent1, fetchedExpiredEvent2);
         assertThat(actual).doesNotContain(fetchedValidEvent);
     }
@@ -164,9 +150,6 @@ class EventRepositoryIT extends TestDatabaseContainer {
     public void findAllWithDatetimeBeforeCurrentTime_ReturnsListOfExpiredEvents_WhenOffsetThreeSeconds() throws SQLException {
         // Arrange
         Instant instantNow = timeTester.getInstantNowFromSystem();
-        Instant jdbcTimeAfterInstantNow = timeTester.getCurrentTimestampUsingJdbc();
-        Long differenceBetweenSystemAndJdbc = timeTester.calculateTimeDifference.apply(instantNow, jdbcTimeAfterInstantNow);
-        System.out.printf("Difference between System Instant.now() and Jdbc CURRENT_TIMESTAMP%n after Instant.Now() invoked - %dms%n", differenceBetweenSystemAndJdbc);
 
         Guild guild = new Guild("1", "guild");
 
@@ -230,25 +213,6 @@ class EventRepositoryIT extends TestDatabaseContainer {
         // Act
         List<Event> actual = underTest.findAllWithDatetimeBeforeCurrentTime();
 
-        Instant jdbcTimeAfterQueryExecuted = timeTester.getCurrentTimestampUsingJdbc();
-        differenceBetweenSystemAndJdbc = timeTester.calculateTimeDifference.apply(instantNow, jdbcTimeAfterQueryExecuted);
-        System.out.printf("Difference between System Instant.now() and Jdbc CURRENT_TIMESTAMP%n after Query executed %dms%n", differenceBetweenSystemAndJdbc);
-
-        String collectActual = actual.stream()
-                .map(e -> String.format("\t{ %s - %s | difference between JDBC and Event dateTime - %dms }",
-                                e.getName(),
-                                e.getDateTime(),
-                                timeTester.calculateTimeDifference.apply(jdbcTimeAfterQueryExecuted, e.getDateTime())
-                        )
-                )
-                .collect(Collectors.joining(", \n"));
-        System.out.printf("""
-                        instantNow = { %s }
-                        actualList = [%n %s %n]
-                        """,
-                instantNow,
-                collectActual
-        );
         assertThat(actual).containsOnly(fetchedExpiredEvent1, fetchedExpiredEvent2);
         assertThat(actual).doesNotContain(fetchedValidEvent);
     }
@@ -257,9 +221,6 @@ class EventRepositoryIT extends TestDatabaseContainer {
     public void findAllWithDatetimeBeforeCurrentTime_ReturnsListOfExpiredEvents_WhenOffsetTwoSeconds() throws SQLException {
         // Arrange
         Instant instantNow = timeTester.getInstantNowFromSystem();
-        Instant jdbcTimeAfterInstantNow = timeTester.getCurrentTimestampUsingJdbc();
-        Long differenceBetweenSystemAndJdbc = timeTester.calculateTimeDifference.apply(instantNow, jdbcTimeAfterInstantNow);
-        System.out.printf("Difference between System Instant.now() and Jdbc CURRENT_TIMESTAMP%n after Instant.Now() invoked - %dms%n", differenceBetweenSystemAndJdbc);
 
         Guild guild = new Guild("1", "guild");
 
@@ -322,27 +283,145 @@ class EventRepositoryIT extends TestDatabaseContainer {
 
         // Act
         List<Event> actual = underTest.findAllWithDatetimeBeforeCurrentTime();
-        Instant jdbcTimeAfterQueryExecuted = timeTester.getCurrentTimestampUsingJdbc();
-        differenceBetweenSystemAndJdbc = timeTester.calculateTimeDifference.apply(instantNow, jdbcTimeAfterQueryExecuted);
-        System.out.printf("Difference between System Instant.now() and Jdbc CURRENT_TIMESTAMP%n after Query executed %dms%n", differenceBetweenSystemAndJdbc);
-
-        String collectActual = actual.stream()
-                .map(e -> String.format("\t{ %s - %s | difference between JDBC and Event dateTime - %dms }",
-                                e.getName(),
-                                e.getDateTime(),
-                                timeTester.calculateTimeDifference.apply(jdbcTimeAfterQueryExecuted, e.getDateTime())
-                        )
-                )
-                .collect(Collectors.joining(", \n"));
-        System.out.printf("""
-                        instantNow = { %s }
-                        actualList = [%n %s %n]
-                        """,
-                instantNow,
-                collectActual
-        );
         assertThat(actual).containsOnly(fetchedExpiredEvent1, fetchedExpiredEvent2);
         assertThat(actual).doesNotContain(fetchedValidEvent);
+    }
+
+    @Test
+    public void findAllWithDatetimeBeforeCurrentTime_ReturnsOnlyOpenAndClosedExpiredEvents() {
+        // Arrange
+        Instant instantNow = timeTester.getInstantNowFromSystem();
+        Guild guild = new Guild("1", "guild");
+        Instant expiredDateTime = instantNow.minus(1, ChronoUnit.MINUTES);
+
+        List<Event> events = new ArrayList<>();
+        EmbedType embedType = new EmbedType(
+                1L,
+                "test",
+                "{\"-1\":\"Absence\",\"-2\":\"Late\",\"1\":\"Tank\",\"-3\":\"Tentative\",\"2\":\"Melee\",\"3\":\"Ranged\",\"4\":\"Healer\",\"5\":\"Support\"}",
+                events
+        );
+
+        Event openEvent = new Event(
+                "111",
+                "open",
+                "description",
+                "12345",
+                expiredDateTime,
+                "123456",
+                null,
+                "15",
+                new ArrayList<>(),
+                guild,
+                embedType);
+        openEvent.setStatus(EventStatus.OPEN);
+        Event fetchedOpenEvent = saveEventToDatabase(openEvent, guild, embedType);
+
+        Event closedEvent = new Event(
+                "222",
+                "closed",
+                "description",
+                "12345",
+                expiredDateTime,
+                "123456",
+                null,
+                "15",
+                new ArrayList<>(),
+                guild,
+                embedType);
+        closedEvent.setStatus(EventStatus.CLOSED);
+        Event fetchedClosedEvent = saveEventToDatabase(closedEvent, guild, embedType);
+
+        Event cancelledEvent = new Event(
+                "333",
+                "cancelled",
+                "description",
+                "12345",
+                expiredDateTime,
+                "123456",
+                null,
+                "15",
+                new ArrayList<>(),
+                guild,
+                embedType);
+        cancelledEvent.setStatus(EventStatus.CANCELLED);
+        Event fetchedCancelledEvent = saveEventToDatabase(cancelledEvent, guild, embedType);
+
+        Event expiredEvent = new Event(
+                "444",
+                "expired",
+                "description",
+                "12345",
+                expiredDateTime,
+                "123456",
+                null,
+                "15",
+                new ArrayList<>(),
+                guild,
+                embedType);
+        expiredEvent.setStatus(EventStatus.EXPIRED);
+        Event fetchedExpiredEvent = saveEventToDatabase(expiredEvent, guild, embedType);
+
+        // Act
+        List<Event> actual = underTest.findAllWithDatetimeBeforeCurrentTime();
+
+        // Assert
+        assertThat(actual).containsOnly(fetchedOpenEvent, fetchedClosedEvent);
+        assertThat(actual).doesNotContain(fetchedCancelledEvent, fetchedExpiredEvent);
+    }
+
+    @Test
+    public void findReminderCandidates_ReturnsOpenAndClosedUnremindedFutureEventsInsideCutoff() {
+        // Arrange
+        Instant instantNow = timeTester.getInstantNowFromSystem();
+        Instant reminderCutoff = instantNow.plus(60, ChronoUnit.MINUTES);
+
+        Guild guild = new Guild("1", "guild");
+        List<Event> events = new ArrayList<>();
+        EmbedType embedType = new EmbedType(
+                1L,
+                "test",
+                "{\"-1\":\"Absence\",\"-2\":\"Late\",\"1\":\"Tank\",\"-3\":\"Tentative\",\"2\":\"Melee\",\"3\":\"Ranged\",\"4\":\"Healer\",\"5\":\"Support\"}",
+                events
+        );
+
+        Event openDueEvent = createRepositoryEvent("123", "open-due", instantNow.plus(30, ChronoUnit.MINUTES), guild, embedType);
+        Event fetchedOpenDueEvent = saveEventToDatabase(openDueEvent, guild, embedType);
+
+        Event closedDueEvent = createRepositoryEvent("456", "closed-due", instantNow.plus(45, ChronoUnit.MINUTES), guild, embedType);
+        closedDueEvent.setStatus(EventStatus.CLOSED);
+        Event fetchedClosedDueEvent = saveEventToDatabase(closedDueEvent, guild, embedType);
+
+        Event alreadyRemindedEvent = createRepositoryEvent("789", "already-reminded", instantNow.plus(30, ChronoUnit.MINUTES), guild, embedType);
+        alreadyRemindedEvent.setReminderSent(true);
+        Event fetchedAlreadyRemindedEvent = saveEventToDatabase(alreadyRemindedEvent, guild, embedType);
+
+        Event cancelledEvent = createRepositoryEvent("101", "cancelled", instantNow.plus(30, ChronoUnit.MINUTES), guild, embedType);
+        cancelledEvent.setStatus(EventStatus.CANCELLED);
+        Event fetchedCancelledEvent = saveEventToDatabase(cancelledEvent, guild, embedType);
+
+        Event expiredStatusEvent = createRepositoryEvent("102", "expired-status", instantNow.plus(30, ChronoUnit.MINUTES), guild, embedType);
+        expiredStatusEvent.setStatus(EventStatus.EXPIRED);
+        Event fetchedExpiredStatusEvent = saveEventToDatabase(expiredStatusEvent, guild, embedType);
+
+        Event futureOutsideCutoffEvent = createRepositoryEvent("103", "future-outside-cutoff", instantNow.plus(2, ChronoUnit.HOURS), guild, embedType);
+        Event fetchedFutureOutsideCutoffEvent = saveEventToDatabase(futureOutsideCutoffEvent, guild, embedType);
+
+        Event pastEvent = createRepositoryEvent("104", "past", instantNow.minus(1, ChronoUnit.MINUTES), guild, embedType);
+        Event fetchedPastEvent = saveEventToDatabase(pastEvent, guild, embedType);
+
+        // Act
+        List<Event> actual = underTest.findReminderCandidates(reminderCutoff);
+
+        // Assert
+        assertThat(actual).containsOnly(fetchedOpenDueEvent, fetchedClosedDueEvent);
+        assertThat(actual).doesNotContain(
+                fetchedAlreadyRemindedEvent,
+                fetchedCancelledEvent,
+                fetchedExpiredStatusEvent,
+                fetchedFutureOutsideCutoffEvent,
+                fetchedPastEvent
+        );
     }
 
     @Test
@@ -388,6 +467,7 @@ class EventRepositoryIT extends TestDatabaseContainer {
                     assertThat(e.getDateTime()).isEqualTo(expected.getDateTime());
                     assertThat(e.getDestinationChannelId()).isEqualTo(expected.getDestinationChannelId());
                     assertThat(e.getMemberSize()).isEqualTo(expected.getMemberSize());
+                    assertThat(e.getStatus()).isEqualTo(expected.getStatus());
                     assertThat(e.getInstances()).isEqualTo(expected.getInstances());
                     assertThat(e.getParticipants()).usingRecursiveComparison().isEqualTo(expected.getParticipants());
                 });
@@ -955,7 +1035,6 @@ class EventRepositoryIT extends TestDatabaseContainer {
         }
         underTest.save(event);
         Optional<Event> actual = underTest.findById(event.getEventId());
-        System.out.println(actual.get().getGuild().getEvents());
         assertThat(actual)
                 .isPresent()
                 .hasValueSatisfying(e -> {
@@ -966,10 +1045,33 @@ class EventRepositoryIT extends TestDatabaseContainer {
                     assertThat(e.getDateTime()).isEqualTo(event.getDateTime());
                     assertThat(e.getDestinationChannelId()).isEqualTo(event.getDestinationChannelId());
                     assertThat(e.getMemberSize()).isEqualTo(event.getMemberSize());
+                    assertThat(e.getStatus()).isEqualTo(event.getStatus());
+                    assertThat(e.isReminderSent()).isEqualTo(event.isReminderSent());
                     assertThat(e.getInstances()).isEqualTo(event.getInstances());
                     assertThat(e.getParticipants()).usingRecursiveComparison().isEqualTo(event.getParticipants());
                 });
 
         return actual.get();
+    }
+
+    private Event createRepositoryEvent(
+            String eventId,
+            String name,
+            Instant dateTime,
+            Guild guild,
+            EmbedType embedType
+    ) {
+        return new Event(
+                eventId,
+                name,
+                "description",
+                "12345",
+                dateTime,
+                "123456",
+                null,
+                "15",
+                new ArrayList<>(),
+                guild,
+                embedType);
     }
 }

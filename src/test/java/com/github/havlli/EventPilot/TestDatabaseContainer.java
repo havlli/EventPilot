@@ -70,11 +70,10 @@ public abstract class TestDatabaseContainer {
                 postgresSQLContainer.getJdbcUrl(),
                 postgresSQLContainer.getUsername(),
                 postgresSQLContainer.getPassword());
-             Statement statement = connection.createStatement()
+            Statement statement = connection.createStatement()
         ) {
             String sql = new String(Files.readAllBytes(Paths.get(sqlResourcePath)));
             statement.execute(sql);
-            System.out.println(statement.getUpdateCount());
         }
     }
 

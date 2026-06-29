@@ -20,6 +20,9 @@ public class Participant {
     private Integer position;
     @Column(name = "role_index")
     private Integer roleIndex;
+    @Enumerated(EnumType.STRING)
+    @Column(name = "status")
+    private ParticipantStatus status = ParticipantStatus.SIGNED_UP;
 
     @ManyToOne
     @JoinColumn(name = "event_id")
@@ -51,6 +54,7 @@ public class Participant {
         this.username = username;
         this.position = position;
         this.roleIndex = roleIndex;
+        this.status = ParticipantStatus.SIGNED_UP;
         this.event = event;
     }
 
@@ -78,6 +82,14 @@ public class Participant {
         this.roleIndex = roleIndex;
     }
 
+    public ParticipantStatus getStatus() {
+        return status;
+    }
+
+    public void setStatus(ParticipantStatus status) {
+        this.status = status;
+    }
+
     public Event getEvent() {
         return event;
     }
@@ -87,12 +99,12 @@ public class Participant {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Participant that = (Participant) o;
-        return Objects.equals(id, that.id) && Objects.equals(userId, that.userId) && Objects.equals(username, that.username) && Objects.equals(position, that.position) && Objects.equals(roleIndex, that.roleIndex) && Objects.equals(event, that.event);
+        return Objects.equals(id, that.id) && Objects.equals(userId, that.userId) && Objects.equals(username, that.username) && Objects.equals(position, that.position) && Objects.equals(roleIndex, that.roleIndex) && status == that.status && Objects.equals(event, that.event);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(id, userId, username, position, roleIndex, event);
+        return Objects.hash(id, userId, username, position, roleIndex, status, event);
     }
 
     @Override
@@ -103,6 +115,7 @@ public class Participant {
             ", username='" + username + '\'' +
             ", position=" + position +
             ", roleIndex=" + roleIndex +
+            ", status=" + status +
             ", event=" + event.getEventId() +
             '}';
     }

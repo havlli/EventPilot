@@ -5,7 +5,7 @@ import com.github.havlli.EventPilot.command.SlashCommand;
 import com.github.havlli.EventPilot.command.onreadyevent.OnReadyEvent;
 import com.github.havlli.EventPilot.command.onreadyevent.ScheduledTask;
 import com.github.havlli.EventPilot.command.onreadyevent.StartupTask;
-import com.github.havlli.EventPilot.command.test.TestCommand;
+import discord4j.core.event.domain.Event;
 import discord4j.core.GatewayDiscordClient;
 import discord4j.core.event.domain.interaction.ChatInputInteractionEvent;
 import org.reactivestreams.Publisher;
@@ -49,8 +49,8 @@ class GlobalCommandListenerTest {
     @Test
     void constructListeners_WithMultipleCommands() {
         // Arrange
-        slashCommands.add(new TestCommand());
-        slashCommands.add(new TestCommand());
+        slashCommands.add(new TestSlashCommand("test-one"));
+        slashCommands.add(new TestSlashCommand("test-two"));
         when(client.on(any(), any())).thenReturn(Flux.just("test"));
 
         // Act
@@ -67,9 +67,9 @@ class GlobalCommandListenerTest {
     @Test
     void constructListeners_WithOnReadyEventAsFirstToSubscribe() {
         // Arrange
-        SlashCommand commandOne = new TestCommand();
+        SlashCommand commandOne = new TestSlashCommand("test-one");
         SlashCommand commandOnReadyEvent = new OnReadyEvent(mock(StartupTask.class), mock(ScheduledTask.class));
-        SlashCommand commandTwo = new TestCommand();
+        SlashCommand commandTwo = new TestSlashCommand("test-two");
 
         slashCommands.add(commandOne);
         slashCommands.add(commandOnReadyEvent);
@@ -166,5 +166,34 @@ class GlobalCommandListenerTest {
                 .expectSubscription()
                 .verifyComplete();
         verify(errorCommand, times(1)).handle(event);
+    }
+
+    private static class TestSlashCommand implements SlashCommand {
+        private final String name;
+        private Class<? extends Event> eventType = ChatInputInteractionEvent.class;
+
+        private TestSlashCommand(String name) {
+            this.name = name;
+        }
+
+        @Override
+        public String getName() {
+            return name;
+        }
+
+        @Override
+        public Class<? extends Event> getEventType() {
+            return eventType;
+        }
+
+        @Override
+        public void setEventType(Class<? extends Event> eventType) {
+            this.eventType = eventType;
+        }
+
+        @Override
+        public Mono<?> handle(Event event) {
+            return Mono.empty();
+        }
     }
 }

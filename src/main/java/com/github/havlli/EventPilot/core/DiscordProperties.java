@@ -18,6 +18,9 @@ public record DiscordProperties(
     public record Commands(@NotBlank String folder) {
     }
 
-    public record Scheduler(@Min(1) int intervalSeconds) {
+    public record Scheduler(
+            @Min(1) int intervalSeconds,
+            @Min(1) int reminderLeadMinutes
+    ) {
     }
 }

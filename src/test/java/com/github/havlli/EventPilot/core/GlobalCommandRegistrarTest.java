@@ -70,7 +70,17 @@ class GlobalCommandRegistrarTest {
                 .bulkOverwriteGlobalApplicationCommand(eq(123L), anyList());
 
         List<ApplicationCommandRequest> capturedCommands = commandsCaptor.getValue();
-        assertThat(capturedCommands.size()).isEqualTo(6);
+        assertThat(capturedCommands)
+                .extracting(ApplicationCommandRequest::name)
+                .containsExactlyInAnyOrder(
+                        "cancel-event",
+                        "clear-expired",
+                        "close-event",
+                        "create-embed-type",
+                        "create-event",
+                        "delete-event",
+                        "reopen-event"
+                );
     }
 
     @Test
@@ -129,7 +139,7 @@ class GlobalCommandRegistrarTest {
         return new DiscordProperties(
                 "token",
                 new DiscordProperties.Commands(commandsFolder),
-                new DiscordProperties.Scheduler(60)
+                new DiscordProperties.Scheduler(60, 60)
         );
     }
 }

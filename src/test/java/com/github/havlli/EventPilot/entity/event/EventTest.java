@@ -51,6 +51,8 @@ class EventTest {
 
         // Assert
         assertThat(actual).hasNoNullFieldsOrProperties();
+        assertThat(actual.getStatus()).isEqualTo(EventStatus.OPEN);
+        assertThat(actual.isReminderSent()).isFalse();
     }
 
     @Test
@@ -178,7 +180,7 @@ class EventTest {
                 .withGuild(new Guild("test", "test"))
                 .withEmbedType(new EmbedType(1L, "test", "test", List.of()))
                 .build();
-        String expected = "Event{eventId='testId', name='test', description='test', author='test', dateTime=2023-09-04T19:10:06.947216700Z, destinationChannelId='test', instances='test, test', memberSize='test', participants=0, guild=test, embedType=test}";
+        String expected = "Event{eventId='testId', name='test', description='test', author='test', dateTime=2023-09-04T19:10:06.947216700Z, destinationChannelId='test', instances='test, test', memberSize='test', status=OPEN, reminderSent=false, participants=0, guild=test, embedType=test}";
 
         // Act
         String actual = event.toString();

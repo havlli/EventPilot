@@ -5,14 +5,16 @@ import com.github.havlli.EventPilot.command.createevent.CreateEventInteraction;
 import com.github.havlli.EventPilot.command.onreadyevent.OnReadyEvent;
 import com.github.havlli.EventPilot.command.onreadyevent.ScheduledTask;
 import com.github.havlli.EventPilot.command.onreadyevent.StartupTask;
-import com.github.havlli.EventPilot.command.test.TestCommand;
 import com.github.havlli.EventPilot.core.SimplePermissionValidator;
 import com.github.havlli.EventPilot.session.UserSessionValidator;
+import discord4j.core.event.domain.Event;
+import discord4j.core.event.domain.interaction.ChatInputInteractionEvent;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.MockitoAnnotations;
 import org.springframework.context.MessageSource;
+import reactor.core.publisher.Mono;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.mock;
@@ -52,7 +54,7 @@ class EventTypeComparatorTest {
     void compareWhenOnReadyEventFirst() {
         // Arrange
         SlashCommand command1 = new OnReadyEvent(mock(StartupTask.class),mock(ScheduledTask.class));
-        SlashCommand command2 = new TestCommand();
+        SlashCommand command2 = new TestSlashCommand();
 
         // Act
         int result = underTest.compare(command1, command2);
@@ -66,7 +68,7 @@ class EventTypeComparatorTest {
     @Test
     void compareWhenOnReadyEventSecond() {
         // Arrange
-        SlashCommand command1 = new TestCommand();
+        SlashCommand command1 = new TestSlashCommand();
         SlashCommand command2 = new OnReadyEvent(mock(StartupTask.class),mock(ScheduledTask.class));
 
         // Act
@@ -81,7 +83,7 @@ class EventTypeComparatorTest {
     @Test
     void compareWhenTwoDifferentEvents() {
         // Arrange
-        SlashCommand command1 = new TestCommand();
+        SlashCommand command1 = new TestSlashCommand();
         SlashCommand command2 = new CreateEventCommand(mock(CreateEventInteraction.class), mock(SimplePermissionValidator.class), mock(UserSessionValidator.class), mock(MessageSource.class));
 
         // Act
@@ -91,5 +93,29 @@ class EventTypeComparatorTest {
         assertThat(result)
                 .as("Commands with different event types should have a non-zero comparison result")
                 .isEqualTo(0);
+    }
+
+    private static class TestSlashCommand implements SlashCommand {
+        private Class<? extends Event> eventType = ChatInputInteractionEvent.class;
+
+        @Override
+        public String getName() {
+            return "test-command";
+        }
+
+        @Override
+        public Class<? extends Event> getEventType() {
+            return eventType;
+        }
+
+        @Override
+        public void setEventType(Class<? extends Event> eventType) {
+            this.eventType = eventType;
+        }
+
+        @Override
+        public Mono<?> handle(Event event) {
+            return Mono.empty();
+        }
     }
 }

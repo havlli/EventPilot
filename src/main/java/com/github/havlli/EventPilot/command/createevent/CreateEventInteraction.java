@@ -380,7 +380,7 @@ public class CreateEventInteraction {
         return message -> {
             Snowflake messageId = message.getId();
             eventBuilder.withEventId(messageId.asString());
-            Event event = buildEventAndSubscribeInteractions();
+            Event event = buildEventAndSaveToDatabase();
             String messageUrl = constructMessageUrl(destinationChannel, guild, messageId);
             String completeMessage = messageSource.getMessage("interaction.create-event.finalize.complete", new Object[] {messageUrl}, Locale.ENGLISH);
             Mono<Message> finalMessage = getFinalMessage(completeMessage);
@@ -391,9 +391,9 @@ public class CreateEventInteraction {
         };
     }
 
-    private Event buildEventAndSubscribeInteractions() {
+    private Event buildEventAndSaveToDatabase() {
         Event event = eventBuilder.build();
-        subscribeInteractionsAndSaveToDatabase(event);
+        eventService.saveEvent(event);
         return event;
     }
 
@@ -412,11 +412,6 @@ public class CreateEventInteraction {
                 .addEmbed(embedGenerator.generateEmbed(event))
                 .addAllComponents(embedGenerator.generateComponents(event))
                 .build();
-    }
-
-    private void subscribeInteractionsAndSaveToDatabase(Event event) {
-        embedGenerator.subscribeInteractions(event);
-        eventService.saveEvent(event);
     }
 
     protected void setPrivateChannel(Mono<PrivateChannel> privateChannel) {

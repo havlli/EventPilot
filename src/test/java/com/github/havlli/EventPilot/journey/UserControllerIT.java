@@ -363,7 +363,6 @@ public class UserControllerIT extends TestDatabaseContainer {
                 .getResponseBody();
 
         // Assert
-        System.out.println(actual);
         assertThat(actual).isInstanceOf(ApiErrorResponse.class);
         assertThat(actual).isNotNull();
         assertThat(actual.httpStatus()).isEqualTo(HttpStatus.UNAUTHORIZED);

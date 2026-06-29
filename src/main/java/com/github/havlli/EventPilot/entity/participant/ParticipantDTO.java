@@ -7,7 +7,8 @@ public record ParticipantDTO(
         String discordUserId,
         String username,
         Integer position,
-        Integer roleIndex
+        Integer roleIndex,
+        ParticipantStatus status
 ) {
     public static ParticipantDTO fromParticipant(Participant participant) {
         return new ParticipantDTO(
@@ -15,7 +16,8 @@ public record ParticipantDTO(
                 participant.getUserId(),
                 participant.getUsername(),
                 participant.getPosition(),
-                participant.getRoleIndex()
+                participant.getRoleIndex(),
+                participant.getStatus()
         );
     }
 

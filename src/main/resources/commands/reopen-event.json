@@ -1,0 +1,12 @@
+{
+  "name": "reopen-event",
+  "description": "Reopen a closed event signup.",
+  "options": [
+    {
+      "name": "message-id",
+      "description": "Discord message ID of the event signup",
+      "type": 3,
+      "required": true
+    }
+  ]
+}

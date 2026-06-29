@@ -3,6 +3,8 @@ package com.github.havlli.EventPilot.entity.event;
 import com.github.havlli.EventPilot.exception.ResourceNotFoundException;
 import org.springframework.stereotype.Service;
 
+import java.time.Duration;
+import java.time.Instant;
 import java.util.List;
 import java.util.Optional;
 
@@ -38,8 +40,48 @@ public class EventService {
         eventDAO.deleteById(id);
     }
 
+    public boolean deleteEventIfExists(String id) {
+        if (!eventDAO.existsById(id)) {
+            return false;
+        }
+        eventDAO.deleteById(id);
+        return true;
+    }
+
     public List<Event> getExpiredEvents() {
         return eventDAO.getExpiredEvents();
+    }
+
+    public List<Event> getReminderCandidates(Duration reminderLeadTime) {
+        return eventDAO.getReminderCandidates(Instant.now().plus(reminderLeadTime));
+    }
+
+    public Optional<Event> updateStatusIfExists(String id, EventStatus status) {
+        Optional<Event> eventOptional = eventDAO.findById(id);
+        if (eventOptional.isEmpty()) {
+            return Optional.empty();
+        }
+
+        Event event = eventOptional.orElseThrow();
+        event.setStatus(status);
+        eventDAO.saveEvent(event);
+        return Optional.of(event);
+    }
+
+    public boolean markExpiredIfExists(String id) {
+        return updateStatusIfExists(id, EventStatus.EXPIRED).isPresent();
+    }
+
+    public boolean markReminderSentIfExists(String id) {
+        Optional<Event> eventOptional = eventDAO.findById(id);
+        if (eventOptional.isEmpty()) {
+            return false;
+        }
+
+        Event event = eventOptional.orElseThrow();
+        event.setReminderSent(true);
+        eventDAO.saveEvent(event);
+        return true;
     }
 
     public List<Event> getLastFiveEvents() {

@@ -1,7 +1,6 @@
 package com.github.havlli.EventPilot.command.onreadyevent;
 
 import com.github.havlli.EventPilot.core.DiscordService;
-import com.github.havlli.EventPilot.core.DiscordProperties;
 import com.github.havlli.EventPilot.entity.event.Event;
 import com.github.havlli.EventPilot.entity.event.EventService;
 import org.junit.jupiter.api.AfterEach;
@@ -10,7 +9,9 @@ import org.junit.jupiter.api.Test;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 import reactor.core.publisher.Flux;
+import reactor.core.scheduler.Schedulers;
 import reactor.test.StepVerifier;
+import reactor.test.scheduler.VirtualTimeScheduler;
 
 import java.time.Duration;
 import java.util.ArrayList;
@@ -26,16 +27,20 @@ class ScheduledTaskTest {
     private EventService eventServiceMock;
     @Mock
     private DiscordService discordServiceMock;
-    private static final Integer intervalSeconds = 5;
+    private VirtualTimeScheduler virtualTimeScheduler;
 
     @BeforeEach
     public void setUp() {
         autoCloseable = MockitoAnnotations.openMocks(this);
-        underTest = new ScheduledTask(eventServiceMock, discordServiceMock, new DiscordProperties(
-                "token",
-                new DiscordProperties.Commands("commands"),
-                new DiscordProperties.Scheduler(intervalSeconds)
-        ));
+        virtualTimeScheduler = VirtualTimeScheduler.create();
+        underTest = new ScheduledTask(
+                eventServiceMock,
+                discordServiceMock,
+                Duration.ofSeconds(5),
+                Duration.ofMinutes(60),
+                virtualTimeScheduler,
+                Schedulers.immediate()
+        );
     }
 
     @AfterEach
@@ -47,11 +52,18 @@ class ScheduledTaskTest {
     public void getFlux_InvokesServicesTwiceIn13Seconds_WhenIntervalIs5Seconds() {
         // Arrange
         List<Event> expiredEvents = new ArrayList<>();
+        List<Event> reminderEvents = new ArrayList<>();
         when(eventServiceMock.getExpiredEvents()).thenReturn(expiredEvents);
         when(discordServiceMock.deactivateEvents(expiredEvents)).thenReturn(Flux.empty());
+        when(eventServiceMock.getReminderCandidates(Duration.ofMinutes(60))).thenReturn(reminderEvents);
+        when(discordServiceMock.sendEventReminders(reminderEvents)).thenReturn(Flux.empty());
 
         // Assert
-        StepVerifier.create(underTest.getSchedulersFlux())
+        StepVerifier.withVirtualTime(
+                        underTest::getSchedulersFlux,
+                        () -> virtualTimeScheduler,
+                        Long.MAX_VALUE
+                )
                 .expectSubscription()
                 .thenAwait(Duration.ofSeconds(13))
                 .thenCancel()
@@ -59,6 +71,8 @@ class ScheduledTaskTest {
 
         verify(eventServiceMock, times(2)).getExpiredEvents();
         verify(discordServiceMock, times(2)).deactivateEvents(expiredEvents);
+        verify(eventServiceMock, times(2)).getReminderCandidates(Duration.ofMinutes(60));
+        verify(discordServiceMock, times(2)).sendEventReminders(reminderEvents);
     }
 
 }

@@ -311,6 +311,7 @@ class ClearExpiredCommandTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     void handleResponse_formatsResponseAndSendsResponse() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         // Arrange
         ClearExpiredCommand underTestSpy = spy(underTest);
@@ -332,6 +333,7 @@ class ClearExpiredCommandTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     void filterAllMessagesThenDelete_ReturnsDeleteMessages() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         // Arrange
         Class<?> underTestClass = ClearExpiredCommand.class;
@@ -355,6 +357,7 @@ class ClearExpiredCommandTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     void deleteMessageThenReturn_InvokesDeletionThenReturnsSameObject() throws NoSuchMethodException, InvocationTargetException, IllegalAccessException {
         // Arrange
         Class<?> underTestClass = ClearExpiredCommand.class;

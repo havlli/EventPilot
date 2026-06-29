@@ -1,10 +1,12 @@
 package com.github.havlli.EventPilot.generator;
 
 import com.github.havlli.EventPilot.entity.participant.Participant;
+import com.github.havlli.EventPilot.entity.event.EventStatus;
 import org.springframework.stereotype.Component;
 
 import java.time.Instant;
 import java.util.List;
+import java.util.Map;
 import java.util.stream.Collectors;
 
 @Component
@@ -20,6 +22,23 @@ public class EmbedFormatter {
 
     public String leaderWithId(String leader, String id) {
         return String.format("Leader: %s - ID: %s", leader, id);
+    }
+
+    public String status(EventStatus status) {
+        if (status == null) {
+            return "Open";
+        }
+
+        return switch (status) {
+            case OPEN -> "Open";
+            case CLOSED -> "Closed";
+            case CANCELLED -> "Cancelled";
+            case EXPIRED -> "Expired";
+        };
+    }
+
+    public String rosterSummary(int confirmed, String maximum, int waitlisted) {
+        return String.format("%d/%s confirmed, %d waitlisted", confirmed, maximum, waitlisted);
     }
 
     public String date(Instant dateTime) {
@@ -67,5 +86,16 @@ public class EmbedFormatter {
                 lineBreak,
                 concatUsers
         );
+    }
+
+    public String createWaitlistField(List<Participant> waitlistedUsers, Map<Integer, String> roleNames) {
+        return waitlistedUsers.stream()
+                .map(participant -> String.format(
+                        "`%d`%s - %s",
+                        participant.getPosition(),
+                        participant.getUsername(),
+                        roleNames.getOrDefault(participant.getRoleIndex(), "Role " + participant.getRoleIndex())
+                ))
+                .collect(Collectors.joining("\n"));
     }
 }

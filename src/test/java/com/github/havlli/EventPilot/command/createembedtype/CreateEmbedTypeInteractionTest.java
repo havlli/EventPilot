@@ -112,6 +112,7 @@ class CreateEmbedTypeInteractionTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     void promptName() {
         // Arrange
         CreateEmbedTypeInteraction underTestSpy = spy(underTest);
@@ -144,6 +145,7 @@ class CreateEmbedTypeInteractionTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     void promptImportDialog() {
         // Arrange
         CreateEmbedTypeInteraction underTestSpy = spy(underTest);
@@ -180,6 +182,7 @@ class CreateEmbedTypeInteractionTest {
     }
 
     @Test
+    @SuppressWarnings("unchecked")
     void confirmationPrompt() {
         // Arrange
         CreateEmbedTypeInteraction underTestSpy = spy(underTest);

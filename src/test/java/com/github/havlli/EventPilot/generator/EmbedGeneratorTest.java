@@ -5,6 +5,7 @@ import com.github.havlli.EventPilot.entity.embedtype.EmbedType;
 import com.github.havlli.EventPilot.entity.embedtype.EmbedTypeService;
 import com.github.havlli.EventPilot.entity.event.Event;
 import com.github.havlli.EventPilot.entity.participant.Participant;
+import com.github.havlli.EventPilot.entity.participant.ParticipantStatus;
 import discord4j.core.spec.EmbedCreateFields;
 import discord4j.core.spec.EmbedCreateSpec;
 import org.junit.jupiter.api.AfterEach;
@@ -35,8 +36,6 @@ class EmbedGeneratorTest {
     private ComponentGenerator componentGeneratorMock;
     @Mock
     private EmbedTypeService embedTypeServiceMock;
-    @Mock
-    private EmbedInteractionGenerator interactionGeneratorMock;
 
     @BeforeEach
     void setUp() {
@@ -44,8 +43,8 @@ class EmbedGeneratorTest {
         underTest = new EmbedGenerator(
                 embedFormatterMock,
                 componentGeneratorMock,
-                embedTypeServiceMock,
-                interactionGeneratorMock);
+                embedTypeServiceMock);
+        when(embedFormatterMock.status(any())).thenReturn("Open");
     }
 
     @AfterEach
@@ -164,6 +163,40 @@ class EmbedGeneratorTest {
     }
 
     @Test
+    void getPopulatedFields_AddsWaitlistFieldAndExcludesWaitlistedParticipantsFromRoleFields() throws JsonProcessingException {
+        // Arrange
+        HashMap<Integer, String> fieldsMap = new HashMap<>(Map.of(
+                1, "Tank",
+                2, "Healer"
+        ));
+        Event eventMock = mock(Event.class);
+        EmbedType embedTypeMock = mock(EmbedType.class);
+        when(eventMock.getEmbedType()).thenReturn(embedTypeMock);
+        when(embedTypeServiceMock.getDeserializedMap(embedTypeMock)).thenReturn(fieldsMap);
+
+        Participant confirmedParticipant = new Participant(1L,"1","confirmed",1,1, eventMock);
+        Participant waitlistedParticipant = new Participant(2L,"2","waitlisted",2,1, eventMock);
+        waitlistedParticipant.setStatus(ParticipantStatus.WAITLISTED);
+
+        when(eventMock.getParticipants()).thenReturn(List.of(confirmedParticipant, waitlistedParticipant));
+        when(embedFormatterMock.createConcatField(eq("Tank"), anyList(), eq(false))).thenReturn("tank field");
+        when(embedFormatterMock.createWaitlistField(List.of(waitlistedParticipant), fieldsMap)).thenReturn("waitlist field");
+
+        // Act
+        List<EmbedCreateFields.Field> actualFields = underTest.constructPopulatedFields(eventMock);
+
+        // Assert
+        assertThat(actualFields).hasSize(2);
+        assertThat(actualFields.get(1).name()).isEqualTo("Waitlist (1)");
+        assertThat(actualFields.get(1).value()).isEqualTo("waitlist field");
+        verify(embedFormatterMock, times(1)).createConcatField(
+                eq("Tank"),
+                argThat(participants -> participants.size() == 1 && participants.contains(confirmedParticipant)),
+                eq(false)
+        );
+    }
+
+    @Test
     void generateEmbed_ReturnsEmbedCreateSpec_WhenEventHasMultipleParticipants() throws JsonProcessingException {
         // Arrange
         HashMap<Integer, String> fieldsMap = new HashMap<>(Map.of(
@@ -203,7 +236,8 @@ class EmbedGeneratorTest {
         EmbedCreateSpec actual = underTest.generateEmbed(eventMock);
 
         // Assert
-        assertThat(actual.fields()).hasSize(10);
+        assertThat(actual.fields()).hasSize(11);
+        verify(embedFormatterMock, times(1)).raidSize(3, "25");
     }
 
     @Test
@@ -242,7 +276,7 @@ class EmbedGeneratorTest {
         EmbedCreateSpec actual = underTest.generateEmbed(eventMock);
 
         // Assert
-        assertThat(actual.fields()).hasSize(7);
+        assertThat(actual.fields()).hasSize(8);
     }
 
     @Test
@@ -280,7 +314,47 @@ class EmbedGeneratorTest {
         EmbedCreateSpec actual = underTest.generateEmbed(eventMock);
 
         // Assert
+        assertThat(actual.fields()).hasSize(7);
+    }
+
+    @Test
+    void generateReminderEmbed_ReturnsRosterSummaryWithConfirmedAndWaitlistedCounts() throws JsonProcessingException {
+        // Arrange
+        HashMap<Integer, String> fieldsMap = new HashMap<>(Map.of(
+                1, "Tank",
+                2, "Healer"
+        ));
+        Event eventMock = mock(Event.class);
+        EmbedType embedTypeMock = mock(EmbedType.class);
+        when(eventMock.getEmbedType()).thenReturn(embedTypeMock);
+        when(eventMock.getName()).thenReturn("raid");
+        when(eventMock.getDescription()).thenReturn("description");
+        when(eventMock.getAuthor()).thenReturn("leader");
+        when(eventMock.getMemberSize()).thenReturn("10");
+        when(eventMock.getDateTime()).thenReturn(Instant.now());
+        when(embedFormatterMock.dateTime(eventMock.getDateTime())).thenReturn("date time");
+        when(embedFormatterMock.relativeTime(eventMock.getDateTime())).thenReturn("relative time");
+        when(embedFormatterMock.rosterSummary(1, "10", 1)).thenReturn("1/10 confirmed, 1 waitlisted");
+        when(embedTypeServiceMock.getDeserializedMap(embedTypeMock)).thenReturn(fieldsMap);
+
+        Participant confirmedParticipant = new Participant(1L,"1","confirmed",1,1, eventMock);
+        Participant waitlistedParticipant = new Participant(2L,"2","waitlisted",2,2, eventMock);
+        waitlistedParticipant.setStatus(ParticipantStatus.WAITLISTED);
+        when(eventMock.getParticipants()).thenReturn(List.of(confirmedParticipant, waitlistedParticipant));
+        when(embedFormatterMock.createConcatField(anyString(), anyList(), anyBoolean())).thenReturn("role field");
+        when(embedFormatterMock.createWaitlistField(List.of(waitlistedParticipant), fieldsMap)).thenReturn("waitlist field");
+
+        // Act
+        EmbedCreateSpec actual = underTest.generateReminderEmbed(eventMock);
+
+        // Assert
+        assertThat(actual.title().toOptional()).contains("Event reminder: raid");
         assertThat(actual.fields()).hasSize(6);
+        assertThat(actual.fields()).anySatisfy(field -> {
+            assertThat(field.name()).isEqualTo("Roster");
+            assertThat(field.value()).isEqualTo("1/10 confirmed, 1 waitlisted");
+        });
+        verify(embedFormatterMock, times(1)).rosterSummary(1, "10", 1);
     }
 
     @Test
@@ -324,18 +398,6 @@ class EmbedGeneratorTest {
         // Assert
         assertThatThrownBy(() -> underTest.generateEmbedTypePreview(embedTypeMock))
                 .isInstanceOf(RuntimeException.class);
-    }
-
-    @Test
-    void subscribeInteractions_CallsInteractionGenerator() {
-        // Arrange
-        Event eventMock = mock(Event.class);
-
-        // Act
-        underTest.subscribeInteractions(eventMock);
-
-        // Assert
-        verify(interactionGeneratorMock, only()).subscribeInteractions(eventMock, underTest);
     }
 
     @Test

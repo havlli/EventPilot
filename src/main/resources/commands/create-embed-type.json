@@ -1,4 +1,4 @@
 {
   "name": "create-embed-type",
-  "description": "Create new embed type which can be used when creating new events."
+  "description": "Create a reusable event role layout."
 }

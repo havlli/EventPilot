@@ -11,6 +11,7 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.data.jpa.test.autoconfigure.DataJpaTest;
 import org.springframework.boot.jdbc.test.autoconfigure.AutoConfigureTestDatabase;
@@ -25,8 +26,9 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
-@DataJpaTest
+@DataJpaTest(showSql = false)
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
 @DirtiesContext(classMode = DirtiesContext.ClassMode.BEFORE_EACH_TEST_METHOD)
 class ParticipantRepositoryIT extends TestDatabaseContainer {
@@ -188,6 +190,20 @@ class ParticipantRepositoryIT extends TestDatabaseContainer {
         assertThat(actual).isEmpty();
     }
 
+    @Test
+    public void saveParticipant_RejectsDuplicateUserForSameEvent() {
+        // Arrange
+        Event event = addDummyEvent();
+        Participant participant = new Participant("1", "user1", 1, 1, event);
+        underTest.saveAndFlush(participant);
+
+        Participant duplicateParticipant = new Participant("1", "user1", 2, 2, event);
+
+        // Act + Assert
+        assertThatThrownBy(() -> underTest.saveAndFlush(duplicateParticipant))
+                .isInstanceOf(DataIntegrityViolationException.class);
+    }
+
     public Guild addGuild(Guild guild) {
         guildRepository.save(guild);
         Optional<Guild> actual = guildRepository.findById(guild.getId());
@@ -209,7 +225,6 @@ class ParticipantRepositoryIT extends TestDatabaseContainer {
         }
         eventRepository.save(event);
         Optional<Event> actual = eventRepository.findById(event.getEventId());
-        System.out.println(actual.get().getGuild().getEvents());
         assertThat(actual)
                 .isPresent()
                 .hasValueSatisfying(e -> {
