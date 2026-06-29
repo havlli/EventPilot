@@ -19,6 +19,7 @@ import java.time.Instant;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.stream.IntStream;
 
 import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.when;
@@ -89,14 +90,101 @@ class OrganizerEventFormatterTest {
                 .contains("`2` backup - Healer");
     }
 
+    @Test
+    void formatEventDetails_UsesEmptyStateAndUnknownChannel_WhenEventHasNoParticipantsOrChannel() throws JsonProcessingException {
+        // Arrange
+        Event event = createEventWithChannel(null);
+        when(embedTypeService.getDeserializedMap(event.getEmbedType())).thenReturn(new HashMap<>());
+
+        // Act
+        String actual = underTest.formatEventDetails(event);
+
+        // Assert
+        assertThat(actual)
+                .contains("Channel: unknown channel")
+                .contains("Roster: 0/2 confirmed, 0 waitlisted")
+                .contains("No confirmed participants.")
+                .contains("No waitlisted participants.");
+    }
+
+    @Test
+    void formatEventDetails_UsesFallbackRoleNames_WhenRoleNamesCannotBeParsed() throws JsonProcessingException {
+        // Arrange
+        Event event = createEvent();
+        when(embedTypeService.getDeserializedMap(event.getEmbedType()))
+                .thenThrow(new JsonProcessingException("invalid role json") { });
+
+        event.getParticipants().add(new Participant("1", "healer", 1, 2, event));
+        event.getParticipants().add(new Participant("2", "tank", 2, 1, event));
+        event.getParticipants().add(new Participant("3", "late", 3, -2, event));
+        event.getParticipants().add(new Participant("4", "absence", 4, -1, event));
+        Participant waitlisted = new Participant("5", "backup", 5, 99, event);
+        waitlisted.setStatus(ParticipantStatus.WAITLISTED);
+        event.getParticipants().add(waitlisted);
+
+        // Act
+        String actual = underTest.formatEventDetails(event);
+
+        // Assert
+        assertThat(actual)
+                .contains("Role 1 (1): `2` tank")
+                .contains("Role 2 (1): `1` healer")
+                .contains("Role -2 (1): `3` late")
+                .contains("Role -1 (1): `4` absence")
+                .contains("`5` backup - Role 99");
+    }
+
+    @Test
+    void formatEventList_TruncatesContent_WhenDiscordMessageWouldBeTooLong() {
+        // Arrange
+        List<Event> events = IntStream.range(0, 80)
+                .mapToObj(index -> createEventWithName("Raid Night " + index))
+                .toList();
+
+        // Act
+        String actual = underTest.formatEventList(events);
+
+        // Assert
+        assertThat(actual)
+                .hasSize(1900)
+                .endsWith("\n... truncated");
+    }
+
+    @Test
+    void formatEventList_DoesNotCountNonCapacityOrNullRoleParticipantsAsConfirmed() {
+        // Arrange
+        Event event = createEvent();
+        event.getParticipants().add(new Participant("1", "tank", 1, 1, event));
+        event.getParticipants().add(new Participant("2", "late", 2, -1, event));
+        event.getParticipants().add(new Participant("3", "missing-role", 3, null, event));
+
+        // Act
+        String actual = underTest.formatEventList(List.of(event));
+
+        // Assert
+        assertThat(actual).contains("1/2 confirmed, 0 waitlisted");
+    }
+
     private Event createEvent() {
+        return createEventWithChannel("channel-1");
+    }
+
+    private Event createEventWithName(String name) {
+        return createEvent("event-" + name.hashCode(), name, "channel-1");
+    }
+
+    private Event createEventWithChannel(String channelId) {
+        return createEvent("event-1", "Raid Night", channelId);
+    }
+
+    private Event createEvent(String eventId, String name, String channelId) {
         Event event = new Event(
-                "event-1",
-                "Raid Night",
+                eventId,
+                name,
                 "description",
                 "leader",
                 Instant.ofEpochSecond(1_800_000_000L),
-                "channel-1",
+                channelId,
                 null,
                 "2",
                 new ArrayList<>(),

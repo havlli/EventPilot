@@ -8,6 +8,7 @@ import com.github.havlli.EventPilot.session.UserSessionValidator;
 import discord4j.common.util.Snowflake;
 import discord4j.core.GatewayDiscordClient;
 import discord4j.core.event.domain.interaction.ChatInputInteractionEvent;
+import discord4j.core.event.domain.lifecycle.ReadyEvent;
 import discord4j.core.object.command.ApplicationCommandInteractionOption;
 import discord4j.core.object.command.Interaction;
 import discord4j.core.object.entity.Message;
@@ -78,6 +79,22 @@ class ListEventsCommandTest {
     }
 
     @Test
+    void handle_ReturnsEmptyMono_WhenCommandNameDoesNotMatch() {
+        // Arrange
+        when(interactionEvent.getCommandName()).thenReturn("event-info");
+
+        // Act
+        Mono<Message> actual = underTest.handle(interactionEvent)
+                .cast(Message.class);
+
+        // Assert
+        StepVerifier.create(actual)
+                .expectSubscription()
+                .verifyComplete();
+        verifyNoInteractions(permissionChecker, userSessionValidator, eventService);
+    }
+
+    @Test
     void listEventsInteraction_UsesActiveFilterAndDefaultLimit_WhenOptionsAreMissing() {
         // Arrange
         Event event = mock(Event.class);
@@ -121,6 +138,37 @@ class ListEventsCommandTest {
     }
 
     @Test
+    void listEventsInteraction_UsesLowerClampedLimit_WhenLimitIsBelowMinimum() {
+        // Arrange
+        Event event = mock(Event.class);
+        stubGuildInteraction();
+        when(interactionEvent.getOption("status")).thenReturn(Optional.empty());
+        when(interactionEvent.getOption("limit")).thenReturn(Optional.of(longOption(0)));
+        when(eventService.getEventsForGuild("111", List.of(EventStatus.OPEN, EventStatus.CLOSED), 1))
+                .thenReturn(List.of(event));
+        when(organizerEventFormatter.formatEventList(List.of(event))).thenReturn("Events:\n- Raid");
+        stubFollowup();
+
+        // Act
+        Mono<Message> actual = underTest.listEventsInteraction(interactionEvent);
+
+        // Assert
+        StepVerifier.create(actual)
+                .expectNext(followupMessage)
+                .verifyComplete();
+        assertFollowup("Events:\n- Raid");
+    }
+
+    @Test
+    void listEventsInteraction_MapsStatusFiltersToEventStatuses() {
+        assertStatusFilter("open", List.of(EventStatus.OPEN));
+        assertStatusFilter("closed", List.of(EventStatus.CLOSED));
+        assertStatusFilter("cancelled", List.of(EventStatus.CANCELLED));
+        assertStatusFilter("expired", List.of(EventStatus.EXPIRED));
+        assertStatusFilter("unknown", List.of(EventStatus.OPEN, EventStatus.CLOSED));
+    }
+
+    @Test
     void listEventsInteraction_RepliesNoEvents_WhenNoMatchingEventsExist() {
         // Arrange
         stubGuildInteraction();
@@ -143,6 +191,26 @@ class ListEventsCommandTest {
     }
 
     @Test
+    void listEventsInteraction_RepliesGuildOnly_WhenInteractionIsNotFromGuild() {
+        // Arrange
+        when(interactionEvent.getInteraction()).thenReturn(interaction);
+        when(interaction.getGuildId()).thenReturn(Optional.empty());
+        when(messageSource.getMessage("interaction.organizer.guild-only", null, Locale.ENGLISH))
+                .thenReturn("This command can only be used in a Discord server.");
+        stubFollowup();
+
+        // Act
+        Mono<Message> actual = underTest.listEventsInteraction(interactionEvent);
+
+        // Assert
+        StepVerifier.create(actual)
+                .expectNext(followupMessage)
+                .verifyComplete();
+        assertFollowup("This command can only be used in a Discord server.");
+        verifyNoInteractions(eventService);
+    }
+
+    @Test
     void handle_ReturnsPermissionDeniedMessageAndDoesNotQueryEvents_WhenPermissionValidatorRejects() {
         // Arrange
         Message deniedMessage = mock(Message.class);
@@ -159,6 +227,37 @@ class ListEventsCommandTest {
                 .expectNext(deniedMessage)
                 .verifyComplete();
         verify(eventService, never()).getEventsForGuild(any(), any(), anyInt());
+    }
+
+    @Test
+    void commandMetadata_CanBeReadAndUpdated() {
+        // Assert
+        assertThat(underTest.getName()).isEqualTo("list-events");
+        assertThat(underTest.getEventType()).isEqualTo(ChatInputInteractionEvent.class);
+
+        // Act
+        underTest.setEventType(ReadyEvent.class);
+
+        // Assert
+        assertThat(underTest.getEventType()).isEqualTo(ReadyEvent.class);
+    }
+
+    private void assertStatusFilter(String status, List<EventStatus> expectedStatuses) {
+        Event event = mock(Event.class);
+        stubGuildInteraction();
+        when(interactionEvent.getOption("status")).thenReturn(Optional.of(stringOption(status)));
+        when(interactionEvent.getOption("limit")).thenReturn(Optional.empty());
+        when(eventService.getEventsForGuild("111", expectedStatuses, 5)).thenReturn(List.of(event));
+        when(organizerEventFormatter.formatEventList(List.of(event))).thenReturn("Events:\n- " + status);
+        stubFollowup();
+
+        Mono<Message> actual = underTest.listEventsInteraction(interactionEvent);
+
+        StepVerifier.create(actual)
+                .expectNext(followupMessage)
+                .verifyComplete();
+        assertFollowup("Events:\n- " + status);
+        verify(eventService, times(1)).getEventsForGuild("111", expectedStatuses, 5);
     }
 
     private void stubValidatedHandle() {

@@ -7,10 +7,13 @@ import com.github.havlli.EventPilot.session.UserSessionValidator;
 import discord4j.common.util.Snowflake;
 import discord4j.core.GatewayDiscordClient;
 import discord4j.core.event.domain.interaction.ChatInputInteractionEvent;
+import discord4j.core.event.domain.lifecycle.ReadyEvent;
 import discord4j.core.object.command.ApplicationCommandInteractionOption;
 import discord4j.core.object.command.Interaction;
 import discord4j.core.object.entity.Message;
+import discord4j.core.spec.InteractionCallbackSpecDeferReplyMono;
 import discord4j.core.spec.InteractionFollowupCreateSpec;
+import discord4j.rest.util.Permission;
 import discord4j.discordjson.json.ApplicationCommandInteractionOptionData;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -27,6 +30,8 @@ import java.util.Locale;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.mockito.ArgumentMatchers.any;
+import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
 
 class EventInfoCommandTest {
@@ -72,6 +77,44 @@ class EventInfoCommandTest {
     }
 
     @Test
+    void handle_ReturnsEmptyMono_WhenCommandNameDoesNotMatch() {
+        // Arrange
+        when(interactionEvent.getCommandName()).thenReturn("list-events");
+
+        // Act
+        Mono<Message> actual = underTest.handle(interactionEvent)
+                .cast(Message.class);
+
+        // Assert
+        StepVerifier.create(actual)
+                .expectSubscription()
+                .verifyComplete();
+        verifyNoInteractions(permissionChecker, userSessionValidator, eventService);
+    }
+
+    @Test
+    void handle_DelegatesThroughPermissionAndSessionValidators_WhenCommandNameMatches() {
+        // Arrange
+        Event event = mock(Event.class);
+        stubValidatedHandle();
+        when(interactionEvent.getOption("message-id")).thenReturn(Optional.of(stringOption("123")));
+        when(eventService.getEventByIdForGuild("123", "111")).thenReturn(Optional.of(event));
+        when(organizerEventFormatter.formatEventDetails(event)).thenReturn("Event details");
+        stubFollowup();
+
+        // Act
+        Mono<Message> actual = underTest.handle(interactionEvent)
+                .cast(Message.class);
+
+        // Assert
+        StepVerifier.create(actual)
+                .expectNext(followupMessage)
+                .verifyComplete();
+        verify(permissionChecker, times(1)).followupWith(any(), eq(interactionEvent), eq(Permission.MANAGE_CHANNELS));
+        verify(userSessionValidator, times(1)).validateThenWrap(any(), eq(interactionEvent));
+    }
+
+    @Test
     void eventInfoInteraction_ReturnsFormattedEventDetails_WhenEventExistsInGuild() {
         // Arrange
         Event event = mock(Event.class);
@@ -109,6 +152,73 @@ class EventInfoCommandTest {
                 .expectNext(followupMessage)
                 .verifyComplete();
         assertFollowup("Event not found in this server.");
+    }
+
+    @Test
+    void eventInfoInteraction_RepliesGuildOnly_WhenInteractionIsNotFromGuild() {
+        // Arrange
+        when(interactionEvent.getInteraction()).thenReturn(interaction);
+        when(interaction.getGuildId()).thenReturn(Optional.empty());
+        when(messageSource.getMessage("interaction.organizer.guild-only", null, Locale.ENGLISH))
+                .thenReturn("This command can only be used in a Discord server.");
+        stubFollowup();
+
+        // Act
+        Mono<Message> actual = underTest.eventInfoInteraction(interactionEvent);
+
+        // Assert
+        StepVerifier.create(actual)
+                .expectNext(followupMessage)
+                .verifyComplete();
+        assertFollowup("This command can only be used in a Discord server.");
+        verifyNoInteractions(eventService);
+    }
+
+    @Test
+    void eventInfoInteraction_UsesFallbackMessageId_WhenOptionIsMissing() {
+        // Arrange
+        Event event = mock(Event.class);
+        stubGuildInteraction();
+        when(interactionEvent.getOption("message-id")).thenReturn(Optional.empty());
+        when(eventService.getEventByIdForGuild("0", "111")).thenReturn(Optional.of(event));
+        when(organizerEventFormatter.formatEventDetails(event)).thenReturn("Fallback event details");
+        stubFollowup();
+
+        // Act
+        Mono<Message> actual = underTest.eventInfoInteraction(interactionEvent);
+
+        // Assert
+        StepVerifier.create(actual)
+                .expectNext(followupMessage)
+                .verifyComplete();
+        assertFollowup("Fallback event details");
+    }
+
+    @Test
+    void commandMetadata_CanBeReadAndUpdated() {
+        // Assert
+        assertThat(underTest.getName()).isEqualTo("event-info");
+        assertThat(underTest.getEventType()).isEqualTo(ChatInputInteractionEvent.class);
+
+        // Act
+        underTest.setEventType(ReadyEvent.class);
+
+        // Assert
+        assertThat(underTest.getEventType()).isEqualTo(ReadyEvent.class);
+    }
+
+    private void stubValidatedHandle() {
+        when(interactionEvent.getCommandName()).thenReturn("event-info");
+        stubGuildInteraction();
+        InteractionCallbackSpecDeferReplyMono deferReplyMono = mock(InteractionCallbackSpecDeferReplyMono.class);
+        when(interactionEvent.deferReply()).thenReturn(deferReplyMono);
+        when(deferReplyMono.withEphemeral(true)).thenReturn(deferReplyMono);
+        when(deferReplyMono.then(org.mockito.ArgumentMatchers.<Mono<Message>>any()))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(userSessionValidator.validateThenWrap(any(), eq(interactionEvent)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
+        when(permissionChecker.followupWith(any(), eq(interactionEvent), eq(Permission.MANAGE_CHANNELS)))
+                .thenAnswer(invocation -> invocation.getArgument(0));
     }
 
     private void stubGuildInteraction() {

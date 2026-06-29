@@ -5,13 +5,9 @@ import com.github.havlli.EventPilot.entity.event.EventService;
 import com.github.havlli.EventPilot.entity.event.EventStatus;
 import com.github.havlli.EventPilot.session.UserSessionValidator;
 import discord4j.common.util.Snowflake;
-import discord4j.core.event.domain.Event;
 import discord4j.core.event.domain.interaction.ChatInputInteractionEvent;
 import discord4j.core.object.command.ApplicationCommandInteractionOption;
 import discord4j.core.object.entity.Message;
-import discord4j.core.spec.InteractionCallbackSpecDeferReplyMono;
-import discord4j.core.spec.InteractionFollowupCreateSpec;
-import discord4j.rest.util.Permission;
 import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Component;
 import reactor.core.publisher.Mono;
@@ -22,7 +18,7 @@ import java.util.Locale;
 import java.util.Optional;
 
 @Component
-public class ListEventsCommand implements SlashCommand {
+public class ListEventsCommand extends OrganizerCommand {
 
     private static final String EVENT_NAME = "list-events";
     private static final String OPTION_STATUS = "status";
@@ -30,10 +26,6 @@ public class ListEventsCommand implements SlashCommand {
     private static final String DEFAULT_STATUS = "active";
     private static final int DEFAULT_LIMIT = 5;
     private static final int MAXIMUM_LIMIT = 10;
-    private Class<? extends Event> eventType = ChatInputInteractionEvent.class;
-    private final SimplePermissionValidator permissionChecker;
-    private final UserSessionValidator userSessionValidator;
-    private final MessageSource messageSource;
     private final EventService eventService;
     private final OrganizerEventFormatter organizerEventFormatter;
 
@@ -44,43 +36,20 @@ public class ListEventsCommand implements SlashCommand {
             EventService eventService,
             OrganizerEventFormatter organizerEventFormatter
     ) {
-        this.permissionChecker = permissionChecker;
-        this.userSessionValidator = userSessionValidator;
-        this.messageSource = messageSource;
+        super(EVENT_NAME, permissionChecker, userSessionValidator, messageSource);
         this.eventService = eventService;
         this.organizerEventFormatter = organizerEventFormatter;
     }
 
     @Override
-    public String getName() {
-        return EVENT_NAME;
-    }
-
-    @Override
-    public Class<? extends Event> getEventType() {
-        return eventType;
-    }
-
-    @Override
-    public void setEventType(Class<? extends Event> eventType) {
-        this.eventType = eventType;
-    }
-
-    @Override
-    public Mono<?> handle(Event event) {
-        ChatInputInteractionEvent interactionEvent = (ChatInputInteractionEvent) event;
-        if (!interactionEvent.getCommandName().equals(EVENT_NAME)) {
-            return Mono.empty();
-        }
-
-        return deferInteractionWithEphemeralResponse(interactionEvent)
-                .then(validatePermissions(interactionEvent));
+    protected Mono<Message> processInteraction(ChatInputInteractionEvent event) {
+        return listEventsInteraction(event);
     }
 
     public Mono<Message> listEventsInteraction(ChatInputInteractionEvent event) {
-        Optional<Snowflake> guildId = event.getInteraction().getGuildId();
+        Optional<Snowflake> guildId = getGuildId(event);
         if (guildId.isEmpty()) {
-            return sendMessage(event, messageSource.getMessage("interaction.organizer.guild-only", null, Locale.ENGLISH));
+            return sendMessage(event, getMessage("interaction.organizer.guild-only"));
         }
 
         List<EventStatus> statuses = statusesFor(statusOption(event));
@@ -90,24 +59,11 @@ public class ListEventsCommand implements SlashCommand {
                 .subscribeOn(Schedulers.boundedElastic())
                 .flatMap(events -> {
                     if (events.isEmpty()) {
-                        return sendMessage(event, messageSource.getMessage("interaction.list-events.no-events", null, Locale.ENGLISH));
+                        return sendMessage(event, getMessage("interaction.list-events.no-events"));
                     }
 
                     return sendMessage(event, organizerEventFormatter.formatEventList(events));
                 });
-    }
-
-    private InteractionCallbackSpecDeferReplyMono deferInteractionWithEphemeralResponse(ChatInputInteractionEvent event) {
-        return event.deferReply()
-                .withEphemeral(true);
-    }
-
-    private Mono<Message> validatePermissions(ChatInputInteractionEvent event) {
-        return permissionChecker.followupWith(validateSession(event), event, Permission.MANAGE_CHANNELS);
-    }
-
-    private Mono<Message> validateSession(ChatInputInteractionEvent event) {
-        return userSessionValidator.validateThenWrap(listEventsInteraction(event), event);
     }
 
     private String statusOption(ChatInputInteractionEvent event) {
@@ -136,12 +92,5 @@ public class ListEventsCommand implements SlashCommand {
             case "active" -> List.of(EventStatus.OPEN, EventStatus.CLOSED);
             default -> List.of(EventStatus.OPEN, EventStatus.CLOSED);
         };
-    }
-
-    private Mono<Message> sendMessage(ChatInputInteractionEvent event, String content) {
-        return event.createFollowup(InteractionFollowupCreateSpec.builder()
-                .content(content)
-                .ephemeral(true)
-                .build());
     }
 }
