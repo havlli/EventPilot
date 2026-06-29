@@ -4,12 +4,15 @@ services:
     container_name: eventpilot-app
     image: havlli/eventpilot:latest
     environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://database:5432/eventpilot
+      SPRING_DATASOURCE_URL: jdbc:postgresql://database:5432/${POSTGRES_DB:?Set POSTGRES_DB in .env}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:?Set POSTGRES_USER in .env}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
-      CACHE_REDIS_HOST: cache
-      DISCORD_BOT_TOKEN: your-discord-bot-token
-      JWT_SECRET: at-least-256bits-HS256-compliant-secret
+      SPRING_DATA_REDIS_HOST: cache
+      SPRING_DATA_REDIS_PORT: 6379
+      DISCORD_BOT_TOKEN: ${DISCORD_BOT_TOKEN:?Set DISCORD_BOT_TOKEN in .env}
+      DISCORD_SCHEDULER_INTERVAL_SECONDS: ${DISCORD_SCHEDULER_INTERVAL_SECONDS:-60}
+      DISCORD_REMINDER_LEAD_MINUTES: ${DISCORD_REMINDER_LEAD_MINUTES:-60}
+      JWT_SECRET: ${JWT_SECRET:?Set JWT_SECRET in .env}
     ports:
       - 8080:8080
     depends_on:

@@ -6,284 +6,320 @@
 [![Test Coverage](https://github.com/havlli/EventPilot/actions/workflows/test-coverage.yml/badge.svg)](https://github.com/havlli/EventPilot/actions/workflows/test-coverage.yml)
 [![Build & Publish OCI Image](https://github.com/havlli/EventPilot/actions/workflows/docker-publish.yml/badge.svg)](https://github.com/havlli/EventPilot/actions/workflows/docker-publish.yml)
 
-EventPilot is a Discord bot written in Java using the Spring Boot, Project Reactor and Discord4J
-library. Its primary functionality is to help users create and manage events, allowing other Discord
-members to sign up for these events. Whether you're organizing gaming sessions, study groups, or any
-other kind of event, EventPilot simplifies the process by providing a user-friendly interface within
-your Discord server.
+EventPilot is a Discord bot for gaming communities that organize scheduled group activities: raids,
+dungeons, scrims, static groups, and recurring sessions. Organizers create role-based signup posts,
+players claim or change roles with Discord buttons, and the bot keeps capacity, waitlists, lifecycle
+state, reminders, and cleanup backed by PostgreSQL.
 
-## Table of Contents
+This repository started as a Java and reactive-programming learning project. It is now being shaped
+as a portfolio-ready backend project with a concrete target audience, a Discord-first product flow,
+reactive Discord event handling, transactional domain logic, Flyway migrations, and Docker-backed
+integration tests.
 
-- [Features](#features)
-- [About Project](#about-project)
-    - [Technologies Used](#technologies-used)
-    - [Lessons Learned](#lessons-learned)
-- [Getting Started](#getting-started)
-    - [Prerequisites](#prerequisites)
-    - [Run Application Locally](#run-application-locally-in-docker)
-    - [Setup Development Environment](#setup-development-environment)
-- [Usage](#usage)
-    - [Commands](#commands)
-- [Contributing](#contributing)
-- [FAQ](#faq)
+## Contents
+
+- [Use Case](#use-case)
+- [Feature Set](#feature-set)
+- [Demo Flow](#demo-flow)
+- [Commands](#commands)
+- [Signup Rules](#signup-rules)
+- [Architecture](#architecture)
+- [Supporting Docs](#supporting-docs)
+- [Technology Stack](#technology-stack)
+- [Local Setup](#local-setup)
+- [Configuration](#configuration)
+- [Testing](#testing)
+- [Discord Bot Setup](#discord-bot-setup)
+- [Project Status](#project-status)
 - [License](#license)
 
-## Features
+## Use Case
 
-- Create and manage events within your Discord server.
-- Allow members to sign up for events with a simple command.
-- Display event details, including the organizer, date, time, and available slots.
-- Automatic event reminders to keep participants informed.
+EventPilot is built for gaming groups where signups need more structure than a plain Discord thread.
+The primary user is a raid leader, guild officer, party organizer, or community moderator who needs
+to know:
 
-## About Project
+- who is confirmed for an event
+- which role each player selected
+- whether the group is full
+- who is waiting for a slot
+- who marked themselves absent, late, or tentative
+- whether an event is open, closed, cancelled, or expired
 
-This project began as a personal hobby, driven by my interest in reactive programming and
-experimentation with the Project Reactor library. Initially, it was intended for personal use
-within my Discord server among friends. However, over time, it evolved into a robust application
-with its own database, asynchronous operations, CI pipeline and much more.
+The bot is intentionally centered on Discord messages and buttons. The REST/admin API exists for
+supporting operations, but the main product surface is the Discord server.
 
-### Technologies Used
+## Feature Set
 
-_The project leverages the following technologies:_
+- Guided event creation through `/create-event`.
+- Reusable role layouts through `/create-embed-type`.
+- Button-based role signups using the stable custom ID format `{eventMessageId},{roleIndex}`.
+- Transactional signup handling from the database as source of truth.
+- Capacity enforcement for confirmed positive-role participants.
+- Waitlists for full events.
+- Existing participants can change roles without creating duplicate signup records.
+- Non-capacity states such as Absence, Late, and Tentative do not fill roster capacity.
+- Event lifecycle commands for close, reopen, cancel, delete, and expired cleanup.
+- Scheduled reminders before event start time with roster and waitlist summary.
+- Expired event deactivation and stale database cleanup.
+- Flyway-managed PostgreSQL schema with constraints for participant consistency.
+- Unit and integration tests, including Testcontainers-backed PostgreSQL and Redis coverage.
 
-- [**Java 17**](https://www.oracle.com/java/technologies/downloads/) - The programming language used
-  to develop the bot.
-- [**Project Reactor**](https://projectreactor.io) - Library for reactive programming in Java,
-  utilized to handle asynchronous operations.
-- [**Discord4J**](https://discord4j.com) - Discord API wrapper for Java, enabling seamless
-  integration with the Discord platform.
-- [**Spring Boot**](https://spring.io/projects/spring-boot) - Framework used for building Java
-  applications, providing features such as web development, data persistence, and logging.
-- [**PostgreSQL**](https://www.postgresql.org) - An open-source relational database management
-  system, used to store and manage event-related data.
-- [**Flyway**](https://flywaydb.org) - Database migration tool that ensures the consistency and
-  integrity of the database schema.
-- [**Redis**](https://redis.io) - In-memory data store used as a database and cache for efficient
-  data storage and retrieval.
-- [**Spring Security**](https://spring.io/projects/spring-security) - Highly customizable authentication and access-control framework.
-- [**JSON Web Token**](https://jwt.io/introduction) - Open standard that defines a compact and self-contained way for securely transmitting information between parties as a JSON object.
-- [**JUnit 5**](https://junit.org/junit5/) - Testing framework for Java, utilized for writing unit
-  tests.
-- [**Mockito**](https://site.mockito.org) - Mocking framework used for testing, providing
-  flexibility in creating and verifying mock objects.
-- [**Testcontainers**](https://testcontainers.com) - A Java library that simplifies the use of
-  Docker containers for integration testing.
-- [**Reactor Test**](https://projectreactor.io/docs/core/release/reference/index.html#testing) -
-  Testing module for the Reactor library, facilitating the testing of reactive code.
-- [**Buildpacks**](https://buildpacks.io) - Used to build OCI-compliant images for streamlined
-  deployment and scalability.
+## Demo Flow
 
-### Lessons Learned
+This is the recommended walkthrough for a portfolio demo or local smoke test.
 
-Throughout the development, I have gained valuable knowledge and experience in several areas. This
-includes working with the Discord API and Discord4J library, implementing reactive programming using
-Project Reactor, managing a PostgreSQL database, setting up a CI/CD pipeline, conducting
-comprehensive testing with JUnit 5 and Mockito, leveraging Docker containers for integration testing
-using Testcontainers, utilizing buildpacks for building OCI-compliant images, as well as integrating
-Spring Data Redis and Redis for handling custom user sessions. This project has provided me with
-practical hands-on experience in building a robust Discord bot and honing my skills in various Java
-technologies and frameworks, as well as modern deployment practices.
+1. Invite the bot to a Discord test server.
+2. Start the app with Docker Compose or local Maven.
+3. Run `/create-embed-type` and create a layout such as:
 
-## Getting Started
+```text
+Tank
+Healer
+Melee
+Ranged
+Support
+Late
+Tentative
+Absence
+```
 
-Follow these instructions to get EventPilot up and running in your Discord server.
+4. Run `/create-event` and create a raid/session with a small capacity, for example `2`.
+5. Sign up from two Discord users or test accounts until the event reaches capacity.
+6. Sign up another user to show waitlist behavior.
+7. Change an existing confirmed user to `Absence` and show the next waitlisted user promoted.
+8. Run `/close-event`, then try another signup to show lifecycle protection.
+9. Run `/reopen-event` and show signups working again.
+10. Reduce `DISCORD_REMINDER_LEAD_MINUTES` in a local demo environment and create a near-future event
+    to show the reminder embed.
+11. Run `/cancel-event` or `/delete-event` to show organizer controls and cleanup.
+
+Useful screenshots or GIFs for a portfolio page:
+
+- event creation prompt flow
+- signup embed with role buttons
+- full event with waitlist
+- reminder embed
+- close/reopen/cancel command behavior
+- passing `mvn verify` output
+
+## Commands
+
+| Command | Purpose |
+| --- | --- |
+| `/create-event` | Starts a private guided flow for creating a role-based event signup post. |
+| `/create-embed-type` | Creates a reusable role layout for event buttons and embed grouping. |
+| `/close-event message-id:<id>` | Closes an event to prevent further signups without deleting the post. |
+| `/reopen-event message-id:<id>` | Reopens a previously closed event. |
+| `/cancel-event message-id:<id>` | Cancels an event without deleting its historical signup state. |
+| `/delete-event message-id:<id>` | Deletes a bot-owned Discord event message and removes matching database state. |
+| `/clear-expired` | Deactivates expired event signups in the current channel. |
+
+The `message-id` is the Discord message ID of the event signup post. Event embeds also show the event
+ID so organizers can copy it when using lifecycle commands.
+
+## Signup Rules
+
+- The database event is the source of truth for every signup mutation.
+- Each Discord user can have only one participant row per event.
+- Positive role indexes count toward capacity. Negative role indexes are treated as non-capacity
+  states such as Absence, Late, or Tentative.
+- New positive-role signups are confirmed while capacity is available.
+- New positive-role signups become waitlisted when the event is full.
+- Existing confirmed participants can change positive roles even when the event is full.
+- Existing non-capacity participants who switch into a positive role are waitlisted when the event is
+  full.
+- When a confirmed positive-role participant moves to a non-capacity role or is removed, the earliest
+  waitlisted positive-role participant is promoted.
+- Closed, cancelled, and expired events reject signup button clicks with an ephemeral Discord
+  response.
+
+## Architecture
+
+```mermaid
+flowchart LR
+    Discord["Discord interactions"] --> Listener["GlobalCommandListener"]
+    Listener --> Commands["Slash commands and button handlers"]
+    Commands --> Domain["Domain services"]
+    Domain --> Database["PostgreSQL via Spring Data JPA"]
+    Domain --> DiscordService["DiscordService"]
+    DiscordService --> Discord
+    Scheduler["ScheduledTask"] --> Domain
+    Scheduler --> DiscordService
+    Database --> Flyway["Flyway migrations"]
+```
+
+Key implementation points:
+
+- Discord button handling is centralized through one global `ButtonInteractionEvent` path.
+- Signup mutation lives in `EventSignupService`, which makes capacity and waitlist behavior testable.
+- Repository lookups use locking where concurrent signup consistency matters.
+- Scheduled work handles expired-event deactivation and reminder dispatch.
+- Discord message rendering is separated into generator/formatter classes.
+- Flyway migrations own schema evolution; test schema mirrors the migrated model.
+
+## Supporting Docs
+
+- [Architecture decisions](docs/architecture-decisions.md) explains the signup, waitlist, lifecycle,
+  reminder, cleanup, and testing decisions behind the current design.
+- [Demo capture guide](docs/demo-capture.md) provides a repeatable script for recording portfolio
+  screenshots or GIFs in a Discord test server.
+
+## Technology Stack
+
+- Java 17
+- Spring Boot 4
+- Project Reactor
+- Discord4J
+- Spring Data JPA
+- PostgreSQL
+- Flyway
+- Redis
+- Spring Security and JWT
+- JUnit 5
+- Mockito
+- Reactor Test
+- Testcontainers
+- Docker Compose
+- Buildpacks
+
+## Local Setup
 
 ### Prerequisites
 
-If you intend to only run bot on your local machine, you need:
-
+- Java 17
+- Maven 3.9+
 - Docker
+- A Discord bot token
 
-Before you begin to code, make sure your development environment have the following:
-
-- [mise](https://mise.jdx.dev/) for Java and Maven version management
-- Docker
-
-This repository declares its development toolchain in `.mise.toml`. After installing mise, run:
+The repository includes `.mise.toml` for local Java and Maven version management.
 
 ```shell
 mise install
-mise exec -- mvn -ntp test
 ```
 
-On Windows, the repository also includes small wrappers around the mise command:
+### Run With Docker Compose
+
+The root [docker-compose.yml](docker-compose.yml) starts the bot, PostgreSQL, and Redis.
 
 ```shell
-.\scripts\test.cmd
-.\scripts\test.cmd verify
-```
-
-To run a local dependency vulnerability report:
-
-```shell
-.\scripts\security-check.cmd
-```
-
-### Run application locally in docker
-
-One of the approach to run bot locally is that we can use docker container to run both application
-and database with ease. Preferable approach is to run docker-compose.yml file, to make sure all the
-configuration is set
-correctly. Example of working
-[docker-compose.yml](https://github.com/havlli/EventPilot/blob/main/docker-compose.yml)
-from this repository.
-
-```yaml
-name: eventpilot
-services:
-  eventpilot:
-    container_name: eventpilot-app
-    image: havlli/eventpilot:latest
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:postgresql://database:5432/eventpilot
-      SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER}
-      SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD}
-      CACHE_REDIS_HOST: cache
-      DISCORD_BOT_TOKEN: your-discord-bot-token
-      JWT_SECRET: at-least-256bits-HS256-compliant-secret
-    ports:
-      - 8080:8080
-    depends_on:
-      - database
-      - cache
-  database:
-    container_name: eventpilot-postgres
-    image: postgres:15-alpine
-    environment:
-      POSTGRES_DB: ${POSTGRES_DB}
-      POSTGRES_USER: ${POSTGRES_USER}
-      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD}
-    volumes:
-      - database:/data/postgres
-    ports:
-      - 5554:5432
-    restart: unless-stopped
-  cache:
-    container_name: eventpilot-redis
-    image: redis:7-alpine
-    hostname: cache
-    ports:
-      - 6378:6379
-    restart: unless-stopped
-
-volumes:
-  database:
-```
-
-1. Create or download docker-compose.yml file with same structure presented above.
-
-Make sure you replace `DISCORD_BOT_TOKEN` environmental variable with your discord bot token and set
-`POSTGRES_DB`, `POSTGRES_USER`, and `POSTGRES_PASSWORD` in your `.env` file. If you're
-unsure how to obtain the discord bot token
-check [FAQ: How to acquire Discord Bot Token.](#how-to-acquire-discord-bot-token)
-Make sure that your `JWT_SECRET` is compliant with HS256 algorithm, if you are unsure how to create 
-such secret just create random 32 characters long `String`. Generating secrets using online tools
-is, from security reasons, not advised.
-
-2. Once you set your required environment variables, simply run in same directory:
-
-```shell
+cp .env.example .env
+openssl rand -base64 32
 docker compose up -d
 ```
 
-3. Done! After docker successfully creates and runs both containers your bot should appear online in
-   your server and listening to commands.
+Before starting, edit `.env` and set at least:
 
-_Note: If your bot is not present in the server you have to first invite the bot.
-[FAQ: How to invite newly created bot to my Discord server](#how-to-invite-newly-created-bot-to-my-discord-server)_
+- `DISCORD_BOT_TOKEN`
+- `JWT_SECRET`
+- `POSTGRES_DB`
+- `POSTGRES_USER`
+- `POSTGRES_PASSWORD`
 
-### Setup Development Environment
+After startup, the bot registers slash commands and appears online in Discord servers where it has
+been invited.
 
-1. CD to your project folder and clone repository.
+### Run The App Locally
 
-```shell
-cd projectdirectory
-git clone https://github.com/havlli/EventPilot.git
-```
-
-2. Rename `.env.example` file to `.env` and set the environmental variables, no need to export
-   environmental variables into your system since `spring-dotenv` manages importing env variables
-   from `.env` file.
-
-```dotenv
-DISCORD_BOT_TOKEN=YOUR_DISCORD_BOT_TOKEN
-TEST_DISCORD_BOT_TOKEN=DISCORD_BOT_TOKEN_FOR_TESTING
-```
-
-_Note: You can use same token for the test token, you should be running the development environment
-on testing discord bot instance. In case you're running dev environment on "live" discord server you
-can use different
-token for testing Discord4J and Discord API calls._
-
-3. In terminal navigate to `docker-compose-services.yml` and compose postgresql container in detach
-   mode.
+Start only PostgreSQL and Redis:
 
 ```shell
-cd src/main/resources
-docker compose -f docker-compose-services.yml up -d
+docker compose -f src/main/resources/docker-compose-services.yml up -d
 ```
 
-_Note: If you make any changes to postgres container make sure the changes reflects in application
-properties `application.yml` as well._
+Then run the application from source:
 
-4. Done! You're up and ready to start coding!
+```shell
+mvn -ntp -Dmaven.repo.local=.m2/repository spring-boot:run
+```
 
-## Contributing
+## Configuration
 
-Thank you for considering contributing to this project! Contributions from everyone are welcome.
+| Variable | Required | Default | Purpose |
+| --- | --- | --- | --- |
+| `DISCORD_BOT_TOKEN` | yes | none | Discord bot token. |
+| `JWT_SECRET` | yes | none | Base64-encoded JWT signing secret. Use `openssl rand -base64 32`. |
+| `POSTGRES_DB` | yes for Docker | `eventpilot` in local service compose | PostgreSQL database name. |
+| `POSTGRES_USER` | yes for Docker | `eventpilot` in local service compose | PostgreSQL username. |
+| `POSTGRES_PASSWORD` | yes for Docker | `eventpilot` in local service compose | PostgreSQL password. |
+| `SPRING_DATASOURCE_URL` | no | local PostgreSQL URL | JDBC URL override. |
+| `SPRING_DATASOURCE_USERNAME` | no | `POSTGRES_USER` | Datasource username override. |
+| `SPRING_DATASOURCE_PASSWORD` | no | `POSTGRES_PASSWORD` | Datasource password override. |
+| `SPRING_DATA_REDIS_HOST` | no | `localhost` | Redis host. |
+| `SPRING_DATA_REDIS_PORT` | no | `6379` | Redis port. |
+| `DISCORD_SCHEDULER_INTERVAL_SECONDS` | no | `60` | Scheduled job polling interval. |
+| `DISCORD_REMINDER_LEAD_MINUTES` | no | `60` | How long before event start the reminder is sent. |
+| `CORS_ALLOWED_ORIGINS` | no | local frontend origins | Allowed origins for REST/admin API calls. |
 
-**To contribute to this project, please follow these steps:**
+## Testing
 
-1. Fork the repository and create a new branch for your contribution.
-2. Make the necessary changes or improvements in your branch.
-3. Test your changes thoroughly to ensure they do not introduce any regressions.
-4. Commit your changes and push them to your forked repository.
-5. Submit a pull request (PR) to the main repository. Please provide a clear and descriptive title for
-your PR, along with a detailed description of the changes you have made.
-6. Your PR will be reviewed by the project maintainers. They may provide feedback or request further
-changes.
-7. Once your changes have been reviewed and approved, they will be merged into the main repository.
+Run the unit test suite:
 
-## Usage
-TBA
+```shell
+mvn -ntp -Dmaven.repo.local=.m2/repository test
+```
 
-## FAQ
+Run the full verification suite, including Testcontainers integration tests:
 
-### How to acquire Discord Bot Token
+```shell
+mvn -ntp -Dmaven.repo.local=.m2/repository verify
+```
 
-1. Navigate to **[Discord Developer Portal](https://discord.com/developers/)** and login.
-2. Click on **'New Application'** to create a new application.
-3. Give your application a name and click **'Create'**.
-4. In the left sidebar, click on **'Bot'**.
-5. Under the **Token** section, click on **'Reset Token'** and then **'Copy'** to copy the bot token
-   to your clipboard.
+`verify` requires Docker. The integration suite starts PostgreSQL and Redis containers and validates
+repository behavior, migrations, application startup, and API journeys.
 
-_Note: Treat your bot token as a secret and keep it secure. Do not share it publicly or commit it to
-version control. You can keep your token in .env file. Application loads environmental variables
-from that file._
+The current hardening pass has been verified locally with:
 
-### How to invite newly created bot to my Discord server
+- warning-enabled test compilation
+- full unit test suite
+- full Maven `verify`
+- `git diff --check`
 
-To invite your created bot to your Discord server, you'll need the **"Manage Server"** permission or
-have an account with the necessary permissions on the Discord server where you want to add the bot.
+## Discord Bot Setup
 
-1. Navigate to **[Discord Developer Portal](https://discord.com/developers/)** and login.
-2. Select your bot application.
-2. In the left sidebar, click on **'OAuth2'**, then click on **'URL Generator'**.
-3. Under **Scopes** make sure that **'bot'** and **'applications.commands'** values are checked.
-4. Under **Bot Permissions** make sure that **'Administrator'** value is checked.
-5. Copy the generated URL and open it in your web browser.
-6. You will be prompted to authorize the bot. Select the Discord server where you want to add the
-   bot and authorize it.
-7. Complete any additional verification steps if prompted.
-8. The bot will now be added to your Discord server.
+### Get A Bot Token
+
+1. Open the [Discord Developer Portal](https://discord.com/developers/).
+2. Create or select an application.
+3. Open the **Bot** tab.
+4. Reset and copy the token.
+5. Store it in `.env` as `DISCORD_BOT_TOKEN`.
+
+Treat the token as a secret. Do not commit it.
+
+### Invite The Bot
+
+1. Open the application in the Discord Developer Portal.
+2. Go to **OAuth2** and then **URL Generator**.
+3. Select the `bot` and `applications.commands` scopes.
+4. Select permissions needed for your test server. For a quick private demo, Administrator is the
+   simplest option. For a tighter setup, grant message, slash command, channel, and event-related
+   permissions explicitly.
+5. Open the generated URL and authorize the bot into your server.
+
+## Project Status
+
+Completed hardening areas:
+
+- global signup interaction handling
+- transactional signup service
+- capacity and duplicate-user safeguards
+- waitlists and waitlist promotion
+- event lifecycle states
+- stale event cleanup
+- scheduled reminders
+- Docker/Testcontainers verification
+
+Useful next improvements:
+
+- capture the demo screenshots or GIFs from the scripted guide
+- add CI workflow documentation and badge cleanup if needed
+- decide whether the REST/admin API is a supported product surface or legacy support tooling
+- add production deployment notes for hosting, secrets, logs, and backups
 
 ## License
-This project is licensed under the **Apache License 2.0**.
 
-The Apache License 2.0 is an open source license that allows you to use, modify, and distribute this software, both for commercial and non-commercial purposes. It provides patent and trademark protection, and requires that you include the original license notice in any derivative works.
-
-For more details, please refer to the full text of the [Apache License 2.0](https://github.com/havlli/EventPilot/blob/main/LICENSE.txt).
+This project is licensed under the Apache License 2.0. See [LICENSE.txt](LICENSE.txt).
 
 <!-- Repository -->
 
