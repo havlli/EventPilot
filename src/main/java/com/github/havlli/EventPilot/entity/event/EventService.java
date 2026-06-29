@@ -88,6 +88,14 @@ public class EventService {
         return eventDAO.getLastFiveEvents();
     }
 
+    public List<Event> getEventsForGuild(String guildId, List<EventStatus> statuses, int limit) {
+        return eventDAO.getEventsForGuild(guildId, statuses, limit);
+    }
+
+    public Optional<Event> getEventByIdForGuild(String id, String guildId) {
+        return eventDAO.findByIdAndGuildId(id, guildId);
+    }
+
     public Event updateEvent(String id, EventUpdateRequest updateRequest) {
         Optional<Event> eventOptional = eventDAO.findById(id);
 

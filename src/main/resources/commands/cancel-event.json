@@ -1,6 +1,7 @@
 {
   "name": "cancel-event",
   "description": "Cancel an event signup without deleting it.",
+  "default_member_permissions": "16",
   "options": [
     {
       "name": "message-id",

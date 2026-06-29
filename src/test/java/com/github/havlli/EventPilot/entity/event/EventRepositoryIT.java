@@ -8,6 +8,7 @@ import com.github.havlli.EventPilot.entity.guild.Guild;
 import com.github.havlli.EventPilot.entity.guild.GuildRepository;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.data.domain.PageRequest;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -422,6 +423,109 @@ class EventRepositoryIT extends TestDatabaseContainer {
                 fetchedFutureOutsideCutoffEvent,
                 fetchedPastEvent
         );
+    }
+
+    @Test
+    public void findByGuildIdAndStatusInOrderByDateTimeAsc_ReturnsGuildScopedStatusFilteredEvents() {
+        // Arrange
+        Instant instantNow = timeTester.getInstantNowFromSystem();
+        Guild targetGuild = new Guild("guild-1", "target");
+        Guild otherGuild = new Guild("guild-2", "other");
+        EmbedType embedType = new EmbedType(
+                1L,
+                "test",
+                "{\"-1\":\"Absence\",\"-2\":\"Late\",\"1\":\"Tank\",\"-3\":\"Tentative\",\"2\":\"Melee\",\"3\":\"Ranged\",\"4\":\"Healer\",\"5\":\"Support\"}",
+                new ArrayList<>()
+        );
+
+        Event laterOpenEvent = createRepositoryEvent("300", "later-open", instantNow.plus(30, ChronoUnit.MINUTES), targetGuild, embedType);
+        Event fetchedLaterOpenEvent = saveEventToDatabase(laterOpenEvent, targetGuild, embedType);
+
+        Event earlierClosedEvent = createRepositoryEvent("100", "earlier-closed", instantNow.plus(10, ChronoUnit.MINUTES), targetGuild, embedType);
+        earlierClosedEvent.setStatus(EventStatus.CLOSED);
+        Event fetchedEarlierClosedEvent = saveEventToDatabase(earlierClosedEvent, targetGuild, embedType);
+
+        Event cancelledEvent = createRepositoryEvent("200", "cancelled", instantNow.plus(20, ChronoUnit.MINUTES), targetGuild, embedType);
+        cancelledEvent.setStatus(EventStatus.CANCELLED);
+        Event fetchedCancelledEvent = saveEventToDatabase(cancelledEvent, targetGuild, embedType);
+
+        Event otherGuildEvent = createRepositoryEvent("400", "other-guild", instantNow.plus(5, ChronoUnit.MINUTES), otherGuild, embedType);
+        Event fetchedOtherGuildEvent = saveEventToDatabase(otherGuildEvent, otherGuild, embedType);
+
+        // Act
+        List<Event> actual = underTest.findByGuildIdAndStatusInOrderByDateTimeAsc(
+                "guild-1",
+                List.of(EventStatus.OPEN, EventStatus.CLOSED),
+                PageRequest.of(0, 10)
+        );
+
+        // Assert
+        assertThat(actual).containsExactly(fetchedEarlierClosedEvent, fetchedLaterOpenEvent);
+        assertThat(actual).doesNotContain(fetchedCancelledEvent, fetchedOtherGuildEvent);
+    }
+
+    @Test
+    public void findByGuildIdOrderByDateTimeAsc_ReturnsLimitedGuildScopedEvents() {
+        // Arrange
+        Instant instantNow = timeTester.getInstantNowFromSystem();
+        Guild targetGuild = new Guild("guild-1", "target");
+        Guild otherGuild = new Guild("guild-2", "other");
+        EmbedType embedType = new EmbedType(
+                1L,
+                "test",
+                "{\"-1\":\"Absence\",\"-2\":\"Late\",\"1\":\"Tank\",\"-3\":\"Tentative\",\"2\":\"Melee\",\"3\":\"Ranged\",\"4\":\"Healer\",\"5\":\"Support\"}",
+                new ArrayList<>()
+        );
+
+        Event firstEvent = createRepositoryEvent("100", "first", instantNow.plus(10, ChronoUnit.MINUTES), targetGuild, embedType);
+        Event fetchedFirstEvent = saveEventToDatabase(firstEvent, targetGuild, embedType);
+
+        Event secondEvent = createRepositoryEvent("200", "second", instantNow.plus(20, ChronoUnit.MINUTES), targetGuild, embedType);
+        Event fetchedSecondEvent = saveEventToDatabase(secondEvent, targetGuild, embedType);
+
+        Event thirdEvent = createRepositoryEvent("300", "third", instantNow.plus(30, ChronoUnit.MINUTES), targetGuild, embedType);
+        Event fetchedThirdEvent = saveEventToDatabase(thirdEvent, targetGuild, embedType);
+
+        Event otherGuildEvent = createRepositoryEvent("400", "other-guild", instantNow.plus(5, ChronoUnit.MINUTES), otherGuild, embedType);
+        Event fetchedOtherGuildEvent = saveEventToDatabase(otherGuildEvent, otherGuild, embedType);
+
+        // Act
+        List<Event> actual = underTest.findByGuildIdOrderByDateTimeAsc(
+                "guild-1",
+                PageRequest.of(0, 2)
+        );
+
+        // Assert
+        assertThat(actual).containsExactly(fetchedFirstEvent, fetchedSecondEvent);
+        assertThat(actual).doesNotContain(fetchedThirdEvent, fetchedOtherGuildEvent);
+    }
+
+    @Test
+    public void findByIdAndGuildId_ReturnsOnlyMatchingGuildEvent() {
+        // Arrange
+        Instant instantNow = timeTester.getInstantNowFromSystem();
+        Guild targetGuild = new Guild("guild-1", "target");
+        Guild otherGuild = new Guild("guild-2", "other");
+        EmbedType embedType = new EmbedType(
+                1L,
+                "test",
+                "{\"-1\":\"Absence\",\"-2\":\"Late\",\"1\":\"Tank\",\"-3\":\"Tentative\",\"2\":\"Melee\",\"3\":\"Ranged\",\"4\":\"Healer\",\"5\":\"Support\"}",
+                new ArrayList<>()
+        );
+
+        Event targetEvent = createRepositoryEvent("100", "target", instantNow.plus(10, ChronoUnit.MINUTES), targetGuild, embedType);
+        Event fetchedTargetEvent = saveEventToDatabase(targetEvent, targetGuild, embedType);
+
+        Event otherGuildEvent = createRepositoryEvent("200", "other-guild", instantNow.plus(10, ChronoUnit.MINUTES), otherGuild, embedType);
+        saveEventToDatabase(otherGuildEvent, otherGuild, embedType);
+
+        // Act
+        Optional<Event> actual = underTest.findByIdAndGuildId("100", "guild-1");
+        Optional<Event> wrongGuild = underTest.findByIdAndGuildId("100", "guild-2");
+
+        // Assert
+        assertThat(actual).contains(fetchedTargetEvent);
+        assertThat(wrongGuild).isEmpty();
     }
 
     @Test

@@ -1,6 +1,6 @@
 {
-  "name": "close-event",
-  "description": "Close an event signup without deleting it.",
+  "name": "event-info",
+  "description": "Show details for an event signup.",
   "default_member_permissions": "16",
   "options": [
     {

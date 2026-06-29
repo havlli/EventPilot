@@ -1,5 +1,6 @@
 package com.github.havlli.EventPilot.entity.event;
 
+import org.springframework.data.domain.PageRequest;
 import org.springframework.stereotype.Repository;
 
 import java.time.Instant;
@@ -9,6 +10,7 @@ import java.util.Optional;
 @Repository
 public class EventJPADataAccessService implements EventDAO {
 
+    private static final int MINIMUM_LIMIT = 1;
     private final EventRepository eventRepository;
 
     public EventJPADataAccessService(EventRepository eventRepository) {
@@ -61,8 +63,23 @@ public class EventJPADataAccessService implements EventDAO {
     }
 
     @Override
+    public List<Event> getEventsForGuild(String guildId, List<EventStatus> statuses, int limit) {
+        PageRequest pageRequest = PageRequest.of(0, Math.max(MINIMUM_LIMIT, limit));
+        if (statuses == null || statuses.isEmpty()) {
+            return eventRepository.findByGuildIdOrderByDateTimeAsc(guildId, pageRequest);
+        }
+
+        return eventRepository.findByGuildIdAndStatusInOrderByDateTimeAsc(guildId, statuses, pageRequest);
+    }
+
+    @Override
     public Optional<Event> findById(String id) {
         return eventRepository.findById(id);
+    }
+
+    @Override
+    public Optional<Event> findByIdAndGuildId(String id, String guildId) {
+        return eventRepository.findByIdAndGuildId(id, guildId);
     }
 
     @Override

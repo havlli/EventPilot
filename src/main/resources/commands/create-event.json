@@ -1,4 +1,5 @@
 {
   "name": "create-event",
-  "description": "Create a role-based event signup post."
+  "description": "Create a role-based event signup post.",
+  "default_member_permissions": "16"
 }

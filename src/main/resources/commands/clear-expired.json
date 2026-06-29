@@ -1,4 +1,5 @@
 {
   "name": "clear-expired",
-  "description": "Delete expired event signups in this channel."
+  "description": "Delete expired event signups in this channel.",
+  "default_member_permissions": "16"
 }

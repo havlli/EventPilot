@@ -79,8 +79,12 @@ class GlobalCommandRegistrarTest {
                         "create-embed-type",
                         "create-event",
                         "delete-event",
+                        "event-info",
+                        "list-events",
                         "reopen-event"
                 );
+        assertThat(capturedCommands)
+                .allSatisfy(command -> assertThat(command.defaultMemberPermissions()).contains("16"));
     }
 
     @Test

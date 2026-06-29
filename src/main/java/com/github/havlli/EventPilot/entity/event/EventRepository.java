@@ -1,6 +1,7 @@
 package com.github.havlli.EventPilot.entity.event;
 
 import jakarta.persistence.LockModeType;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Lock;
 import org.springframework.data.jpa.repository.Query;
@@ -65,4 +66,36 @@ public interface EventRepository extends JpaRepository<Event, String> {
             ORDER BY e.eventId DESC LIMIT 5
             """)
     List<Event> findLastFiveEvents();
+
+    @Query("""
+            SELECT DISTINCT e FROM Event e
+            LEFT JOIN FETCH e.guild
+            LEFT JOIN FETCH e.embedType
+            WHERE e.guild.id = :guildId
+            ORDER BY e.dateTime ASC, e.eventId ASC
+            """)
+    List<Event> findByGuildIdOrderByDateTimeAsc(String guildId, Pageable pageable);
+
+    @Query("""
+            SELECT DISTINCT e FROM Event e
+            LEFT JOIN FETCH e.guild
+            LEFT JOIN FETCH e.embedType
+            WHERE e.guild.id = :guildId
+            AND e.status IN :statuses
+            ORDER BY e.dateTime ASC, e.eventId ASC
+            """)
+    List<Event> findByGuildIdAndStatusInOrderByDateTimeAsc(
+            String guildId,
+            List<EventStatus> statuses,
+            Pageable pageable
+    );
+
+    @Query("""
+            SELECT DISTINCT e FROM Event e
+            LEFT JOIN FETCH e.guild
+            LEFT JOIN FETCH e.embedType
+            WHERE e.eventId = :id
+            AND e.guild.id = :guildId
+            """)
+    Optional<Event> findByIdAndGuildId(String id, String guildId);
 }

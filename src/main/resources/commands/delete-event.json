@@ -1,6 +1,7 @@
 {
   "name": "delete-event",
   "description": "Delete an event signup by message ID.",
+  "default_member_permissions": "16",
   "options": [
     {
       "name": "message-id",
