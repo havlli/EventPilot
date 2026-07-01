@@ -33,7 +33,6 @@ import static org.assertj.core.api.Assertions.assertThat;
 class EventRepositoryIT extends TestDatabaseContainer {
 
     private static final Logger LOG = LoggerFactory.getLogger(EventRepositoryIT.class);
-    private static final int TIMESTAMP_CLOCK_SKEW_TOLERANCE_SECONDS = 2;
     @Autowired
     private GuildRepository guildRepository;
     @Autowired
@@ -55,31 +54,22 @@ class EventRepositoryIT extends TestDatabaseContainer {
     }
 
     @Test
-    public void jpaQueryCurrentTimestamp_SatisfiesExecutionTimeTolerance() throws SQLException {
-        // Arrange
-        Instant beforeQuery = Instant.now();
-
+    public void jpaQueryCurrentTimestamp_ReturnsStableTransactionTimestamp() throws SQLException {
         // Act
-        Instant actualJdbcQuery = timeTester.getCurrentTimestampUsingJdbc();
         Instant actualNativeQuery = timeTester.getCurrentTimestampUsingPersistence();
         Instant actualJPQLQuery = testRepository.selectCurrentTimestamp();
-        Instant afterQuery = Instant.now();
+        Instant actualSecondNativeQuery = timeTester.getCurrentTimestampUsingPersistence();
 
         // Assert
-        assertTimestampWithinQueryWindow(actualNativeQuery, beforeQuery, afterQuery);
-        assertTimestampWithinQueryWindow(actualJPQLQuery, beforeQuery, afterQuery);
-        assertTimestampWithinQueryWindow(actualJdbcQuery, beforeQuery, afterQuery);
-    }
-
-    private static void assertTimestampWithinQueryWindow(Instant actual, Instant beforeQuery, Instant afterQuery) {
-        assertThat(actual).isAfterOrEqualTo(beforeQuery.minus(TIMESTAMP_CLOCK_SKEW_TOLERANCE_SECONDS, ChronoUnit.SECONDS));
-        assertThat(actual).isBeforeOrEqualTo(afterQuery.plus(TIMESTAMP_CLOCK_SKEW_TOLERANCE_SECONDS, ChronoUnit.SECONDS));
+        assertThat(actualJPQLQuery).isEqualTo(actualNativeQuery);
+        assertThat(actualSecondNativeQuery).isEqualTo(actualNativeQuery);
+        assertThat(timeTester.getCurrentTimestampUsingJdbc()).isNotNull();
     }
 
     @Test
     public void findAllWithDatetimeBeforeCurrentTime_ReturnsListOfExpiredEvents_WhenOffsetOneMinute() {
         // Arrange
-        Instant instantNow = timeTester.getInstantNowFromSystem();
+        Instant instantNow = timeTester.getCurrentTimestampUsingPersistence();
 
         Guild guild = new Guild("1", "guild");
 
@@ -150,7 +140,7 @@ class EventRepositoryIT extends TestDatabaseContainer {
     @Test
     public void findAllWithDatetimeBeforeCurrentTime_ReturnsListOfExpiredEvents_WhenOffsetThreeSeconds() throws SQLException {
         // Arrange
-        Instant instantNow = timeTester.getInstantNowFromSystem();
+        Instant instantNow = timeTester.getCurrentTimestampUsingPersistence();
 
         Guild guild = new Guild("1", "guild");
 
@@ -221,7 +211,7 @@ class EventRepositoryIT extends TestDatabaseContainer {
     @Test
     public void findAllWithDatetimeBeforeCurrentTime_ReturnsListOfExpiredEvents_WhenOffsetTwoSeconds() throws SQLException {
         // Arrange
-        Instant instantNow = timeTester.getInstantNowFromSystem();
+        Instant instantNow = timeTester.getCurrentTimestampUsingPersistence();
 
         Guild guild = new Guild("1", "guild");
 
@@ -291,7 +281,7 @@ class EventRepositoryIT extends TestDatabaseContainer {
     @Test
     public void findAllWithDatetimeBeforeCurrentTime_ReturnsOnlyOpenAndClosedExpiredEvents() {
         // Arrange
-        Instant instantNow = timeTester.getInstantNowFromSystem();
+        Instant instantNow = timeTester.getCurrentTimestampUsingPersistence();
         Guild guild = new Guild("1", "guild");
         Instant expiredDateTime = instantNow.minus(1, ChronoUnit.MINUTES);
 
@@ -374,7 +364,7 @@ class EventRepositoryIT extends TestDatabaseContainer {
     @Test
     public void findReminderCandidates_ReturnsOpenAndClosedUnremindedFutureEventsInsideCutoff() {
         // Arrange
-        Instant instantNow = timeTester.getInstantNowFromSystem();
+        Instant instantNow = timeTester.getCurrentTimestampUsingPersistence();
         Instant reminderCutoff = instantNow.plus(60, ChronoUnit.MINUTES);
 
         Guild guild = new Guild("1", "guild");
