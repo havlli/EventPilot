@@ -30,6 +30,17 @@ DISCORD_SCHEDULER_INTERVAL_SECONDS=10
 DISCORD_REMINDER_LEAD_MINUTES=5
 ```
 
+## Preflight
+
+Run the local preflight before starting the bot:
+
+```shell
+scripts/live-smoke-preflight.sh
+```
+
+The script checks Docker, `.env`, required variable names, and command resources. It prints key names
+only and never prints secret values.
+
 ## Startup
 
 1. Start the app and dependencies:
@@ -200,8 +211,8 @@ Expected result:
 Run after the live pass:
 
 ```shell
-mvn -ntp -Dmaven.repo.local=.m2/repository test
-mvn -ntp -Dmaven.repo.local=.m2/repository verify
+mise exec -- mvn -ntp -Dmaven.repo.local=.m2/repository test
+mise exec -- mvn -ntp -Dmaven.repo.local=.m2/repository verify
 ```
 
 `verify` requires Docker for Testcontainers.

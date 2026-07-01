@@ -21,7 +21,11 @@ import discord4j.core.spec.InteractionReplyEditSpec;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
+import org.mockito.Mockito;
 import org.mockito.MockitoAnnotations;
 import org.springframework.context.MessageSource;
 import reactor.core.publisher.Mono;
@@ -64,10 +68,19 @@ class EventSignupCommandTest {
         autoCloseable.close();
     }
 
-    @Test
-    void handle_ReturnsEmptyMono_WhenButtonIdIsNotSignupId() {
+    @ParameterizedTest
+    @ValueSource(strings = {
+            "confirm",
+            "confirm,1",
+            "12345",
+            "12345,",
+            "12345,role",
+            "12345,1,2",
+            ",1"
+    })
+    void handle_ReturnsEmptyMono_WhenButtonIdIsNotSignupId(String customId) {
         // Arrange
-        when(buttonEvent.getCustomId()).thenReturn("confirm");
+        when(buttonEvent.getCustomId()).thenReturn(customId);
 
         // Act
         Mono<Message> actual = underTest.handle(buttonEvent)
@@ -80,34 +93,15 @@ class EventSignupCommandTest {
         verifyNoInteractions(eventSignupService);
     }
 
-    @Test
-    void handle_ReturnsEmptyMono_WhenCommaButtonIdIsNotSignupId() {
-        // Arrange
-        when(buttonEvent.getCustomId()).thenReturn("confirm,1");
-
-        // Act
-        Mono<Message> actual = underTest.handle(buttonEvent)
-                .cast(Message.class);
-
-        // Assert
-        StepVerifier.create(actual)
-                .expectSubscription()
-                .verifyComplete();
-        verifyNoInteractions(eventSignupService);
-    }
-
-    @Test
-    void handle_AppliesSignupAndEditsReply_WhenSignupIsSuccessful() {
+    @ParameterizedTest
+    @EnumSource(value = EventSignupResult.Outcome.class, names = {"ADDED", "UPDATED", "WAITLISTED"})
+    void handle_AppliesSignupAndEditsReply_WhenSignupUpdatesEventMessage(EventSignupResult.Outcome outcome) {
         // Arrange
         Event event = createEvent();
         Message message = mock(Message.class);
-        when(buttonEvent.getCustomId()).thenReturn("12345,1");
-        when(buttonEvent.getInteraction()).thenReturn(interaction);
-        when(interaction.getUser()).thenReturn(user);
-        when(user.getId()).thenReturn(Snowflake.of("999"));
-        when(user.getUsername()).thenReturn("player");
+        stubSignupRequest();
         when(eventSignupService.applySignup("12345", "999", "player", 1))
-                .thenReturn(EventSignupResult.added(event));
+                .thenReturn(signupResult(outcome, event));
         when(buttonEvent.deferEdit()).thenReturn(InteractionCallbackSpecDeferEditMono.of(buttonEvent));
         when(buttonEvent.deferEdit(any(InteractionCallbackSpec.class))).thenReturn(Mono.empty());
         when(buttonEvent.editReply(any(InteractionReplyEditSpec.class))).thenReturn(Mono.just(message));
@@ -125,20 +119,27 @@ class EventSignupCommandTest {
         verify(eventSignupService, times(1)).applySignup("12345", "999", "player", 1);
         verify(embedGenerator, times(1)).generateEmbed(event);
         verify(embedGenerator, times(1)).generateComponents(event);
+        verifyNoInteractions(messageSource);
     }
 
-    @Test
-    void handle_RepliesEphemerally_WhenEventIsFull() {
+    @ParameterizedTest
+    @EnumSource(value = EventSignupResult.Outcome.class, names = {
+            "EVENT_FULL",
+            "EVENT_NOT_FOUND",
+            "ROLE_NOT_FOUND",
+            "INVALID_CAPACITY",
+            "EVENT_CLOSED",
+            "EVENT_CANCELLED",
+            "EVENT_EXPIRED"
+    })
+    void handle_RepliesEphemerally_WhenSignupIsBlocked(EventSignupResult.Outcome outcome) {
         // Arrange
-        when(buttonEvent.getCustomId()).thenReturn("12345,1");
-        when(buttonEvent.getInteraction()).thenReturn(interaction);
-        when(interaction.getUser()).thenReturn(user);
-        when(user.getId()).thenReturn(Snowflake.of("999"));
-        when(user.getUsername()).thenReturn("player");
+        String messageKey = messageKeyFor(outcome);
+        String message = "message for " + outcome;
+        stubSignupRequest();
         when(eventSignupService.applySignup("12345", "999", "player", 1))
-                .thenReturn(EventSignupResult.withoutEvent(EventSignupResult.Outcome.EVENT_FULL));
-        when(messageSource.getMessage("interaction.signup.event-full", null, Locale.ENGLISH))
-                .thenReturn("This event is already full.");
+                .thenReturn(EventSignupResult.withoutEvent(outcome));
+        when(messageSource.getMessage(messageKey, null, Locale.ENGLISH)).thenReturn(message);
         when(buttonEvent.reply()).thenReturn(InteractionApplicationCommandCallbackReplyMono.of(buttonEvent));
         when(buttonEvent.reply(any(InteractionApplicationCommandCallbackSpec.class))).thenReturn(Mono.empty());
 
@@ -148,71 +149,49 @@ class EventSignupCommandTest {
         // Assert
         StepVerifier.create(actual)
                 .expectSubscription()
-                .verifyComplete();
-        verify(messageSource, times(1)).getMessage("interaction.signup.event-full", null, Locale.ENGLISH);
-        verify(buttonEvent, times(1)).reply(any(InteractionApplicationCommandCallbackSpec.class));
-    }
-
-    @Test
-    void handle_AppliesSignupAndEditsReply_WhenSignupIsWaitlisted() {
-        // Arrange
-        Event event = createEvent();
-        Message message = mock(Message.class);
-        when(buttonEvent.getCustomId()).thenReturn("12345,1");
-        when(buttonEvent.getInteraction()).thenReturn(interaction);
-        when(interaction.getUser()).thenReturn(user);
-        when(user.getId()).thenReturn(Snowflake.of("999"));
-        when(user.getUsername()).thenReturn("player");
-        when(eventSignupService.applySignup("12345", "999", "player", 1))
-                .thenReturn(EventSignupResult.waitlisted(event));
-        when(buttonEvent.deferEdit()).thenReturn(InteractionCallbackSpecDeferEditMono.of(buttonEvent));
-        when(buttonEvent.deferEdit(any(InteractionCallbackSpec.class))).thenReturn(Mono.empty());
-        when(buttonEvent.editReply(any(InteractionReplyEditSpec.class))).thenReturn(Mono.just(message));
-        when(embedGenerator.generateEmbed(event)).thenReturn(EmbedCreateSpec.builder().build());
-        when(embedGenerator.generateComponents(event)).thenReturn(List.<TopLevelMessageComponent>of());
-
-        // Act
-        Mono<Message> actual = underTest.handle(buttonEvent)
-                .cast(Message.class);
-
-        // Assert
-        StepVerifier.create(actual)
-                .expectNext(message)
                 .verifyComplete();
         verify(eventSignupService, times(1)).applySignup("12345", "999", "player", 1);
-        verify(embedGenerator, times(1)).generateEmbed(event);
-        verify(embedGenerator, times(1)).generateComponents(event);
-    }
-
-    @Test
-    void handle_RepliesEphemerally_WhenEventIsClosed() {
-        // Arrange
-        when(buttonEvent.getCustomId()).thenReturn("12345,1");
-        when(buttonEvent.getInteraction()).thenReturn(interaction);
-        when(interaction.getUser()).thenReturn(user);
-        when(user.getId()).thenReturn(Snowflake.of("999"));
-        when(user.getUsername()).thenReturn("player");
-        when(eventSignupService.applySignup("12345", "999", "player", 1))
-                .thenReturn(EventSignupResult.withoutEvent(EventSignupResult.Outcome.EVENT_CLOSED));
-        when(messageSource.getMessage("interaction.signup.event-closed", null, Locale.ENGLISH))
-                .thenReturn("This event is closed.");
-        when(buttonEvent.reply()).thenReturn(InteractionApplicationCommandCallbackReplyMono.of(buttonEvent));
-        when(buttonEvent.reply(any(InteractionApplicationCommandCallbackSpec.class))).thenReturn(Mono.empty());
-
-        // Act
-        Mono<?> actual = underTest.handle(buttonEvent);
-
-        // Assert
-        StepVerifier.create(actual)
-                .expectSubscription()
-                .verifyComplete();
-        verify(messageSource, times(1)).getMessage("interaction.signup.event-closed", null, Locale.ENGLISH);
-        verify(buttonEvent, times(1)).reply(any(InteractionApplicationCommandCallbackSpec.class));
+        verify(messageSource, times(1)).getMessage(messageKey, null, Locale.ENGLISH);
+        verify(buttonEvent, times(1)).reply(Mockito.<InteractionApplicationCommandCallbackSpec>argThat(spec ->
+                spec.ephemeral().toOptional().orElse(false)
+                        && spec.content().toOptional().orElse("").equals(message)
+        ));
+        verifyNoInteractions(embedGenerator);
     }
 
     @Test
     void getName_ReturnsEventSignup() {
         assertThat(underTest.getName()).isEqualTo("event-signup");
+    }
+
+    private void stubSignupRequest() {
+        when(buttonEvent.getCustomId()).thenReturn("12345,1");
+        when(buttonEvent.getInteraction()).thenReturn(interaction);
+        when(interaction.getUser()).thenReturn(user);
+        when(user.getId()).thenReturn(Snowflake.of("999"));
+        when(user.getUsername()).thenReturn("player");
+    }
+
+    private EventSignupResult signupResult(EventSignupResult.Outcome outcome, Event event) {
+        return switch (outcome) {
+            case ADDED -> EventSignupResult.added(event);
+            case UPDATED -> EventSignupResult.updated(event);
+            case WAITLISTED -> EventSignupResult.waitlisted(event);
+            default -> throw new IllegalArgumentException("Unexpected success outcome: " + outcome);
+        };
+    }
+
+    private String messageKeyFor(EventSignupResult.Outcome outcome) {
+        return switch (outcome) {
+            case EVENT_FULL -> "interaction.signup.event-full";
+            case EVENT_NOT_FOUND -> "interaction.signup.event-not-found";
+            case ROLE_NOT_FOUND -> "interaction.signup.role-not-found";
+            case INVALID_CAPACITY -> "interaction.signup.invalid-capacity";
+            case EVENT_CLOSED -> "interaction.signup.event-closed";
+            case EVENT_CANCELLED -> "interaction.signup.event-cancelled";
+            case EVENT_EXPIRED -> "interaction.signup.event-expired";
+            default -> throw new IllegalArgumentException("Unexpected blocked outcome: " + outcome);
+        };
     }
 
     private Event createEvent() {
