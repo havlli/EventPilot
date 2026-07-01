@@ -1,5 +1,6 @@
 package com.github.havlli.EventPilot.entity.event;
 
+import org.springframework.data.domain.PageRequest;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
@@ -10,6 +11,7 @@ import org.mockito.MockitoAnnotations;
 import java.time.Instant;
 import java.util.List;
 
+import static org.assertj.core.api.Assertions.assertThat;
 import static org.mockito.Mockito.*;
 
 class EventJPADataAccessServiceTest {
@@ -123,6 +125,58 @@ class EventJPADataAccessServiceTest {
     }
 
     @Test
+    void getEventsForGuild_DelegatesToAllGuildEvents_WhenStatusesAreNullAndClampsLimit() {
+        // Arrange
+        Event event = mock(Event.class);
+        when(eventRepository.findByGuildIdOrderByDateTimeAsc("guild-1", PageRequest.of(0, 1)))
+                .thenReturn(List.of(event));
+
+        // Act
+        List<Event> actual = underTest.getEventsForGuild("guild-1", null, 0);
+
+        // Assert
+        assertThat(actual).containsExactly(event);
+        verify(eventRepository, times(1))
+                .findByGuildIdOrderByDateTimeAsc("guild-1", PageRequest.of(0, 1));
+        verify(eventRepository, never()).findByGuildIdAndStatusInOrderByDateTimeAsc(any(), any(), any());
+    }
+
+    @Test
+    void getEventsForGuild_DelegatesToAllGuildEvents_WhenStatusesAreEmpty() {
+        // Arrange
+        Event event = mock(Event.class);
+        when(eventRepository.findByGuildIdOrderByDateTimeAsc("guild-1", PageRequest.of(0, 5)))
+                .thenReturn(List.of(event));
+
+        // Act
+        List<Event> actual = underTest.getEventsForGuild("guild-1", List.of(), 5);
+
+        // Assert
+        assertThat(actual).containsExactly(event);
+        verify(eventRepository, times(1))
+                .findByGuildIdOrderByDateTimeAsc("guild-1", PageRequest.of(0, 5));
+        verify(eventRepository, never()).findByGuildIdAndStatusInOrderByDateTimeAsc(any(), any(), any());
+    }
+
+    @Test
+    void getEventsForGuild_DelegatesToStatusFilteredGuildEvents() {
+        // Arrange
+        Event event = mock(Event.class);
+        List<EventStatus> statuses = List.of(EventStatus.OPEN, EventStatus.CLOSED);
+        when(eventRepository.findByGuildIdAndStatusInOrderByDateTimeAsc("guild-1", statuses, PageRequest.of(0, 5)))
+                .thenReturn(List.of(event));
+
+        // Act
+        List<Event> actual = underTest.getEventsForGuild("guild-1", statuses, 5);
+
+        // Assert
+        assertThat(actual).containsExactly(event);
+        verify(eventRepository, times(1))
+                .findByGuildIdAndStatusInOrderByDateTimeAsc("guild-1", statuses, PageRequest.of(0, 5));
+        verify(eventRepository, never()).findByGuildIdOrderByDateTimeAsc(any(), any());
+    }
+
+    @Test
     void findById() {
         // Arrange
         String eventId = "1234";
@@ -132,6 +186,18 @@ class EventJPADataAccessServiceTest {
 
         // Assert
         verify(eventRepository, times(1)).findById(eventId);
+    }
+
+    @Test
+    void findByIdAndGuildId() {
+        // Arrange
+        String eventId = "1234";
+
+        // Act
+        underTest.findByIdAndGuildId(eventId, "guild-1");
+
+        // Assert
+        verify(eventRepository, times(1)).findByIdAndGuildId(eventId, "guild-1");
     }
 
     @Test

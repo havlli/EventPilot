@@ -1,6 +1,7 @@
 {
   "name": "reopen-event",
   "description": "Reopen a closed event signup.",
+  "default_member_permissions": "16",
   "options": [
     {
       "name": "message-id",

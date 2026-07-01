@@ -1,0 +1,47 @@
+{
+  "name": "list-events",
+  "description": "List event signups in this server.",
+  "default_member_permissions": "16",
+  "options": [
+    {
+      "name": "status",
+      "description": "Filter events by lifecycle status",
+      "type": 3,
+      "required": false,
+      "choices": [
+        {
+          "name": "Active",
+          "value": "active"
+        },
+        {
+          "name": "Open",
+          "value": "open"
+        },
+        {
+          "name": "Closed",
+          "value": "closed"
+        },
+        {
+          "name": "Cancelled",
+          "value": "cancelled"
+        },
+        {
+          "name": "Expired",
+          "value": "expired"
+        },
+        {
+          "name": "All",
+          "value": "all"
+        }
+      ]
+    },
+    {
+      "name": "limit",
+      "description": "Maximum events to show",
+      "type": 4,
+      "required": false,
+      "min_value": 1,
+      "max_value": 10
+    }
+  ]
+}

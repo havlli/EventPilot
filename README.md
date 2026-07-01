@@ -60,6 +60,8 @@ supporting operations, but the main product surface is the Discord server.
 - Existing participants can change roles without creating duplicate signup records.
 - Non-capacity states such as Absence, Late, and Tentative do not fill roster capacity.
 - Event lifecycle commands for close, reopen, cancel, delete, and expired cleanup.
+- Organizer discovery commands for listing events and inspecting detailed roster state.
+- Discord-side command permission defaults backed by server-side permission checks.
 - Scheduled reminders before event start time with roster and waitlist summary.
 - Expired event deactivation and stale database cleanup.
 - Flyway-managed PostgreSQL schema with constraints for participant consistency.
@@ -88,11 +90,12 @@ Absence
 5. Sign up from two Discord users or test accounts until the event reaches capacity.
 6. Sign up another user to show waitlist behavior.
 7. Change an existing confirmed user to `Absence` and show the next waitlisted user promoted.
-8. Run `/close-event`, then try another signup to show lifecycle protection.
-9. Run `/reopen-event` and show signups working again.
-10. Reduce `DISCORD_REMINDER_LEAD_MINUTES` in a local demo environment and create a near-future event
+8. Run `/list-events` and `/event-info` to show organizer visibility.
+9. Run `/close-event`, then try another signup to show lifecycle protection.
+10. Run `/reopen-event` and show signups working again.
+11. Reduce `DISCORD_REMINDER_LEAD_MINUTES` in a local demo environment and create a near-future event
     to show the reminder embed.
-11. Run `/cancel-event` or `/delete-event` to show organizer controls and cleanup.
+12. Run `/cancel-event` or `/delete-event` to show organizer controls and cleanup.
 
 Useful screenshots or GIFs for a portfolio page:
 
@@ -109,6 +112,8 @@ Useful screenshots or GIFs for a portfolio page:
 | --- | --- |
 | `/create-event` | Starts a private guided flow for creating a role-based event signup post. |
 | `/create-embed-type` | Creates a reusable role layout for event buttons and embed grouping. |
+| `/list-events status:<filter> limit:<count>` | Lists recent events in the current server with roster and waitlist counts. |
+| `/event-info message-id:<id>` | Shows detailed event status, roster groups, and waitlist for one signup post. |
 | `/close-event message-id:<id>` | Closes an event to prevent further signups without deleting the post. |
 | `/reopen-event message-id:<id>` | Reopens a previously closed event. |
 | `/cancel-event message-id:<id>` | Cancels an event without deleting its historical signup state. |
@@ -116,7 +121,8 @@ Useful screenshots or GIFs for a portfolio page:
 | `/clear-expired` | Deactivates expired event signups in the current channel. |
 
 The `message-id` is the Discord message ID of the event signup post. Event embeds also show the event
-ID so organizers can copy it when using lifecycle commands.
+ID so organizers can copy it when using lifecycle and inspection commands. Organizer commands require
+`Manage Channels`; command JSON also sets Discord `default_member_permissions` for supported clients.
 
 ## Signup Rules
 
@@ -154,6 +160,8 @@ Key implementation points:
 - Discord button handling is centralized through one global `ButtonInteractionEvent` path.
 - Signup mutation lives in `EventSignupService`, which makes capacity and waitlist behavior testable.
 - Repository lookups use locking where concurrent signup consistency matters.
+- Organizer inspection commands are guild-scoped so one server cannot read another server's event
+  state by message ID.
 - Scheduled work handles expired-event deactivation and reminder dispatch.
 - Discord message rendering is separated into generator/formatter classes.
 - Flyway migrations own schema evolution; test schema mirrors the migrated model.
@@ -164,6 +172,8 @@ Key implementation points:
   reminder, cleanup, and testing decisions behind the current design.
 - [Demo capture guide](docs/demo-capture.md) provides a repeatable script for recording portfolio
   screenshots or GIFs in a Discord test server.
+- [Live smoke test](docs/live-smoke-test.md) lists the real Discord checks to run before treating a
+  build as demo-ready.
 
 ## Technology Stack
 
@@ -309,6 +319,7 @@ Completed hardening areas:
 - stale event cleanup
 - scheduled reminders
 - Docker/Testcontainers verification
+- organizer event discovery and detailed event inspection
 
 Useful next improvements:
 

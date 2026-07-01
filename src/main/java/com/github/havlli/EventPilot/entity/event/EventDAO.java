@@ -14,6 +14,8 @@ public interface EventDAO {
     List<Event> getReminderCandidates(Instant reminderCutoff);
     boolean existsById(String id);
     List<Event> getLastFiveEvents();
+    List<Event> getEventsForGuild(String guildId, List<EventStatus> statuses, int limit);
     Optional<Event> findById(String id);
+    Optional<Event> findByIdAndGuildId(String id, String guildId);
     Optional<Event> findByIdForUpdate(String id);
 }

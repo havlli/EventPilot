@@ -202,6 +202,35 @@ class EventServiceTest {
     }
 
     @Test
+    void getEventsForGuild_DelegatesToDao() {
+        // Arrange
+        List<EventStatus> statuses = List.of(EventStatus.OPEN, EventStatus.CLOSED);
+        List<Event> expected = List.of(mock(Event.class));
+        when(eventDAO.getEventsForGuild("guild-1", statuses, 5)).thenReturn(expected);
+
+        // Act
+        List<Event> actual = underTest.getEventsForGuild("guild-1", statuses, 5);
+
+        // Assert
+        assertThat(actual).isEqualTo(expected);
+        verify(eventDAO, times(1)).getEventsForGuild("guild-1", statuses, 5);
+    }
+
+    @Test
+    void getEventByIdForGuild_DelegatesToDao() {
+        // Arrange
+        Event expected = mock(Event.class);
+        when(eventDAO.findByIdAndGuildId("event-1", "guild-1")).thenReturn(Optional.of(expected));
+
+        // Act
+        Optional<Event> actual = underTest.getEventByIdForGuild("event-1", "guild-1");
+
+        // Assert
+        assertThat(actual).contains(expected);
+        verify(eventDAO, times(1)).findByIdAndGuildId("event-1", "guild-1");
+    }
+
+    @Test
     void deleteEventById_deletesEvent_WhenEventExists() {
         // Arrange
         var eventId = "1";
