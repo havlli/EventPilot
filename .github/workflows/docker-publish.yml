@@ -33,7 +33,7 @@ jobs:
         options: --restart always
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6.0.2
+        uses: actions/checkout@v7.0.0
 
       - name: Set up JDK 17
         uses: actions/setup-java@v5
