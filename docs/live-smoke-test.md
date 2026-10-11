@@ -30,6 +30,18 @@ DISCORD_SCHEDULER_INTERVAL_SECONDS=10
 DISCORD_REMINDER_LEAD_MINUTES=5
 ```
 
+## Preflight
+
+Run the local preflight before starting the bot:
+
+```shell
+scripts/live-smoke-preflight.sh
+```
+
+The script checks Docker, `.env`, required variable names, and command resources. During normal runs,
+it prints key names, not values; shell tracing (for example `bash -x` or inherited `set -x`) could
+expose captured `.env` lines, so do not run it with tracing.
+
 ## Startup
 
 1. Start the app and dependencies:
@@ -200,8 +212,8 @@ Expected result:
 Run after the live pass:
 
 ```shell
-mvn -ntp -Dmaven.repo.local=.m2/repository test
-mvn -ntp -Dmaven.repo.local=.m2/repository verify
+mise exec -- mvn -ntp -Dmaven.repo.local=.m2/repository test
+mise exec -- mvn -ntp -Dmaven.repo.local=.m2/repository verify
 ```
 
 `verify` requires Docker for Testcontainers.
@@ -210,3 +222,8 @@ mvn -ntp -Dmaven.repo.local=.m2/repository verify
 
 Do not create or commit `.env` placeholders with real secrets. Leave this checklist as the live
 acceptance script and rely on automated verification for the current pass.
+
+As of this pull request (2026-10-11), no live Discord checks were run: Startup (bot online,
+command visibility and permissions), Event Creation, Signup Lifecycle, Organizer Discovery,
+Lifecycle Controls, Reminder, and Stale Delete Cleanup. No `.env`, bot token, or test server
+was available; live runs were not authorized.
