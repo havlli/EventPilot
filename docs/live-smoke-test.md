@@ -38,8 +38,9 @@ Run the local preflight before starting the bot:
 scripts/live-smoke-preflight.sh
 ```
 
-The script checks Docker, `.env`, required variable names, and command resources. It prints key names
-only and never prints secret values.
+The script checks Docker, `.env`, required variable names, and command resources. During normal runs,
+it prints key names, not values; shell tracing (for example `bash -x` or inherited `set -x`) could
+expose captured `.env` lines, so do not run it with tracing.
 
 ## Startup
 
@@ -221,3 +222,8 @@ mise exec -- mvn -ntp -Dmaven.repo.local=.m2/repository verify
 
 Do not create or commit `.env` placeholders with real secrets. Leave this checklist as the live
 acceptance script and rely on automated verification for the current pass.
+
+As of this pull request (2026-10-11), no live Discord checks were run: Startup (bot online,
+command visibility and permissions), Event Creation, Signup Lifecycle, Organizer Discovery,
+Lifecycle Controls, Reminder, and Stale Delete Cleanup. No `.env`, bot token, or test server
+was available; live runs were not authorized.
