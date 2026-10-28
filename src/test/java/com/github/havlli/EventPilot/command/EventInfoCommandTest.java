@@ -30,6 +30,7 @@ import java.util.Locale;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 import static org.mockito.ArgumentMatchers.any;
 import static org.mockito.ArgumentMatchers.eq;
 import static org.mockito.Mockito.*;
@@ -192,6 +193,32 @@ class EventInfoCommandTest {
                 .expectNext(followupMessage)
                 .verifyComplete();
         assertFollowup("Fallback event details");
+    }
+
+    @Test
+    void eventInfoInteraction_PreservesMalformedMessageIdFailure() {
+        stubGuildInteraction();
+        when(interactionEvent.getOption("message-id")).thenReturn(Optional.of(stringOption("invalid")));
+
+        assertThatThrownBy(() -> underTest.eventInfoInteraction(interactionEvent))
+                .isInstanceOf(NumberFormatException.class);
+        verifyNoInteractions(eventService);
+    }
+
+    @Test
+    void eventInfoInteraction_NormalizesUnsignedSnowflakeId() {
+        Event event = mock(Event.class);
+        stubGuildInteraction();
+        when(interactionEvent.getOption("message-id"))
+                .thenReturn(Optional.of(stringOption("018446744073709551615")));
+        when(eventService.getEventByIdForGuild("18446744073709551615", "111"))
+                .thenReturn(Optional.of(event));
+        when(organizerEventFormatter.formatEventDetails(event)).thenReturn("Event details");
+        stubFollowup();
+
+        StepVerifier.create(underTest.eventInfoInteraction(interactionEvent))
+                .expectNext(followupMessage).verifyComplete();
+        assertFollowup("Event details");
     }
 
     @Test

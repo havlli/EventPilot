@@ -10,6 +10,7 @@ public interface EventDAO {
     void deleteAllEvents(List<Event> events);
     List<Event> getExpiredEvents();
     List<Event> getReminderCandidates(Instant reminderCutoff);
+    Integer getMaxReminderLeadMinutes();
     boolean existsById(String id);
     List<Event> getEventsForGuild(String guildId, List<EventStatus> statuses, int limit);
     Optional<Event> findById(String id);

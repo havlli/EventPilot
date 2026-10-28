@@ -43,6 +43,11 @@ public class EventJPADataAccessService implements EventDAO {
     }
 
     @Override
+    public Integer getMaxReminderLeadMinutes() {
+        return eventRepository.findMaxReminderLeadMinutes();
+    }
+
+    @Override
     public boolean existsById(String id) {
         return eventRepository.existsById(id);
     }

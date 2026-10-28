@@ -61,6 +61,7 @@ Expected organizer commands:
 /create-embed-type
 /list-events
 /event-info
+/event-options
 /close-event
 /reopen-event
 /cancel-event
@@ -168,6 +169,33 @@ Expected result:
 Expected result:
 
 - response is `Event not found in this server.`
+
+## Event Reminder Options
+
+Use an open or closed event whose reminder has not been sent. Replies should be ephemeral.
+
+1. Run `/event-options message-id:<event-message-id>`.
+   Expect `Reminder lead: 60 minutes (instance default). Reminder: not sent.` with the standard
+   instance setting, or the configured lead (for example, `5` with the fast-reminder setup).
+2. Run `/event-options message-id:<event-message-id> reminder-minutes:10`.
+   Expect `Event options saved.` followed by
+   `Reminder lead: 10 minutes (event override). Reminder: not sent.`
+3. Show the options again; expect the same override without the saved line.
+4. Run `/event-options message-id:<event-message-id> reset:true`.
+   Expect `Event options saved.` followed by the instance default and `Reminder: not sent.`
+5. Set a lead that includes the event's start time and wait for the scheduler interval.
+   Expect one reminder. Change or reset the lead afterward; expect `Reminder: already sent.` and
+   `The reminder was already sent; this change will not trigger another reminder.` No second
+   reminder should appear.
+6. Supply both `reminder-minutes:10` and `reset:true`.
+   Expect `Use either reminder-minutes or reset:true, not both.`
+7. Show a missing ID or an ID belonging to another server.
+   Expect `Event not found in this server.` Trying to change it, or a cancelled or expired event,
+   should return `Open or closed event not found in this server.`
+8. Try the command as an ordinary player. Discord may hide it; if invoked, expect
+   `You do not have permission to use this command.` and no change. Values outside 1–10080 should
+   be rejected by Discord; if received by the bot, expect
+   `Reminder minutes must be between 1 and 10080.`
 
 ## Lifecycle Controls
 

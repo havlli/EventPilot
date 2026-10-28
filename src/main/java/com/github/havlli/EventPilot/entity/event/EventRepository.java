@@ -41,6 +41,18 @@ public interface EventRepository extends JpaRepository<Event, String> {
             """)
     List<Event> findReminderCandidates(Instant reminderCutoff, List<EventStatus> statuses);
 
+    default Integer findMaxReminderLeadMinutes() {
+        return findMaxReminderLeadMinutes(List.of(EventStatus.OPEN, EventStatus.CLOSED));
+    }
+
+    @Query("""
+            SELECT MAX(e.reminderLeadMinutes) FROM Event e
+            WHERE e.dateTime > CURRENT_TIMESTAMP
+            AND e.status IN :statuses
+            AND e.reminderSent = false
+            """)
+    Integer findMaxReminderLeadMinutes(List<EventStatus> statuses);
+
     @Override
     @Query("""
             SELECT DISTINCT e FROM Event e

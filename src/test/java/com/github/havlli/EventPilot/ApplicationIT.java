@@ -29,6 +29,15 @@ class ApplicationIT extends TestDatabaseContainer {
     }
 
     @Test
+    void migratedEventReminderLeadColumnExistsAndIsNullable() {
+        assertThat(jdbcTemplate.queryForList("""
+                SELECT is_nullable FROM information_schema.columns
+                WHERE table_schema = current_schema()
+                AND table_name = 'event' AND column_name = 'reminder_lead_minutes'
+                """, String.class)).containsExactly("YES");
+    }
+
+    @Test
     void migratedSchemaHasNoAdministrativeUserTablesAndPassesJpaValidation() {
         assertThat(jdbcTemplate.queryForList("""
                 SELECT table_name FROM information_schema.tables

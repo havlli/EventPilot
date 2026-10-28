@@ -50,9 +50,10 @@ class EventTest {
                 .build();
 
         // Assert
-        assertThat(actual).hasNoNullFieldsOrProperties();
+        assertThat(actual).hasNoNullFieldsOrPropertiesExcept("reminderLeadMinutes");
         assertThat(actual.getStatus()).isEqualTo(EventStatus.OPEN);
         assertThat(actual.isReminderSent()).isFalse();
+        assertThat(actual.getReminderLeadMinutes()).isNull();
     }
 
     @Test
@@ -135,7 +136,7 @@ class EventTest {
         Event actual = builder.getEvent();
 
         // Assert
-        assertThat(actual).hasNoNullFieldsOrProperties();
+        assertThat(actual).hasNoNullFieldsOrPropertiesExcept("reminderLeadMinutes");
     }
 
     @Test
@@ -163,6 +164,18 @@ class EventTest {
     }
 
     @Test
+    void builderFrom_PreservesReminderOverrideAndSentState() {
+        Event original = Event.builder().withReminderLeadMinutes(120).withReminderSent(true).build();
+
+        Event copy = Event.builder().fromEvent(original).build();
+
+        assertThat(copy.getReminderLeadMinutes()).isEqualTo(120);
+        assertThat(copy.isReminderSent()).isTrue();
+        original.setReminderLeadMinutes(null);
+        assertThat(Event.builder().fromEvent(original).build().getReminderLeadMinutes()).isNull();
+    }
+
+    @Test
     void Event_toString() {
         // Arrange
         String name = "test", description = "test", memberSize = "test", destChannel = "test";
@@ -180,7 +193,7 @@ class EventTest {
                 .withGuild(new Guild("test", "test"))
                 .withEmbedType(new EmbedType(1L, "test", "test", List.of()))
                 .build();
-        String expected = "Event{eventId='testId', name='test', description='test', author='test', dateTime=2023-09-04T19:10:06.947216700Z, destinationChannelId='test', instances='test, test', memberSize='test', status=OPEN, reminderSent=false, participants=0, guild=test, embedType=test}";
+        String expected = "Event{eventId='testId', name='test', description='test', author='test', dateTime=2023-09-04T19:10:06.947216700Z, destinationChannelId='test', instances='test, test', memberSize='test', status=OPEN, reminderSent=false, reminderLeadMinutes=null, participants=0, guild=test, embedType=test}";
 
         // Act
         String actual = event.toString();

@@ -5,6 +5,7 @@ import com.github.havlli.EventPilot.session.UserSessionValidator;
 import discord4j.common.util.Snowflake;
 import discord4j.core.event.domain.Event;
 import discord4j.core.event.domain.interaction.ChatInputInteractionEvent;
+import discord4j.core.object.command.ApplicationCommandInteractionOption;
 import discord4j.core.object.entity.Message;
 import discord4j.core.spec.InteractionCallbackSpecDeferReplyMono;
 import discord4j.core.spec.InteractionFollowupCreateSpec;
@@ -63,6 +64,17 @@ public abstract class OrganizerCommand implements SlashCommand {
 
     protected Optional<Snowflake> getGuildId(ChatInputInteractionEvent event) {
         return event.getInteraction().getGuildId();
+    }
+
+    protected String targetMessageId(ChatInputInteractionEvent event) {
+        return event.getOption("message-id")
+                .flatMap(ApplicationCommandInteractionOption::getValue)
+                .map(value -> Snowflake.of(value.asString()).asString())
+                .orElse(Snowflake.of(0).asString());
+    }
+
+    protected String getMessage(String key, Object... arguments) {
+        return messageSource.getMessage(key, arguments, Locale.ENGLISH);
     }
 
     protected String getMessage(String key) {

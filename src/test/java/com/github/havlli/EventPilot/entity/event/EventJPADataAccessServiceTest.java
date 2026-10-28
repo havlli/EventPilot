@@ -79,6 +79,22 @@ class EventJPADataAccessServiceTest {
     }
 
     @Test
+    void getMaxReminderLeadMinutes_ReturnsRepositoryMaximum() {
+        when(eventRepository.findMaxReminderLeadMinutes()).thenReturn(120);
+
+        assertThat(underTest.getMaxReminderLeadMinutes()).isEqualTo(120);
+        verify(eventRepository).findMaxReminderLeadMinutes();
+    }
+
+    @Test
+    void getMaxReminderLeadMinutes_PreservesNullWhenNoOverridesExist() {
+        when(eventRepository.findMaxReminderLeadMinutes()).thenReturn(null);
+
+        assertThat(underTest.getMaxReminderLeadMinutes()).isNull();
+        verify(eventRepository).findMaxReminderLeadMinutes();
+    }
+
+    @Test
     void deleteById() {
         // Arrange
         String eventId = "1234";

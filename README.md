@@ -114,14 +114,16 @@ Useful screenshots or GIFs for a portfolio page:
 | `/create-embed-type` | Creates a reusable role layout for event buttons and embed grouping. |
 | `/list-events status:<filter> limit:<count>` | Lists recent events in the current server with roster and waitlist counts. |
 | `/event-info message-id:<id>` | Shows detailed event status, roster groups, and waitlist for one signup post. |
+| `/event-options message-id:<id> [reminder-minutes:<n>] [reset:true]` | Shows or changes the reminder lead for an event in this server. |
 | `/close-event message-id:<id>` | Closes an event to prevent further signups without deleting the post. |
 | `/reopen-event message-id:<id>` | Reopens a previously closed event. |
 | `/cancel-event message-id:<id>` | Cancels an event without deleting its historical signup state. |
 | `/delete-event message-id:<id>` | Deletes a bot-owned Discord event message and removes matching database state. |
 | `/clear-expired` | Deactivates expired event signups in the current channel. |
 
-The `message-id` is the Discord message ID of the event signup post. Event embeds also show the event
-ID so organizers can copy it when using lifecycle and inspection commands. Organizer commands require
+These 10 commands are organizer commands. The `message-id` is the Discord message ID of the event
+signup post. Event embeds also show the event ID so organizers can copy it when using lifecycle and
+inspection commands. Organizer commands require
 `Manage Channels`; command JSON also sets Discord `default_member_permissions` for supported clients.
 
 ## Signup Rules
@@ -257,6 +259,15 @@ mvn -ntp -Dmaven.repo.local=.m2/repository spring-boot:run
 | `DISCORD_REMINDER_LEAD_MINUTES` | no | `60` | How long before event start the reminder is sent. |
 | `EVENTPILOT_HEALTH_ENABLED` | no | `false` | Enable the loopback health endpoint. |
 | `EVENTPILOT_HEALTH_PORT` | no | `8081` | Health endpoint port (1–65535). |
+
+### Configuration layers
+
+Reminder lead settings resolve in this order: per-event override →
+`DISCORD_REMINDER_LEAD_MINUTES` → built-in default of 60 minutes. Use `/event-options` with
+`reminder-minutes:1` through `reminder-minutes:10080` to override an open or closed event, or
+`reset:true` to return to the instance default. Omit both options to show the current setting.
+Changing the lead after a reminder was sent does not send it again. Per-guild settings and a
+`/config` command are not built yet.
 
 ### Health check
 

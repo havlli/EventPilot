@@ -24,9 +24,11 @@ CREATE TABLE event
     member_size  VARCHAR(5)  NOT NULL,
     status       VARCHAR(20) NOT NULL DEFAULT 'OPEN',
     reminder_sent BOOLEAN    NOT NULL DEFAULT FALSE,
+    reminder_lead_minutes INTEGER,
     guild_id     VARCHAR(30) NOT NULL,
     embed_type   BIGINT         NOT NULL,
     PRIMARY KEY (id),
+    CONSTRAINT event_reminder_lead_minutes_check CHECK (reminder_lead_minutes IS NULL OR reminder_lead_minutes BETWEEN 1 AND 10080),
     CONSTRAINT event_status_check CHECK (status IN ('OPEN', 'CLOSED', 'CANCELLED', 'EXPIRED')),
     FOREIGN KEY (guild_id) REFERENCES guild(id) ON DELETE CASCADE,
     FOREIGN KEY (embed_type) REFERENCES embed_type(id) ON DELETE CASCADE

@@ -133,6 +133,16 @@ DISCORD_SCHEDULER_INTERVAL_SECONDS=60
 DISCORD_REMINDER_LEAD_MINUTES=60
 ```
 
+Each event can store a nullable `reminder_lead_minutes` override (1–10080 minutes). Null inherits
+`DISCORD_REMINDER_LEAD_MINUTES`, with a built-in default of 60. `EventSettingsResolver` supplies the
+same effective lead to reminder selection and `/event-options`. Selection queries a broad window
+using the larger of the instance lead and the maximum active, unsent event override, then checks
+each event against its resolved lead with an inclusive cutoff. Updates lock the event within a
+transaction and require the current guild and an open or closed status. Changing an already-sent
+reminder's lead keeps `reminder_sent` set. Per-guild settings and `/config` are not built yet.
+Auto-promote and signup-deadline overrides were considered and deferred: turning auto-promotion
+off would leave no manual promotion path, and a signup deadline needs new expiry semantics.
+
 ## Reactive Boundary
 
 Discord I/O stays reactive. Blocking database work is wrapped onto bounded elastic schedulers where

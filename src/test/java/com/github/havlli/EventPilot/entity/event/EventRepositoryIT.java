@@ -2,6 +2,7 @@ package com.github.havlli.EventPilot.entity.event;
 
 import com.github.havlli.EventPilot.TestDatabaseContainer;
 import com.github.havlli.EventPilot.TimeTester;
+import com.github.havlli.EventPilot.core.DiscordProperties;
 import com.github.havlli.EventPilot.entity.embedtype.EmbedType;
 import com.github.havlli.EventPilot.entity.embedtype.EmbedTypeRepository;
 import com.github.havlli.EventPilot.entity.guild.Guild;
@@ -416,6 +417,113 @@ class EventRepositoryIT extends TestDatabaseContainer {
                 fetchedFutureOutsideCutoffEvent,
                 fetchedPastEvent
         );
+    }
+
+    @Test
+    public void reminderSelection_UsesPersistedNullShorterAndLongerOverrides() {
+        Instant now = timeTester.getCurrentTimestampUsingPersistence();
+        Guild guild = new Guild("1", "guild");
+        EmbedType embedType = new EmbedType(1L, "test", "{}", new ArrayList<>());
+        Event inherited = createRepositoryEvent("100", "default-boundary", now.plus(60, ChronoUnit.MINUTES), guild, embedType);
+        saveEventToDatabase(inherited, guild, embedType);
+        Event shorter = createRepositoryEvent("101", "short-not-due", now.plus(30, ChronoUnit.MINUTES), guild, embedType);
+        shorter.setReminderLeadMinutes(10);
+        saveEventToDatabase(shorter, guild, embedType);
+        Event longer = createRepositoryEvent("102", "long-due", now.plus(90, ChronoUnit.MINUTES), guild, embedType);
+        longer.setStatus(EventStatus.CLOSED);
+        longer.setReminderLeadMinutes(120);
+        saveEventToDatabase(longer, guild, embedType);
+        Event inheritedLater = createRepositoryEvent("103", "default-not-due", now.plus(61, ChronoUnit.MINUTES), guild, embedType);
+        saveEventToDatabase(inheritedLater, guild, embedType);
+        Event shortBoundary = createRepositoryEvent("104", "short-boundary", now.plus(10, ChronoUnit.MINUTES), guild, embedType);
+        shortBoundary.setReminderLeadMinutes(10);
+        saveEventToDatabase(shortBoundary, guild, embedType);
+        Event longBoundary = createRepositoryEvent("105", "long-boundary", now.plus(120, ChronoUnit.MINUTES), guild, embedType);
+        longBoundary.setReminderLeadMinutes(120);
+        saveEventToDatabase(longBoundary, guild, embedType);
+        Event outside = createRepositoryEvent("106", "outside", now.plus(121, ChronoUnit.MINUTES), guild, embedType);
+        outside.setReminderLeadMinutes(120);
+        saveEventToDatabase(outside, guild, embedType);
+        entityManager.flush();
+        entityManager.clear();
+
+        // The repository supplies the broad window; the service resolves each event's lead.
+        assertThat(underTest.findReminderCandidates(now.plus(120, ChronoUnit.MINUTES)))
+                .extracting(Event::getEventId).containsExactlyInAnyOrder("100", "101", "102", "103", "104", "105");
+        EventService service = new EventService(new EventJPADataAccessService(underTest),
+                new EventSettingsResolver(new DiscordProperties("test", null, new DiscordProperties.Scheduler(60, 60))));
+
+        assertThat(service.getReminderCandidates(now)).extracting(Event::getEventId)
+                .containsExactlyInAnyOrder("100", "102", "104", "105");
+    }
+
+    @Test
+    public void findMaxReminderLeadMinutes_OnlyCountsFutureActiveUnsentEvents() {
+        Instant now = timeTester.getCurrentTimestampUsingPersistence();
+        Guild guild = new Guild("1", "guild");
+        EmbedType embedType = new EmbedType(1L, "test", "{}", new ArrayList<>());
+        assertThat(underTest.findMaxReminderLeadMinutes()).isNull();
+        Event inherited = createRepositoryEvent("100", "default", now.plus(1, ChronoUnit.HOURS), guild, embedType);
+        saveEventToDatabase(inherited, guild, embedType);
+        assertThat(underTest.findMaxReminderLeadMinutes()).isNull();
+        Event shorter = createRepositoryEvent("101", "short", now.plus(1, ChronoUnit.HOURS), guild, embedType);
+        shorter.setReminderLeadMinutes(10);
+        saveEventToDatabase(shorter, guild, embedType);
+        Event longer = createRepositoryEvent("102", "long", now.plus(2, ChronoUnit.DAYS), guild, embedType);
+        longer.setStatus(EventStatus.CLOSED);
+        longer.setReminderLeadMinutes(120);
+        saveEventToDatabase(longer, guild, embedType);
+        for (EventStatus status : List.of(EventStatus.CANCELLED, EventStatus.EXPIRED)) {
+            Event inactive = createRepositoryEvent(status.name(), "inactive", now.plus(1, ChronoUnit.HOURS), guild, embedType);
+            inactive.setStatus(status);
+            inactive.setReminderLeadMinutes(10080);
+            saveEventToDatabase(inactive, guild, embedType);
+        }
+        Event past = createRepositoryEvent("103", "past", now.minus(1, ChronoUnit.MINUTES), guild, embedType);
+        past.setReminderLeadMinutes(10080);
+        saveEventToDatabase(past, guild, embedType);
+        Event started = createRepositoryEvent("104", "started", now, guild, embedType);
+        started.setReminderLeadMinutes(10080);
+        saveEventToDatabase(started, guild, embedType);
+        Event sent = createRepositoryEvent("105", "sent", now.plus(1, ChronoUnit.HOURS), guild, embedType);
+        sent.setReminderSent(true);
+        sent.setReminderLeadMinutes(10080);
+        saveEventToDatabase(sent, guild, embedType);
+        entityManager.flush();
+        entityManager.clear();
+
+        assertThat(underTest.findMaxReminderLeadMinutes()).isEqualTo(120);
+        assertThat(underTest.findMaxReminderLeadMinutes(List.of(EventStatus.OPEN))).isEqualTo(10);
+    }
+
+    @Test
+    public void reminderLeadMinutes_PersistsOverrideAndNullableResetThroughLockedLookup() {
+        Guild guild = new Guild("1", "guild");
+        EmbedType embedType = new EmbedType(1L, "test", "{}", new ArrayList<>());
+        Event event = createRepositoryEvent("100", "event", Instant.now(), guild, embedType);
+        saveEventToDatabase(event, guild, embedType);
+        entityManager.flush();
+        entityManager.clear();
+        assertThat(underTest.findById("100")).hasValueSatisfying(found ->
+                assertThat(found.getReminderLeadMinutes()).isNull());
+        entityManager.clear();
+
+        Event locked = underTest.findByIdForUpdate("100").orElseThrow();
+        assertThat(locked.getGuild().getId()).isEqualTo("1");
+        assertThat(locked.getEmbedType().getName()).isNotNull();
+        locked.setReminderLeadMinutes(120);
+        underTest.saveAndFlush(locked);
+        entityManager.clear();
+        assertThat(underTest.findById("100")).hasValueSatisfying(found ->
+                assertThat(found.getReminderLeadMinutes()).isEqualTo(120));
+
+        Event reset = underTest.findByIdForUpdate("100").orElseThrow();
+        reset.setReminderLeadMinutes(null);
+        underTest.saveAndFlush(reset);
+        entityManager.clear();
+        assertThat(underTest.findById("100")).hasValueSatisfying(found ->
+                assertThat(found.getReminderLeadMinutes()).isNull());
+        assertThat(underTest.findByIdForUpdate("missing")).isEmpty();
     }
 
     @Test
@@ -1159,6 +1267,7 @@ class EventRepositoryIT extends TestDatabaseContainer {
                     assertThat(e.getMemberSize()).isEqualTo(event.getMemberSize());
                     assertThat(e.getStatus()).isEqualTo(event.getStatus());
                     assertThat(e.isReminderSent()).isEqualTo(event.isReminderSent());
+                    assertThat(e.getReminderLeadMinutes()).isEqualTo(event.getReminderLeadMinutes());
                     assertThat(e.getInstances()).isEqualTo(event.getInstances());
                     assertThat(e.getParticipants()).usingRecursiveComparison().isEqualTo(event.getParticipants());
                 });
