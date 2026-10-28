@@ -153,6 +153,12 @@ Spring startup can finish while this thread keeps the non-web process alive. On 
 the lifecycle logs out with a five-second timeout and releases the waiting thread. Like the gateway
 client, it is disabled in the `test` profile. Scheduled work and ready-event handling stay unchanged.
 
+## Database Upgrade
+
+V9 irreversibly drops the former admin API's user tables (`user_role`, `role`, and `users`),
+including their indexes, constraints, and owned sequences. Discord features never used these tables.
+Back up the database before upgrading if they ever held data that needs to be retained.
+
 ## Testing Strategy
 
 The test suite is organized around risk:
