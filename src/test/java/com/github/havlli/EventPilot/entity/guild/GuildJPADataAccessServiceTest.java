@@ -40,39 +40,6 @@ class GuildJPADataAccessServiceTest {
     }
 
     @Test
-    void selectAllGuilds() {
-        // Act
-        underTest.getGuilds();
-
-        // Assert
-        verify(guildRepository, times(1)).findAll();
-    }
-
-    @Test
-    void existsGuildById() {
-        // Arrange
-        String id = "1";
-
-        // Act
-        underTest.existsGuildById(id);
-
-        // Assert
-        verify(guildRepository, times(1)).existsById(id);
-    }
-
-    @Test
-    void insertGuild() {
-        // Arrange
-        Guild guild = mock(Guild.class);
-
-        // Act
-        underTest.saveGuild(guild);
-
-        // Assert
-        verify(guildRepository, times(1)).save(guild);
-    }
-
-    @Test
     void saveGuildIfNotExists() {
         // Arrange
         String id = "1";

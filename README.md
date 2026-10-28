@@ -46,8 +46,8 @@ to know:
 - who marked themselves absent, late, or tentative
 - whether an event is open, closed, cancelled, or expired
 
-The bot is intentionally centered on Discord messages and buttons. The REST/admin API exists for
-supporting operations, but the main product surface is the Discord server.
+The bot is centered on Discord messages and buttons. It runs as a non-web application and exposes
+no HTTP port.
 
 ## Feature Set
 
@@ -185,7 +185,6 @@ Key implementation points:
 - PostgreSQL
 - Flyway
 - Redis
-- Spring Security and JWT
 - JUnit 5
 - Mockito
 - Reactor Test
@@ -214,14 +213,12 @@ The root [docker-compose.yml](docker-compose.yml) starts the bot, PostgreSQL, an
 
 ```shell
 cp .env.example .env
-openssl rand -base64 32
 docker compose up -d
 ```
 
 Before starting, edit `.env` and set at least:
 
 - `DISCORD_BOT_TOKEN`
-- `JWT_SECRET`
 - `POSTGRES_DB`
 - `POSTGRES_USER`
 - `POSTGRES_PASSWORD`
@@ -248,7 +245,6 @@ mvn -ntp -Dmaven.repo.local=.m2/repository spring-boot:run
 | Variable | Required | Default | Purpose |
 | --- | --- | --- | --- |
 | `DISCORD_BOT_TOKEN` | yes | none | Discord bot token. |
-| `JWT_SECRET` | yes | none | Base64-encoded JWT signing secret. Use `openssl rand -base64 32`. |
 | `POSTGRES_DB` | yes for Docker | `eventpilot` in local service compose | PostgreSQL database name. |
 | `POSTGRES_USER` | yes for Docker | `eventpilot` in local service compose | PostgreSQL username. |
 | `POSTGRES_PASSWORD` | yes for Docker | `eventpilot` in local service compose | PostgreSQL password. |
@@ -259,7 +255,6 @@ mvn -ntp -Dmaven.repo.local=.m2/repository spring-boot:run
 | `SPRING_DATA_REDIS_PORT` | no | `6379` | Redis port. |
 | `DISCORD_SCHEDULER_INTERVAL_SECONDS` | no | `60` | Scheduled job polling interval. |
 | `DISCORD_REMINDER_LEAD_MINUTES` | no | `60` | How long before event start the reminder is sent. |
-| `CORS_ALLOWED_ORIGINS` | no | local frontend origins | Allowed origins for REST/admin API calls. |
 
 ## Testing
 
@@ -276,7 +271,7 @@ mvn -ntp -Dmaven.repo.local=.m2/repository verify
 ```
 
 `verify` requires Docker. The integration suite starts PostgreSQL and Redis containers and validates
-repository behavior, migrations, application startup, and API journeys.
+repository behavior, migrations, and application startup.
 
 The current hardening pass has been verified locally with:
 
@@ -325,7 +320,6 @@ Useful next improvements:
 
 - capture the demo screenshots or GIFs from the scripted guide
 - add CI workflow documentation and badge cleanup if needed
-- decide whether the REST/admin API is a supported product surface or legacy support tooling
 - add production deployment notes for hosting, secrets, logs, and backups
 
 ## License

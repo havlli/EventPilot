@@ -22,7 +22,6 @@ class EventJPADataAccessServiceTest {
      @InjectMocks
      private EventJPADataAccessService underTest;
 
-
     @BeforeEach
     void setUp() {
         autoCloseable = MockitoAnnotations.openMocks(this);
@@ -43,27 +42,6 @@ class EventJPADataAccessServiceTest {
 
         // Assert
         verify(eventRepository, times(1)).save(event);
-    }
-
-    @Test
-    void fetchEvents() {
-        // Act
-        underTest.getEvents();
-
-        // Assert
-        verify(eventRepository, times(1)).findAll();
-    }
-
-    @Test
-    void deleteEvent() {
-        // Arrange
-        Event event = mock(Event.class);
-
-        // Act
-        underTest.deleteEvent(event);
-
-        // Assert
-        verify(eventRepository, times(1)).delete(event);
     }
 
     @Test

@@ -63,14 +63,6 @@ public interface EventRepository extends JpaRepository<Event, String> {
             SELECT DISTINCT e FROM Event e
             LEFT JOIN FETCH e.guild
             LEFT JOIN FETCH e.embedType
-            ORDER BY e.eventId DESC LIMIT 5
-            """)
-    List<Event> findLastFiveEvents();
-
-    @Query("""
-            SELECT DISTINCT e FROM Event e
-            LEFT JOIN FETCH e.guild
-            LEFT JOIN FETCH e.embedType
             WHERE e.guild.id = :guildId
             ORDER BY e.dateTime ASC, e.eventId ASC
             """)

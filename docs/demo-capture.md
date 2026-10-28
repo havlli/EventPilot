@@ -222,7 +222,7 @@ Capture at least these still images if a GIF is too time-consuming:
 
 - Use a test server with generic names.
 - Hide the member list if it contains real users.
-- Do not show `.env`, bot tokens, JWT secrets, or Discord Developer Portal token pages.
+- Do not show `.env`, bot tokens, or Discord Developer Portal token pages.
 - Keep the browser or Discord zoom level readable.
 - Prefer one short end-to-end GIF plus two or three still screenshots.
 - Crop to the Discord channel and terminal output that matter.

@@ -2,7 +2,6 @@ package com.github.havlli.EventPilot.entity.event;
 
 import com.github.havlli.EventPilot.entity.embedtype.EmbedType;
 import com.github.havlli.EventPilot.entity.guild.Guild;
-import com.github.havlli.EventPilot.exception.ResourceNotFoundException;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
@@ -29,7 +28,6 @@ class EventServiceTest {
     @InjectMocks
     private EventService underTest;
 
-
     @BeforeEach
     void setUp() {
         autoCloseable = MockitoAnnotations.openMocks(this);
@@ -50,27 +48,6 @@ class EventServiceTest {
 
         // Assert
         verify(eventDAO, times(1)).saveEvent(event);
-    }
-
-    @Test
-    void getAllEvents() {
-        // Act
-        underTest.getAllEvents();
-
-        // Assert
-        verify(eventDAO, times(1)).getEvents();
-    }
-
-    @Test
-    void deleteEvent() {
-        // Arrange
-        Event event = mock(Event.class);
-
-        // Act
-        underTest.deleteEvent(event);
-
-        // Assert
-        verify(eventDAO, times(1)).deleteEvent(event);
     }
 
     @Test
@@ -231,31 +208,6 @@ class EventServiceTest {
     }
 
     @Test
-    void deleteEventById_deletesEvent_WhenEventExists() {
-        // Arrange
-        var eventId = "1";
-        when(eventDAO.existsById(eventId)).thenReturn(true);
-
-        // Act
-        underTest.deleteEventById(eventId);
-
-        // Assert
-        verify(eventDAO, times(1)).deleteById(eventId);
-    }
-
-    @Test
-    void deleteEventById_throwsException_WhenEventNotExists() {
-        // Arrange
-        var eventId = "1";
-        when(eventDAO.existsById(eventId)).thenReturn(false);
-
-        // Assert
-        assertThatThrownBy(() -> underTest.deleteEventById(eventId))
-                .isInstanceOf(ResourceNotFoundException.class);
-        verify(eventDAO, never()).deleteById(eventId);
-    }
-
-    @Test
     void deleteEventIfExists_ReturnsTrueAndDeletesEvent_WhenEventExists() {
         // Arrange
         var eventId = "1";
@@ -282,105 +234,6 @@ class EventServiceTest {
         assertThat(actual).isFalse();
         verify(eventDAO, never()).deleteById(eventId);
     }
-
-    @Test
-    void updateEvent_updatesEventAndReturnsUpdatedEvent_WhenEventExists() {
-        // Arrange
-        var eventId = "1";
-
-        Guild guild = createGuild();
-        EmbedType embedType = createEmbedType();
-
-        Event event = createEvent(eventId, guild, embedType);
-
-        EventUpdateRequest updateRequest = new EventUpdateRequest(
-                "newName",  "newDescription", "5"
-        );
-
-        when(eventDAO.findById(eventId)).thenReturn(Optional.of(event));
-        doNothing().when(eventDAO).saveEvent(event);
-
-        // Act
-        Event actual = underTest.updateEvent(eventId, updateRequest);
-
-        // Assert
-        assertThat(actual).hasFieldOrPropertyWithValue("name", "newName");
-        assertThat(actual).hasFieldOrPropertyWithValue("description", "newDescription");
-        assertThat(actual).hasFieldOrPropertyWithValue("memberSize", "5");
-        verify(eventDAO, times(1)).saveEvent(any());
-    }
-
-    @Test
-    void updateEvent_ThrowsException_WhenEventNotFound() {
-        // Arrange
-        var eventId = "1";
-
-        EventUpdateRequest updateRequest = new EventUpdateRequest(
-                "newName",  "newDescription", "5"
-        );
-
-        when(eventDAO.findById(eventId)).thenReturn(Optional.empty());
-
-        // Act & Assert
-        assertThatThrownBy(() -> underTest.updateEvent(eventId, updateRequest))
-                .isInstanceOf(ResourceNotFoundException.class)
-                        .hasMessageContaining("Cannot update event with id");
-        verify(eventDAO, never()).saveEvent(any());
-    }
-
-    @Test
-    void updateEvent_updatesEventAndReturnsUpdatedEvent_WhenEventExistsAndNameIsNull() {
-        // Arrange
-        var eventId = "1";
-
-        Guild guild = createGuild();
-        EmbedType embedType = createEmbedType();
-
-        Event event = createEvent(eventId, guild, embedType);
-
-        EventUpdateRequest updateRequest = new EventUpdateRequest(
-                null,  "newDescription", null
-        );
-
-        when(eventDAO.findById(eventId)).thenReturn(Optional.of(event));
-        doNothing().when(eventDAO).saveEvent(event);
-
-        // Act
-        Event actual = underTest.updateEvent(eventId, updateRequest);
-
-        // Assert
-        assertThat(actual).hasFieldOrPropertyWithValue("name", event.getName());
-        assertThat(actual).hasFieldOrPropertyWithValue("description", "newDescription");
-        assertThat(actual).hasFieldOrPropertyWithValue("memberSize", event.getMemberSize());
-        verify(eventDAO, times(1)).saveEvent(any());
-    }
-
-    @Test
-    void getEventById_ReturnsEvent_WhenEventExists() {
-        // Arrange
-        var eventId = "1";
-        Event eventMock = mock(Event.class);
-        when(eventDAO.findById(eventId)).thenReturn(Optional.of(eventMock));
-
-        // Act
-        Event actual = underTest.getEventById(eventId);
-
-        // Assert
-        assertThat(actual).isEqualTo(eventMock);
-    }
-
-    @Test
-    void getEventById_Throws404Exception_WhenEventDoesNotExists() {
-        // Arrange
-        var eventId = "1";
-        when(eventDAO.findById(eventId)).thenReturn(Optional.empty());
-
-        // Assert
-        assertThatThrownBy(() -> underTest.getEventById(eventId))
-                .isInstanceOf(ResourceNotFoundException.class)
-                .hasMessageContaining("Cannot get event with id");
-    }
-
 
     // Helper Methods
     @NotNull

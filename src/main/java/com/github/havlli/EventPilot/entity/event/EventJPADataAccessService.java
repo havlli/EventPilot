@@ -23,16 +23,6 @@ public class EventJPADataAccessService implements EventDAO {
     }
 
     @Override
-    public List<Event> getEvents() {
-        return eventRepository.findAll();
-    }
-
-    @Override
-    public void deleteEvent(Event event) {
-        eventRepository.delete(event);
-    }
-
-    @Override
     public void deleteById(String id) {
         eventRepository.deleteById(id);
     }
@@ -55,11 +45,6 @@ public class EventJPADataAccessService implements EventDAO {
     @Override
     public boolean existsById(String id) {
         return eventRepository.existsById(id);
-    }
-
-    @Override
-    public List<Event> getLastFiveEvents() {
-        return eventRepository.findLastFiveEvents();
     }
 
     @Override

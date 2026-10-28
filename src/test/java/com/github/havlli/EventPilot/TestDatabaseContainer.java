@@ -61,7 +61,6 @@ public abstract class TestDatabaseContainer {
         registry.add("spring.datasource.password", () -> postgresSQLContainer.getPassword());
         registry.add("spring.data.redis.host", () -> redisContainer.getHost());
         registry.add("spring.data.redis.port", () -> redisContainer.getFirstMappedPort());
-        registry.add("security.jwt.secret", () -> "MDEyMzQ1Njc4OTAxMjM0NTY3ODkwMTIzNDU2Nzg5MDE=");
         registry.add("discord.token", () -> "test");
     }
 

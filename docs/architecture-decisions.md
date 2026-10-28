@@ -6,9 +6,8 @@ does, not just what classes exist.
 
 ## Product Boundary
 
-EventPilot is scoped as a Discord-first event coordination bot for gaming groups. The primary product
-surface is the Discord signup message, not the REST API. The REST/admin API remains useful for
-supporting operations, but the core portfolio story is:
+EventPilot is a Discord event coordination bot for gaming groups. It runs as a non-web application,
+exposes no HTTP port, and uses Discord signup messages as its product surface:
 
 - an organizer creates a role-based event post
 - players sign up or change role from Discord buttons
@@ -147,6 +146,13 @@ The goal is pragmatic separation:
 - repositories handle locking and persistence queries
 - generators render Discord embeds and components
 
+## Process Lifetime
+
+`GatewayKeepAlive` starts a non-daemon thread that waits for the Discord gateway to disconnect.
+Spring startup can finish while this thread keeps the non-web process alive. On context shutdown,
+the lifecycle logs out with a five-second timeout and releases the waiting thread. Like the gateway
+client, it is disabled in the `test` profile. Scheduled work and ready-event handling stay unchanged.
+
 ## Testing Strategy
 
 The test suite is organized around risk:
@@ -156,7 +162,6 @@ The test suite is organized around risk:
 - generator tests cover embed fields, roster counts, and waitlist rendering
 - repository integration tests cover constraints, migrations, locking queries, reminder candidates,
   and status filtering
-- journey tests cover authenticated REST/admin behavior
 - Testcontainers runs PostgreSQL and Redis for integration verification
 
 The intended acceptance command for a complete local verification is:

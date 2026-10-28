@@ -6,9 +6,11 @@ import com.github.havlli.EventPilot.entity.embedtype.EmbedType;
 import com.github.havlli.EventPilot.entity.embedtype.EmbedTypeRepository;
 import com.github.havlli.EventPilot.entity.guild.Guild;
 import com.github.havlli.EventPilot.entity.guild.GuildRepository;
+import com.github.havlli.EventPilot.entity.participant.Participant;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.springframework.data.domain.PageRequest;
+import org.springframework.dao.DataIntegrityViolationException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -26,6 +28,7 @@ import java.util.List;
 import java.util.Optional;
 
 import static org.assertj.core.api.Assertions.assertThat;
+import static org.assertj.core.api.Assertions.assertThatThrownBy;
 
 @DataJpaTest(showSql = false)
 @AutoConfigureTestDatabase(replace = AutoConfigureTestDatabase.Replace.NONE)
@@ -1091,6 +1094,21 @@ class EventRepositoryIT extends TestDatabaseContainer {
         // Assert
         long actualCount = underTest.findAll().size();
         assertThat(actualCount).isEqualTo(expectedCount);
+    }
+
+    @Test
+    public void saveParticipant_RejectsDuplicateUserForSameEvent() {
+        Guild guild = new Guild("1", "guild");
+        EmbedType embedType = new EmbedType(1L, "test", "{}", new ArrayList<>());
+        Event event = saveEventToDatabase(
+                createRepositoryEvent("123", "event", Instant.now(), guild, embedType), guild, embedType);
+        event.getParticipants().add(new Participant("1", "user1", 1, 1, event));
+        underTest.saveAndFlush(event);
+
+        event.getParticipants().add(new Participant("1", "user1", 2, 2, event));
+
+        assertThatThrownBy(() -> underTest.saveAndFlush(event))
+                .isInstanceOf(DataIntegrityViolationException.class);
     }
 
     // Helper methods
