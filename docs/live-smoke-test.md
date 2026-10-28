@@ -68,6 +68,22 @@ Expected organizer commands:
 /clear-expired
 ```
 
+## Optional Health Check
+
+For a local application run, set `EVENTPILOT_HEALTH_ENABLED=true` before starting the bot.
+Optionally set `EVENTPILOT_HEALTH_PORT` (default `8081`), then run on the same host:
+
+```shell
+curl --fail http://127.0.0.1:8081/health
+```
+
+Expect HTTP 200 and `{"status":"UP","discord":"UP","database":"UP"}` once Discord and the
+database are available. HTTP 503 marks failing checks `DOWN` without error details. Confirm the
+startup log shows `127.0.0.1`; with health disabled, no health listener should start. For container
+runs, pass the variables through a local Compose environment override and run the probe inside the
+container using an installed probe tool; no published port is needed. This can serve as a container
+healthcheck. The supplied Compose file does not add one because the image may lack a probe tool.
+
 ## Event Creation
 
 1. Run `/create-embed-type`.

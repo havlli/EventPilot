@@ -7,7 +7,7 @@ does, not just what classes exist.
 ## Product Boundary
 
 EventPilot is a Discord event coordination bot for gaming groups. It runs as a non-web application,
-exposes no HTTP port, and uses Discord signup messages as its product surface:
+exposes no HTTP port by default, and uses Discord signup messages as its product surface:
 
 - an organizer creates a role-based event post
 - players sign up or change role from Discord buttons
@@ -152,6 +152,18 @@ The goal is pragmatic separation:
 Spring startup can finish while this thread keeps the non-web process alive. On context shutdown,
 the lifecycle logs out with a five-second timeout and releases the waiting thread. Like the gateway
 client, it is disabled in the `test` profile. Scheduled work and ready-event handling stay unchanged.
+
+## Optional Health Endpoint
+
+The health endpoint uses the JDK's `HttpServer` (`jdk.httpserver`) instead of Actuator or a Spring
+web starter: no mandatory port, no Spring Security, and no new dependencies. It defaults off to keep
+the bot free of a required HTTP port. Enable it with `EVENTPILOT_HEALTH_ENABLED=true`, optionally set
+`EVENTPILOT_HEALTH_PORT` (default `8081`), and probe with `curl --fail http://127.0.0.1:8081/health`.
+It binds only to `127.0.0.1`, can back an internal container healthcheck, and stays off in the `test`
+profile. Discord4J 3.3.2 exposes `GatewayClient.isConnected()` on individual shards; all configured
+shards must report connected within two seconds, and the database must pass `Connection.isValid(2)`.
+SmartLifecycle owns startup and shutdown with a bounded daemon executor. Custom `jlink` runtimes
+must include `jdk.httpserver`; the standard JDK/JRE supplies it.
 
 ## Database Upgrade
 

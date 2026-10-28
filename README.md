@@ -47,7 +47,7 @@ to know:
 - whether an event is open, closed, cancelled, or expired
 
 The bot is centered on Discord messages and buttons. It runs as a non-web application and exposes
-no HTTP port.
+no HTTP port by default. An optional health endpoint is available on loopback only.
 
 ## Feature Set
 
@@ -255,6 +255,33 @@ mvn -ntp -Dmaven.repo.local=.m2/repository spring-boot:run
 | `SPRING_DATA_REDIS_PORT` | no | `6379` | Redis port. |
 | `DISCORD_SCHEDULER_INTERVAL_SECONDS` | no | `60` | Scheduled job polling interval. |
 | `DISCORD_REMINDER_LEAD_MINUTES` | no | `60` | How long before event start the reminder is sent. |
+| `EVENTPILOT_HEALTH_ENABLED` | no | `false` | Enable the loopback health endpoint. |
+| `EVENTPILOT_HEALTH_PORT` | no | `8081` | Health endpoint port (1–65535). |
+
+### Health check
+
+Set `EVENTPILOT_HEALTH_ENABLED=true` in the application's environment to enable
+`GET /health`; optionally set `EVENTPILOT_HEALTH_PORT` (default `8081`). It binds only to
+`127.0.0.1` and is disabled in the `test` profile. No port is required with the default settings.
+
+```shell
+curl --fail http://127.0.0.1:8081/health
+```
+
+The response is HTTP 200 with `{"status":"UP","discord":"UP","database":"UP"}` when every
+Discord gateway shard reports connected and a database connection passes `isValid(2)`. Failures
+return HTTP 503 with the affected checks marked `DOWN`, without internal error details. The gateway
+check has a two-second timeout; database connection acquisition also depends on the pool timeout.
+Redis is not checked.
+
+This uses the JDK's `jdk.httpserver` module without a Spring web starter, Actuator, Spring Security,
+or new dependencies. Standard JDK/JRE distributions include the module; a custom `jlink` runtime
+must include `jdk.httpserver` (for example, in its `--add-modules` list).
+
+The endpoint can back a container healthcheck run inside the container, with no published port.
+Compose is unchanged because the bot image does not guarantee a probe tool such as `curl`.
+To opt in with Compose, pass the two variables through a local service environment override and
+provide a probe tool in the image. A host-side probe cannot reach a container's loopback listener.
 
 ## Testing
 
