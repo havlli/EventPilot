@@ -182,7 +182,7 @@ Key implementation points:
 - Java 17
 - Spring Boot 4
 - Project Reactor
-- Discord4J
+- Discord4J 3.3.3
 - Spring Data JPA
 - PostgreSQL
 - Flyway
@@ -319,6 +319,24 @@ The current hardening pass has been verified locally with:
 - `git diff --check`
 
 ## Discord Bot Setup
+
+### Channel obfuscation (2026-11-16)
+
+From 2026-11-16, Discord will send channels the bot cannot view over the Gateway with name
+`___hidden___` and `CHANNEL_OBFUSCATED` (`1 << 17`). `GET /guilds/{id}/channels` omits those
+channels; interaction payloads are not obfuscated.
+
+Impact is expected to be low. EventPilot uses interactions and known destination channel IDs.
+The exception is the destination string select in `/create-event`: `PromptService` builds its
+text-channel list through the gateway client's store with REST fallback. It now filters out
+`Channel.isObfuscated()` before `ChannelSelectMenu` turns channel names into options, preserving
+normal channels. `DiscordService` uses `getChannelById` / `getMessageById` for known destinations,
+without listing channels; other channel references come from interactions, including the selected
+destination ID.
+
+TODO before 2026-11-16: enable the developer portal **Private Channel Obfuscation** toggle on a
+real test server and run the [obfuscation smoke checklist](docs/live-smoke-test.md#channel-obfuscation-2026-11-16).
+Discord4J 3.3.3 component tests check JSON shape only; live Discord behaviour is unverified.
 
 ### Get A Bot Token
 

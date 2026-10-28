@@ -170,7 +170,7 @@ web starter: no mandatory port, no Spring Security, and no new dependencies. It 
 the bot free of a required HTTP port. Enable it with `EVENTPILOT_HEALTH_ENABLED=true`, optionally set
 `EVENTPILOT_HEALTH_PORT` (default `8081`), and probe with `curl --fail http://127.0.0.1:8081/health`.
 It binds only to `127.0.0.1`, can back an internal container healthcheck, and stays off in the `test`
-profile. Discord4J 3.3.2 exposes `GatewayClient.isConnected()` on individual shards; all configured
+profile. Discord4J 3.3.3 exposes `GatewayClient.isConnected()` on individual shards; all configured
 shards must report connected within two seconds, and the database must pass `Connection.isValid(2)`.
 SmartLifecycle owns startup and shutdown with a bounded daemon executor. Custom `jlink` runtimes
 must include `jdk.httpserver`; the standard JDK/JRE supplies it.
@@ -182,6 +182,11 @@ including their indexes, constraints, and owned sequences. Discord features neve
 Back up the database before upgrading if they ever held data that needs to be retained.
 
 ## Testing Strategy
+
+Discord4J is pinned to 3.3.3 (discord-json 1.7.24). `ComponentsSupportTest` serializes Discord4J's
+own specs/requests with its Jackson mapper and checks JSON shape for Components V2, modal labels
+and controls, scheduled-event recurrence, and legacy action rows. Live Discord behaviour is
+unverified by these tests.
 
 The test suite is organized around risk:
 
@@ -197,3 +202,26 @@ The intended acceptance command for a complete local verification is:
 ```shell
 mvn -ntp -Dmaven.repo.local=.m2/repository verify
 ```
+
+## Channel obfuscation (2026-11-16)
+
+From 2026-11-16, channels the bot cannot view arrive over the Gateway with name `___hidden___`
+and flag `CHANNEL_OBFUSCATED` (`1 << 17`). `GET /guilds/{id}/channels` omits them. Interaction
+payloads are not obfuscated.
+
+`PromptService.fetchGuildTextChannels` calls `GatewayDiscordClient.getGuildChannels`, using the
+default `STORE_FALLBACK_REST` retrieval strategy: gateway store first, REST if the list is empty.
+`CreateEventInteraction` passes this list to `ChannelSelectMenu`, a string select whose option labels
+are channel names. Cached obfuscated text channels could therefore become `___hidden___` options.
+Discord4J 3.3.3 exposes `Channel.isObfuscated()` and `Channel.Flag.CHANNEL_OBFUSCATED`; the service
+now excludes those channels before building the select, keeping normal channels and their order.
+The unit test uses real `ChannelData` flags and `TextChannel` objects with a mocked client.
+
+Impact is expected to be low: the rest of the flow uses interaction channel references (including
+the selected destination ID), and `DiscordService` calls `getChannelById` / `getMessageById` with
+known destination IDs for posting reminders, edits, and cleanup, rather than listing channels.
+This filter checks the obfuscation flag; it does not add a separate permission calculation or
+guarantee posting access if permissions change later.
+
+TODO before 2026-11-16: test the developer portal **Private Channel Obfuscation** toggle on a real
+test server using the [live checklist](live-smoke-test.md#channel-obfuscation-2026-11-16).

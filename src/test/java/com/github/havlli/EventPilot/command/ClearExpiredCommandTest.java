@@ -8,7 +8,7 @@ import discord4j.core.event.domain.Event;
 import discord4j.core.event.domain.interaction.ChatInputInteractionEvent;
 import discord4j.core.event.domain.interaction.InteractionCreateEvent;
 import discord4j.core.object.command.Interaction;
-import discord4j.core.object.component.LayoutComponent;
+import discord4j.core.object.component.ActionRow;
 import discord4j.core.object.component.MessageComponent;
 import discord4j.core.object.component.SelectMenu;
 import discord4j.core.object.component.TopLevelMessageComponent;
@@ -166,7 +166,7 @@ class ClearExpiredCommandTest {
     void filterExpiredPredicate_ReturnsTrue_WhenAnyComponentsMatchExpiredComponent() {
         // Arrange
         Message messageMock = mock(Message.class);
-        LayoutComponent layoutComponentMock = mock(LayoutComponent.class);
+        ActionRow layoutComponentMock = mock(ActionRow.class);
         List<TopLevelMessageComponent> layoutComponentList = List.of(layoutComponentMock);
         when(messageMock.getComponents()).thenReturn(layoutComponentList);
 
@@ -187,7 +187,7 @@ class ClearExpiredCommandTest {
     void filterExpiredPredicate_ReturnsFalse_WhenNoComponentsMatchesExpired() {
         // Arrange
         Message messageMock = mock(Message.class);
-        LayoutComponent layoutComponentMock = mock(LayoutComponent.class);
+        ActionRow layoutComponentMock = mock(ActionRow.class);
         List<TopLevelMessageComponent> layoutComponentList = List.of(layoutComponentMock);
         when(messageMock.getComponents()).thenReturn(layoutComponentList);
 
@@ -208,7 +208,7 @@ class ClearExpiredCommandTest {
     void filterExpiredPredicate_ReturnsFalse_WhenNoMessageComponentsExistsInMessage() {
         // Arrange
         Message messageMock = mock(Message.class);
-        LayoutComponent layoutComponentMock = mock(LayoutComponent.class);
+        ActionRow layoutComponentMock = mock(ActionRow.class);
         List<TopLevelMessageComponent> layoutComponentList = List.of(layoutComponentMock);
         when(messageMock.getComponents()).thenReturn(layoutComponentList);
 

@@ -3,6 +3,9 @@
 Use this checklist to validate EventPilot against a real Discord test server. Keep the server,
 channel names, and users generic so the same run can also produce portfolio-safe screenshots.
 
+Discord4J is 3.3.3. The offline component tests check JSON shape only; live Discord behaviour is
+unverified by those tests.
+
 ## Preconditions
 
 - Docker is running.
@@ -249,6 +252,25 @@ Expected result:
 
 - response is `Event deleted!` if database state existed
 - repeating the command returns `Event not found!`
+
+## Channel obfuscation (2026-11-16)
+
+From 2026-11-16, Discord will hide names of channels the bot cannot view: Gateway payloads carry
+`___hidden___` and `CHANNEL_OBFUSCATED` (`1 << 17`), while `GET /guilds/{id}/channels` omits them.
+Interaction payloads are not obfuscated. Impact is expected to be low: EventPilot uses interactions
+and known destination IDs. Its destination string select uses the guild channel list from
+`PromptService` (gateway store with REST fallback), which now filters `Channel.isObfuscated()`.
+`DiscordService` uses `getChannelById` / `getMessageById` for known destination channels without
+listing; other channel references come from interactions, including the selected destination ID.
+
+TODO: complete this check before 2026-11-16 on a real test server.
+
+- [ ] Enable **Private Channel Obfuscation** in the developer portal and give the bot view access
+  to some test channels while denying it access to others. Reconnect the bot to refresh gateway state.
+- [ ] Create an event; confirm the destination channel list shows only channels the bot can view,
+  with no `___hidden___` entries, and confirm posting to a visible channel works.
+- [ ] Confirm reminders still post to the saved destination channel.
+- [ ] Run `/clear-expired` for an expired event and confirm cleanup still works.
 
 ## Automated Verification
 
