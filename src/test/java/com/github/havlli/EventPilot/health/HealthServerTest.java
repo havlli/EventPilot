@@ -191,4 +191,28 @@ class HealthServerTest {
                 .method(method, HttpRequest.BodyPublishers.noBody()).build();
         return HTTP.send(request, HttpResponse.BodyHandlers.ofString());
     }
+
+    @Test
+    void propertiesConstructorUsesConfiguredPort() throws Exception {
+        int port;
+        try (ServerSocket socket = new ServerSocket(0)) {
+            port = socket.getLocalPort();
+        }
+        HealthServer configured = new HealthServer(new HealthProperties(true, port), gateway, dataSource);
+        try {
+            configured.start();
+            assertThat(configured.getAddress().getPort()).isEqualTo(port);
+        } finally {
+            configured.stop();
+        }
+    }
+
+    @Test
+    void getAddressFailsWhenStopped() {
+        server.stop();
+
+        assertThatThrownBy(server::getAddress)
+                .isInstanceOf(IllegalStateException.class)
+                .hasMessage("Health server is not running");
+    }
 }

@@ -104,4 +104,64 @@ class GatewayKeepAliveTest {
     private void awaitSubscription() throws InterruptedException {
         assertThat(subscribed.await(2, TimeUnit.SECONDS)).isTrue();
     }
+
+    @Test
+    void startAfterStopDoesNotRelaunchWaiter() throws InterruptedException {
+        underTest.start();
+        awaitSubscription();
+        underTest.stop();
+
+        underTest.start();
+
+        verify(gateway, times(1)).onDisconnect();
+        assertThat(underTest.isRunning()).isFalse();
+    }
+
+    @Test
+    void stopBeforeStartDoesNotLogOut() {
+        underTest.stop();
+
+        verify(gateway, never()).logout();
+    }
+
+    @Test
+    void threadEndsWhenOnDisconnectFails() throws InterruptedException {
+        when(gateway.onDisconnect()).thenReturn(Mono.error(new IllegalStateException("gateway failed")));
+        underTest.start();
+
+        Thread keepAlive = awaitKeepAliveThread();
+        keepAlive.join(2000);
+
+        assertThat(keepAlive.isAlive()).isFalse();
+        assertThat(underTest.isRunning()).isFalse();
+    }
+
+    @Test
+    void stopPreservesInterruptWhenJoinIsInterrupted() throws InterruptedException {
+        underTest.start();
+        awaitSubscription();
+
+        Thread.currentThread().interrupt();
+        try {
+            underTest.stop();
+            assertThat(Thread.currentThread().isInterrupted()).isTrue();
+        } finally {
+            Thread.interrupted();
+        }
+        waiter.get().join(2000);
+        assertThat(waiter.get().isAlive()).isFalse();
+    }
+
+    private static Thread awaitKeepAliveThread() throws InterruptedException {
+        long deadline = System.nanoTime() + TimeUnit.SECONDS.toNanos(2);
+        while (System.nanoTime() < deadline) {
+            for (Thread thread : Thread.getAllStackTraces().keySet()) {
+                if ("discord-gateway-keep-alive".equals(thread.getName())) {
+                    return thread;
+                }
+            }
+            Thread.sleep(10);
+        }
+        return Thread.currentThread();
+    }
 }

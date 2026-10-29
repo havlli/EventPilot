@@ -201,4 +201,64 @@ class EventTest {
         // Assert
         assertThat(actual).isEqualTo(expected);
     }
+
+    @Test
+    void equalsAndHashCode_ConsiderReminderLeadMinutes() {
+        Instant dateTime = Instant.parse("2026-11-01T18:00:00Z");
+        Guild guild = new Guild("1", "guild");
+        Event first = Event.builder().withEventId("1").withName("name").withDateTime(dateTime)
+                .withGuild(guild).build();
+        Event second = Event.builder().withEventId("1").withName("name").withDateTime(dateTime)
+                .withGuild(guild).build();
+
+        assertThat(first).isEqualTo(first).isEqualTo(second).hasSameHashCodeAs(second)
+                .isNotEqualTo(null).isNotEqualTo("1");
+
+        second.setReminderLeadMinutes(30);
+        assertThat(first).isNotEqualTo(second);
+        first.setReminderLeadMinutes(30);
+        assertThat(first).isEqualTo(second).hasSameHashCodeAs(second);
+        second.setReminderSent(true);
+        assertThat(first).isNotEqualTo(second);
+    }
+
+    @Test
+    void equals_DetectsDifferenceInEveryField() throws Exception {
+        for (java.lang.reflect.Field field : Event.class.getDeclaredFields()) {
+            if (java.lang.reflect.Modifier.isStatic(field.getModifiers())) {
+                continue;
+            }
+            field.setAccessible(true);
+            Event first = fullEvent();
+            Event second = fullEvent();
+            assertThat(first).isEqualTo(second);
+
+            field.set(second, differentValue(field.getType()));
+
+            assertThat(first).as(field.getName()).isNotEqualTo(second);
+        }
+    }
+
+    private static Event fullEvent() {
+        Event event = Event.builder().withEventId("1").withName("name").withDescription("description")
+                .withAuthor("author").withDateTime(Instant.parse("2026-11-01T18:00:00Z"))
+                .withDestinationChannel("channel").withInstances(List.of("instance")).withMemberSize("5")
+                .withGuild(new Guild("1", "guild")).withEmbedType(EMBED_TYPE).build();
+        event.setReminderLeadMinutes(30);
+        return event;
+    }
+
+    private static final EmbedType EMBED_TYPE = mock(EmbedType.class);
+
+    private static Object differentValue(Class<?> type) {
+        if (type == String.class) return "other";
+        if (type == Instant.class) return Instant.parse("2026-12-01T18:00:00Z");
+        if (type == EventStatus.class) return EventStatus.EXPIRED;
+        if (type == boolean.class) return true;
+        if (type == Integer.class) return 60;
+        if (type == List.class) return List.of(mock(com.github.havlli.EventPilot.entity.participant.Participant.class));
+        if (type == Guild.class) return new Guild("2", "other");
+        if (type == EmbedType.class) return mock(EmbedType.class);
+        throw new IllegalArgumentException("Unhandled field type " + type);
+    }
 }

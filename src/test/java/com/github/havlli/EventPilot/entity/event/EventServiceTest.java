@@ -383,4 +383,14 @@ class EventServiceTest {
     private static Guild createGuild() {
         return new Guild("1", "guild");
     }
+
+    @Test
+    void updateReminderLeadMinutesForGuild_RejectsNullGuildId() {
+        Event event = createEvent("1", createGuild(), createEmbedType());
+        when(eventDAO.findByIdForUpdate("1")).thenReturn(Optional.of(event));
+
+        assertThat(underTest.updateReminderLeadMinutesForGuild("1", null, 60)).isEmpty();
+        assertThat(event.getReminderLeadMinutes()).isNull();
+        verify(eventDAO, never()).saveEvent(any());
+    }
 }
