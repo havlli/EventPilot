@@ -1,13 +1,16 @@
 package com.github.havlli.EventPilot.entity.event;
 
 import com.github.havlli.EventPilot.entity.embedtype.EmbedType;
+import com.github.havlli.EventPilot.core.DiscordProperties;
 import com.github.havlli.EventPilot.entity.guild.Guild;
-import com.github.havlli.EventPilot.exception.ResourceNotFoundException;
 import org.jetbrains.annotations.NotNull;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
-import org.mockito.InjectMocks;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.EnumSource;
+import org.junit.jupiter.params.provider.NullSource;
+import org.junit.jupiter.params.provider.ValueSource;
 import org.mockito.Mock;
 import org.mockito.MockitoAnnotations;
 
@@ -26,13 +29,13 @@ class EventServiceTest {
     private AutoCloseable autoCloseable;
     @Mock
     private EventDAO eventDAO;
-    @InjectMocks
     private EventService underTest;
-
 
     @BeforeEach
     void setUp() {
         autoCloseable = MockitoAnnotations.openMocks(this);
+        underTest = new EventService(eventDAO, new EventSettingsResolver(new DiscordProperties(
+                "test", null, new DiscordProperties.Scheduler(60, 60))));
     }
 
     @AfterEach
@@ -50,27 +53,6 @@ class EventServiceTest {
 
         // Assert
         verify(eventDAO, times(1)).saveEvent(event);
-    }
-
-    @Test
-    void getAllEvents() {
-        // Act
-        underTest.getAllEvents();
-
-        // Assert
-        verify(eventDAO, times(1)).getEvents();
-    }
-
-    @Test
-    void deleteEvent() {
-        // Arrange
-        Event event = mock(Event.class);
-
-        // Act
-        underTest.deleteEvent(event);
-
-        // Assert
-        verify(eventDAO, times(1)).deleteEvent(event);
     }
 
     @Test
@@ -102,13 +84,125 @@ class EventServiceTest {
         Instant beforeCall = Instant.now();
 
         // Act
-        underTest.getReminderCandidates(reminderLeadTime);
+        underTest.getReminderCandidates();
 
         // Assert
+        verify(eventDAO).getMaxReminderLeadMinutes();
         verify(eventDAO, times(1)).getReminderCandidates(argThat(cutoff ->
                 !cutoff.isBefore(beforeCall.plus(reminderLeadTime))
                         && !cutoff.isAfter(Instant.now().plus(reminderLeadTime))
         ));
+    }
+
+    @Test
+    void getReminderCandidates_FiltersEachResolvedLeadAndKeepsInclusiveBoundary() {
+        Instant now = Instant.parse("2026-10-28T12:00:00Z");
+        Event shorter = reminderEvent("short", now.plusSeconds(30 * 60), 10);
+        Event shorterDue = reminderEvent("short-due", now.plusSeconds(10 * 60), 10);
+        Event longer = reminderEvent("long", now.plusSeconds(90 * 60), 120);
+        Event inherited = reminderEvent("inherited", now.plusSeconds(60 * 60), null);
+        Event beyondDefault = reminderEvent("later", now.plusSeconds(60 * 60).plusNanos(1), null);
+        Event beyondOverride = reminderEvent("later-override", now.plusSeconds(120 * 60).plusNanos(1), 120);
+        when(eventDAO.getMaxReminderLeadMinutes()).thenReturn(120);
+        when(eventDAO.getReminderCandidates(now.plusSeconds(120 * 60)))
+                .thenReturn(List.of(shorter, shorterDue, longer, inherited, beyondDefault, beyondOverride));
+
+        assertThat(underTest.getReminderCandidates(now)).containsExactly(shorterDue, longer, inherited);
+        verify(eventDAO).getMaxReminderLeadMinutes();
+        verify(eventDAO).getReminderCandidates(now.plusSeconds(120 * 60));
+    }
+
+    @ParameterizedTest
+    @NullSource
+    @ValueSource(ints = {10})
+    void getReminderCandidates_UsesInstanceLeadWhenMaximumOverrideIsMissingOrShorter(Integer maximum) {
+        Instant now = Instant.parse("2026-10-28T12:00:00Z");
+        underTest = new EventService(eventDAO, new EventSettingsResolver(new DiscordProperties(
+                "test", null, new DiscordProperties.Scheduler(60, 90))));
+        Event inherited = reminderEvent("inherited", now.plusSeconds(90 * 60), null);
+        when(eventDAO.getMaxReminderLeadMinutes()).thenReturn(maximum);
+        when(eventDAO.getReminderCandidates(now.plusSeconds(90 * 60))).thenReturn(List.of(inherited));
+
+        assertThat(underTest.getReminderCandidates(now)).containsExactly(inherited);
+        verify(eventDAO).getReminderCandidates(now.plusSeconds(90 * 60));
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = EventStatus.class, names = {"OPEN", "CLOSED"})
+    void updateReminderLeadMinutesForGuild_SavesOverrideUnderLock(EventStatus status) {
+        Event event = createEvent("1", createGuild(), createEmbedType());
+        event.setStatus(status);
+        event.setReminderSent(true);
+        when(eventDAO.findByIdForUpdate("1")).thenReturn(Optional.of(event));
+
+        assertThat(underTest.updateReminderLeadMinutesForGuild("1", "1", 10080)).contains(event);
+        assertThat(event.getReminderLeadMinutes()).isEqualTo(10080);
+        assertThat(event.isReminderSent()).isTrue();
+        verify(eventDAO).saveEvent(event);
+        verify(eventDAO, never()).findById(any());
+    }
+
+    @Test
+    void updateReminderLeadMinutesForGuild_ResetsToNull() {
+        Event event = createEvent("1", createGuild(), createEmbedType());
+        event.setReminderLeadMinutes(120);
+        when(eventDAO.findByIdForUpdate("1")).thenReturn(Optional.of(event));
+
+        assertThat(underTest.updateReminderLeadMinutesForGuild("1", "1", null)).contains(event);
+        assertThat(event.getReminderLeadMinutes()).isNull();
+        verify(eventDAO).saveEvent(event);
+    }
+
+    @Test
+    void updateReminderLeadMinutesForGuild_RejectsWrongGuildWithoutMutation() {
+        Event event = createEvent("1", createGuild(), createEmbedType());
+        event.setReminderLeadMinutes(120);
+        when(eventDAO.findByIdForUpdate("1")).thenReturn(Optional.of(event));
+
+        assertThat(underTest.updateReminderLeadMinutesForGuild("1", "other", 60)).isEmpty();
+        assertThat(event.getReminderLeadMinutes()).isEqualTo(120);
+        verify(eventDAO, never()).saveEvent(any());
+    }
+
+    @ParameterizedTest
+    @EnumSource(value = EventStatus.class, names = {"CANCELLED", "EXPIRED"})
+    void updateReminderLeadMinutesForGuild_RejectsInactiveStatus(EventStatus status) {
+        Event event = createEvent("1", createGuild(), createEmbedType());
+        event.setStatus(status);
+        when(eventDAO.findByIdForUpdate("1")).thenReturn(Optional.of(event));
+
+        assertThat(underTest.updateReminderLeadMinutesForGuild("1", "1", 60)).isEmpty();
+        assertThat(event.getReminderLeadMinutes()).isNull();
+        verify(eventDAO, never()).saveEvent(any());
+    }
+
+    @Test
+    void updateReminderLeadMinutesForGuild_ReturnsEmptyForMissingEvent() {
+        when(eventDAO.findByIdForUpdate("missing")).thenReturn(Optional.empty());
+
+        assertThat(underTest.updateReminderLeadMinutesForGuild("missing", "1", 1)).isEmpty();
+        verify(eventDAO, never()).saveEvent(any());
+    }
+
+    @Test
+    void updateReminderLeadMinutesForGuild_RejectsEventWithoutGuild() {
+        Event event = createEvent("1", null, createEmbedType());
+        when(eventDAO.findByIdForUpdate("1")).thenReturn(Optional.of(event));
+
+        assertThat(underTest.updateReminderLeadMinutesForGuild("1", "1", 60)).isEmpty();
+        verify(eventDAO, never()).saveEvent(any());
+    }
+
+    @ParameterizedTest
+    @ValueSource(ints = {-1, 0, 10081, Integer.MAX_VALUE})
+    void updateReminderLeadMinutesForGuild_RejectsInvalidRangeBeforeLookup(int minutes) {
+        assertThatThrownBy(() -> underTest.updateReminderLeadMinutesForGuild("1", "1", minutes))
+                .isInstanceOf(IllegalArgumentException.class);
+        verifyNoInteractions(eventDAO);
+    }
+
+    private Event reminderEvent(String id, Instant start, Integer lead) {
+        return Event.builder().withEventId(id).withDateTime(start).withReminderLeadMinutes(lead).build();
     }
 
     @Test
@@ -231,31 +325,6 @@ class EventServiceTest {
     }
 
     @Test
-    void deleteEventById_deletesEvent_WhenEventExists() {
-        // Arrange
-        var eventId = "1";
-        when(eventDAO.existsById(eventId)).thenReturn(true);
-
-        // Act
-        underTest.deleteEventById(eventId);
-
-        // Assert
-        verify(eventDAO, times(1)).deleteById(eventId);
-    }
-
-    @Test
-    void deleteEventById_throwsException_WhenEventNotExists() {
-        // Arrange
-        var eventId = "1";
-        when(eventDAO.existsById(eventId)).thenReturn(false);
-
-        // Assert
-        assertThatThrownBy(() -> underTest.deleteEventById(eventId))
-                .isInstanceOf(ResourceNotFoundException.class);
-        verify(eventDAO, never()).deleteById(eventId);
-    }
-
-    @Test
     void deleteEventIfExists_ReturnsTrueAndDeletesEvent_WhenEventExists() {
         // Arrange
         var eventId = "1";
@@ -282,105 +351,6 @@ class EventServiceTest {
         assertThat(actual).isFalse();
         verify(eventDAO, never()).deleteById(eventId);
     }
-
-    @Test
-    void updateEvent_updatesEventAndReturnsUpdatedEvent_WhenEventExists() {
-        // Arrange
-        var eventId = "1";
-
-        Guild guild = createGuild();
-        EmbedType embedType = createEmbedType();
-
-        Event event = createEvent(eventId, guild, embedType);
-
-        EventUpdateRequest updateRequest = new EventUpdateRequest(
-                "newName",  "newDescription", "5"
-        );
-
-        when(eventDAO.findById(eventId)).thenReturn(Optional.of(event));
-        doNothing().when(eventDAO).saveEvent(event);
-
-        // Act
-        Event actual = underTest.updateEvent(eventId, updateRequest);
-
-        // Assert
-        assertThat(actual).hasFieldOrPropertyWithValue("name", "newName");
-        assertThat(actual).hasFieldOrPropertyWithValue("description", "newDescription");
-        assertThat(actual).hasFieldOrPropertyWithValue("memberSize", "5");
-        verify(eventDAO, times(1)).saveEvent(any());
-    }
-
-    @Test
-    void updateEvent_ThrowsException_WhenEventNotFound() {
-        // Arrange
-        var eventId = "1";
-
-        EventUpdateRequest updateRequest = new EventUpdateRequest(
-                "newName",  "newDescription", "5"
-        );
-
-        when(eventDAO.findById(eventId)).thenReturn(Optional.empty());
-
-        // Act & Assert
-        assertThatThrownBy(() -> underTest.updateEvent(eventId, updateRequest))
-                .isInstanceOf(ResourceNotFoundException.class)
-                        .hasMessageContaining("Cannot update event with id");
-        verify(eventDAO, never()).saveEvent(any());
-    }
-
-    @Test
-    void updateEvent_updatesEventAndReturnsUpdatedEvent_WhenEventExistsAndNameIsNull() {
-        // Arrange
-        var eventId = "1";
-
-        Guild guild = createGuild();
-        EmbedType embedType = createEmbedType();
-
-        Event event = createEvent(eventId, guild, embedType);
-
-        EventUpdateRequest updateRequest = new EventUpdateRequest(
-                null,  "newDescription", null
-        );
-
-        when(eventDAO.findById(eventId)).thenReturn(Optional.of(event));
-        doNothing().when(eventDAO).saveEvent(event);
-
-        // Act
-        Event actual = underTest.updateEvent(eventId, updateRequest);
-
-        // Assert
-        assertThat(actual).hasFieldOrPropertyWithValue("name", event.getName());
-        assertThat(actual).hasFieldOrPropertyWithValue("description", "newDescription");
-        assertThat(actual).hasFieldOrPropertyWithValue("memberSize", event.getMemberSize());
-        verify(eventDAO, times(1)).saveEvent(any());
-    }
-
-    @Test
-    void getEventById_ReturnsEvent_WhenEventExists() {
-        // Arrange
-        var eventId = "1";
-        Event eventMock = mock(Event.class);
-        when(eventDAO.findById(eventId)).thenReturn(Optional.of(eventMock));
-
-        // Act
-        Event actual = underTest.getEventById(eventId);
-
-        // Assert
-        assertThat(actual).isEqualTo(eventMock);
-    }
-
-    @Test
-    void getEventById_Throws404Exception_WhenEventDoesNotExists() {
-        // Arrange
-        var eventId = "1";
-        when(eventDAO.findById(eventId)).thenReturn(Optional.empty());
-
-        // Assert
-        assertThatThrownBy(() -> underTest.getEventById(eventId))
-                .isInstanceOf(ResourceNotFoundException.class)
-                .hasMessageContaining("Cannot get event with id");
-    }
-
 
     // Helper Methods
     @NotNull
@@ -412,5 +382,15 @@ class EventServiceTest {
     @NotNull
     private static Guild createGuild() {
         return new Guild("1", "guild");
+    }
+
+    @Test
+    void updateReminderLeadMinutesForGuild_RejectsNullGuildId() {
+        Event event = createEvent("1", createGuild(), createEmbedType());
+        when(eventDAO.findByIdForUpdate("1")).thenReturn(Optional.of(event));
+
+        assertThat(underTest.updateReminderLeadMinutesForGuild("1", null, 60)).isEmpty();
+        assertThat(event.getReminderLeadMinutes()).isNull();
+        verify(eventDAO, never()).saveEvent(any());
     }
 }

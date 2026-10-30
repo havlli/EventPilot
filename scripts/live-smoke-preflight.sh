@@ -9,7 +9,6 @@ FAILURES=0
 
 required_keys=(
   "DISCORD_BOT_TOKEN"
-  "JWT_SECRET"
   "POSTGRES_DB"
   "POSTGRES_USER"
   "POSTGRES_PASSWORD"
@@ -126,10 +125,10 @@ check_command_resources() {
     fi
   done
 
-  if [ "$command_count" -ge 9 ]; then
+  if [ "$command_count" -ge 10 ]; then
     pass "slash command JSON resources found: ${command_count}"
   else
-    fail "expected at least 9 slash command JSON resources, found: ${command_count}"
+    fail "expected at least 10 slash command JSON resources, found: ${command_count}"
   fi
 }
 

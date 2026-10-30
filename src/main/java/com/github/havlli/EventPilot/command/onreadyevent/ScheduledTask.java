@@ -24,7 +24,6 @@ public class ScheduledTask {
 
     private static final Logger LOG = LoggerFactory.getLogger(ScheduledTask.class);
     private final Duration interval;
-    private final Duration reminderLeadTime;
     private final Scheduler timerScheduler;
     private final Scheduler blockingScheduler;
     private final EventService eventService;
@@ -41,7 +40,6 @@ public class ScheduledTask {
         this.eventService = eventService;
         this.discordService = discordService;
         this.interval = Duration.ofSeconds(discordProperties.scheduler().intervalSeconds());
-        this.reminderLeadTime = Duration.ofMinutes(discordProperties.scheduler().reminderLeadMinutes());
         this.timerScheduler = Schedulers.parallel();
         this.blockingScheduler = Schedulers.boundedElastic();
     }
@@ -50,14 +48,12 @@ public class ScheduledTask {
             EventService eventService,
             DiscordService discordService,
             Duration interval,
-            Duration reminderLeadTime,
             Scheduler timerScheduler,
             Scheduler blockingScheduler
     ) {
         this.eventService = eventService;
         this.discordService = discordService;
         this.interval = interval;
-        this.reminderLeadTime = reminderLeadTime;
         this.timerScheduler = timerScheduler;
         this.blockingScheduler = blockingScheduler;
     }
@@ -111,7 +107,7 @@ public class ScheduledTask {
     }
 
     private Mono<List<Event>> getReminderEventList() {
-        return Mono.fromCallable(() -> eventService.getReminderCandidates(reminderLeadTime))
+        return Mono.fromCallable(eventService::getReminderCandidates)
                 .subscribeOn(blockingScheduler);
     }
 }

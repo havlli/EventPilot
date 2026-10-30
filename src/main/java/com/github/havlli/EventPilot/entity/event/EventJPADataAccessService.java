@@ -23,16 +23,6 @@ public class EventJPADataAccessService implements EventDAO {
     }
 
     @Override
-    public List<Event> getEvents() {
-        return eventRepository.findAll();
-    }
-
-    @Override
-    public void deleteEvent(Event event) {
-        eventRepository.delete(event);
-    }
-
-    @Override
     public void deleteById(String id) {
         eventRepository.deleteById(id);
     }
@@ -53,13 +43,13 @@ public class EventJPADataAccessService implements EventDAO {
     }
 
     @Override
-    public boolean existsById(String id) {
-        return eventRepository.existsById(id);
+    public Integer getMaxReminderLeadMinutes() {
+        return eventRepository.findMaxReminderLeadMinutes();
     }
 
     @Override
-    public List<Event> getLastFiveEvents() {
-        return eventRepository.findLastFiveEvents();
+    public boolean existsById(String id) {
+        return eventRepository.existsById(id);
     }
 
     @Override

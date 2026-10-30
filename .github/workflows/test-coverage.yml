@@ -52,7 +52,6 @@ jobs:
         env:
           DISCORD_BOT_TOKEN: ${{ secrets.DISCORD_BOT_TOKEN }}
           TEST_DISCORD_BOT_TOKEN: ${{ secrets.TEST_DISCORD_BOT_TOKEN }}
-          JWT_SECRET: ${{ secrets.JWT_SECRET }}
         run: mvn -ntp -B verify
 
       - name: Upload coverage reports to Codecov

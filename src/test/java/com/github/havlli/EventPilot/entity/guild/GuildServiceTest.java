@@ -33,26 +33,6 @@ class GuildServiceTest {
     }
 
     @Test
-    public void saveGuild() {
-        // Arrange
-        Guild guildMock = mock(Guild.class);
-
-        // Act
-        underTest.saveGuild(guildMock);
-
-        // Assert
-        verify(guildDAO, times(1)).saveGuild(guildMock);
-    }
-
-    @Test
-    public void getAllGuilds() {
-        underTest.getAllGuilds();
-
-        // Assert
-        verify(guildDAO, times(1)).getGuilds();
-    }
-
-    @Test
     public void getGuildById_WillReturnGuild_WhenExists() {
         // Arrange
         Guild guildMock = mock(Guild.class);
@@ -85,7 +65,6 @@ class GuildServiceTest {
         // Arrange
         String id = "1";
         String name = "guildName";
-        when(guildDAO.existsGuildById(id)).thenReturn(false);
 
         // Act
         underTest.createGuildIfNotExists(id, name);
@@ -99,24 +78,13 @@ class GuildServiceTest {
         // Arrange
         String id = "1";
         String name = "guildName";
-        when(guildDAO.existsGuildById(id)).thenReturn(true);
 
         // Act
         underTest.createGuildIfNotExists(id, name);
 
         // Assert
-        verify(guildDAO, never()).saveGuild(any());
+        verify(guildDAO).saveGuildIfNotExists(id, name);
+        verifyNoMoreInteractions(guildDAO);
     }
 
-    @Test
-    public void existsGuildById() {
-        // Arrange
-        String id = "1";
-
-        // Act
-        underTest.existsGuildById(id);
-
-        // Assert
-        verify(guildDAO, times(1)).existsGuildById(id);
-    }
 }

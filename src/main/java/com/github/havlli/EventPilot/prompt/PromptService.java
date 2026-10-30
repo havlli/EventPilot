@@ -36,7 +36,9 @@ public class PromptService {
     }
 
     private Flux<TextChannel> getGuildTextChannels(Snowflake guildId) {
-        return client.getGuildChannels(guildId).ofType(TextChannel.class);
+        return client.getGuildChannels(guildId)
+                .ofType(TextChannel.class)
+                .filter(channel -> !channel.isObfuscated());
     }
 
     private Interaction getInteraction(InteractionCreateEvent event) {

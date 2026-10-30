@@ -35,6 +35,8 @@ public class Event {
     private EventStatus status = EventStatus.OPEN;
     @Column(name = "reminder_sent", nullable = false)
     private boolean reminderSent = false;
+    @Column(name = "reminder_lead_minutes")
+    private Integer reminderLeadMinutes;
     @OneToMany(mappedBy = "event", cascade = CascadeType.ALL, orphanRemoval = true, fetch = FetchType.EAGER)
     private List<Participant> participants;
     @ManyToOne
@@ -84,6 +86,7 @@ public class Event {
         this.memberSize = builder.memberSize;
         this.status = builder.status == null ? EventStatus.OPEN : builder.status;
         this.reminderSent = builder.reminderSent;
+        this.reminderLeadMinutes = builder.reminderLeadMinutes;
         this.guild = builder.guild;
         this.embedType = builder.embedType;
         this.participants = builder.participants;
@@ -137,6 +140,14 @@ public class Event {
         this.reminderSent = reminderSent;
     }
 
+    public Integer getReminderLeadMinutes() {
+        return reminderLeadMinutes;
+    }
+
+    public void setReminderLeadMinutes(Integer reminderLeadMinutes) {
+        this.reminderLeadMinutes = reminderLeadMinutes;
+    }
+
     public List<Participant> getParticipants() {
         return participants;
     }
@@ -154,12 +165,12 @@ public class Event {
         if (this == o) return true;
         if (o == null || getClass() != o.getClass()) return false;
         Event event = (Event) o;
-        return reminderSent == event.reminderSent && Objects.equals(eventId, event.eventId) && Objects.equals(name, event.name) && Objects.equals(description, event.description) && Objects.equals(author, event.author) && Objects.equals(dateTime, event.dateTime) && Objects.equals(destinationChannelId, event.destinationChannelId) && Objects.equals(instances, event.instances) && Objects.equals(memberSize, event.memberSize) && status == event.status && Objects.equals(participants, event.participants) && Objects.equals(guild, event.guild) && Objects.equals(embedType, event.embedType);
+        return reminderSent == event.reminderSent && Objects.equals(reminderLeadMinutes, event.reminderLeadMinutes) && Objects.equals(eventId, event.eventId) && Objects.equals(name, event.name) && Objects.equals(description, event.description) && Objects.equals(author, event.author) && Objects.equals(dateTime, event.dateTime) && Objects.equals(destinationChannelId, event.destinationChannelId) && Objects.equals(instances, event.instances) && Objects.equals(memberSize, event.memberSize) && status == event.status && Objects.equals(participants, event.participants) && Objects.equals(guild, event.guild) && Objects.equals(embedType, event.embedType);
     }
 
     @Override
     public int hashCode() {
-        return Objects.hash(eventId, name, description, author, dateTime, destinationChannelId, instances, memberSize, status, reminderSent, participants, guild, embedType);
+        return Objects.hash(eventId, name, description, author, dateTime, destinationChannelId, instances, memberSize, status, reminderSent, reminderLeadMinutes, participants, guild, embedType);
     }
 
     @Override
@@ -175,6 +186,7 @@ public class Event {
                 ", memberSize='" + memberSize + '\'' +
                 ", status=" + status +
                 ", reminderSent=" + reminderSent +
+                ", reminderLeadMinutes=" + reminderLeadMinutes +
                 ", participants=" + participants.size() +
                 ", guild=" + guild.getId() +
                 ", embedType=" + embedType.getName() +
@@ -197,6 +209,7 @@ public class Event {
         private String memberSize;
         private EventStatus status = EventStatus.OPEN;
         private boolean reminderSent = false;
+        private Integer reminderLeadMinutes;
         private Guild guild;
         private EmbedType embedType;
         private List<Participant> participants;
@@ -253,6 +266,11 @@ public class Event {
             return this;
         }
 
+        public Builder withReminderLeadMinutes(Integer reminderLeadMinutes) {
+            this.reminderLeadMinutes = reminderLeadMinutes;
+            return this;
+        }
+
         public Builder withGuild(Guild guild) {
             this.guild = guild;
             return this;
@@ -287,6 +305,7 @@ public class Event {
             this.memberSize = event.getMemberSize();
             this.status = event.getStatus();
             this.reminderSent = event.isReminderSent();
+            this.reminderLeadMinutes = event.getReminderLeadMinutes();
             this.guild = event.getGuild();
             this.embedType = event.getEmbedType();
             this.participants = event.getParticipants();

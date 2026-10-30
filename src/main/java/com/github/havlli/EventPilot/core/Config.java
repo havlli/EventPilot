@@ -1,8 +1,5 @@
 package com.github.havlli.EventPilot.core;
 
-import ch.qos.logback.classic.encoder.PatternLayoutEncoder;
-import ch.qos.logback.classic.spi.ILoggingEvent;
-import ch.qos.logback.core.ConsoleAppender;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.context.support.ResourceBundleMessageSource;
@@ -24,13 +21,4 @@ public class Config {
         return messageSource;
     }
 
-    @Bean
-    public PatternLayoutEncoder patternLayoutEncoder() {
-        return new PatternLayoutEncoder();
-    }
-
-    @Bean
-    public ConsoleAppender<ILoggingEvent> consoleAppender() {
-        return new ConsoleAppender<>();
-    }
 }

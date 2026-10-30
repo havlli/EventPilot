@@ -6,9 +6,8 @@ does, not just what classes exist.
 
 ## Product Boundary
 
-EventPilot is scoped as a Discord-first event coordination bot for gaming groups. The primary product
-surface is the Discord signup message, not the REST API. The REST/admin API remains useful for
-supporting operations, but the core portfolio story is:
+EventPilot is a Discord event coordination bot for gaming groups. It runs as a non-web application,
+exposes no HTTP port by default, and uses Discord signup messages as its product surface:
 
 - an organizer creates a role-based event post
 - players sign up or change role from Discord buttons
@@ -134,6 +133,16 @@ DISCORD_SCHEDULER_INTERVAL_SECONDS=60
 DISCORD_REMINDER_LEAD_MINUTES=60
 ```
 
+Each event can store a nullable `reminder_lead_minutes` override (1–10080 minutes). Null inherits
+`DISCORD_REMINDER_LEAD_MINUTES`, with a built-in default of 60. `EventSettingsResolver` supplies the
+same effective lead to reminder selection and `/event-options`. Selection queries a broad window
+using the larger of the instance lead and the maximum active, unsent event override, then checks
+each event against its resolved lead with an inclusive cutoff. Updates lock the event within a
+transaction and require the current guild and an open or closed status. Changing an already-sent
+reminder's lead keeps `reminder_sent` set. Per-guild settings and `/config` are not built yet.
+Auto-promote and signup-deadline overrides were considered and deferred: turning auto-promotion
+off would leave no manual promotion path, and a signup deadline needs new expiry semantics.
+
 ## Reactive Boundary
 
 Discord I/O stays reactive. Blocking database work is wrapped onto bounded elastic schedulers where
@@ -147,7 +156,37 @@ The goal is pragmatic separation:
 - repositories handle locking and persistence queries
 - generators render Discord embeds and components
 
+## Process Lifetime
+
+`GatewayKeepAlive` starts a non-daemon thread that waits for the Discord gateway to disconnect.
+Spring startup can finish while this thread keeps the non-web process alive. On context shutdown,
+the lifecycle logs out with a five-second timeout and releases the waiting thread. Like the gateway
+client, it is disabled in the `test` profile. Scheduled work and ready-event handling stay unchanged.
+
+## Optional Health Endpoint
+
+The health endpoint uses the JDK's `HttpServer` (`jdk.httpserver`) instead of Actuator or a Spring
+web starter: no mandatory port, no Spring Security, and no new dependencies. It defaults off to keep
+the bot free of a required HTTP port. Enable it with `EVENTPILOT_HEALTH_ENABLED=true`, optionally set
+`EVENTPILOT_HEALTH_PORT` (default `8081`), and probe with `curl --fail http://127.0.0.1:8081/health`.
+It binds only to `127.0.0.1`, can back an internal container healthcheck, and stays off in the `test`
+profile. Discord4J 3.3.3 exposes `GatewayClient.isConnected()` on individual shards; all configured
+shards must report connected within two seconds, and the database must pass `Connection.isValid(2)`.
+SmartLifecycle owns startup and shutdown with a bounded daemon executor. Custom `jlink` runtimes
+must include `jdk.httpserver`; the standard JDK/JRE supplies it.
+
+## Database Upgrade
+
+V9 irreversibly drops the former admin API's user tables (`user_role`, `role`, and `users`),
+including their indexes, constraints, and owned sequences. Discord features never used these tables.
+Back up the database before upgrading if they ever held data that needs to be retained.
+
 ## Testing Strategy
+
+Discord4J is pinned to 3.3.3 (discord-json 1.7.24). `ComponentsSupportTest` serializes Discord4J's
+own specs/requests with its Jackson mapper and checks JSON shape for Components V2, modal labels
+and controls, scheduled-event recurrence, and legacy action rows. Live Discord behaviour is
+unverified by these tests.
 
 The test suite is organized around risk:
 
@@ -156,7 +195,6 @@ The test suite is organized around risk:
 - generator tests cover embed fields, roster counts, and waitlist rendering
 - repository integration tests cover constraints, migrations, locking queries, reminder candidates,
   and status filtering
-- journey tests cover authenticated REST/admin behavior
 - Testcontainers runs PostgreSQL and Redis for integration verification
 
 The intended acceptance command for a complete local verification is:
@@ -164,3 +202,26 @@ The intended acceptance command for a complete local verification is:
 ```shell
 mvn -ntp -Dmaven.repo.local=.m2/repository verify
 ```
+
+## Channel obfuscation (2026-11-16)
+
+From 2026-11-16, channels the bot cannot view arrive over the Gateway with name `___hidden___`
+and flag `CHANNEL_OBFUSCATED` (`1 << 17`). `GET /guilds/{id}/channels` omits them. Interaction
+payloads are not obfuscated.
+
+`PromptService.fetchGuildTextChannels` calls `GatewayDiscordClient.getGuildChannels`, using the
+default `STORE_FALLBACK_REST` retrieval strategy: gateway store first, REST if the list is empty.
+`CreateEventInteraction` passes this list to `ChannelSelectMenu`, a string select whose option labels
+are channel names. Cached obfuscated text channels could therefore become `___hidden___` options.
+Discord4J 3.3.3 exposes `Channel.isObfuscated()` and `Channel.Flag.CHANNEL_OBFUSCATED`; the service
+now excludes those channels before building the select, keeping normal channels and their order.
+The unit test uses real `ChannelData` flags and `TextChannel` objects with a mocked client.
+
+Impact is expected to be low: the rest of the flow uses interaction channel references (including
+the selected destination ID), and `DiscordService` calls `getChannelById` / `getMessageById` with
+known destination IDs for posting reminders, edits, and cleanup, rather than listing channels.
+This filter checks the obfuscation flag; it does not add a separate permission calculation or
+guarantee posting access if permissions change later.
+
+TODO before 2026-11-16: test the developer portal **Private Channel Obfuscation** toggle on a real
+test server using the [live checklist](live-smoke-test.md#channel-obfuscation-2026-11-16).

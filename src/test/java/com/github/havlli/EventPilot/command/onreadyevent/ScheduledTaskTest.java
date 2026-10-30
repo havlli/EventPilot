@@ -38,7 +38,6 @@ class ScheduledTaskTest {
                 eventServiceMock,
                 discordServiceMock,
                 Duration.ofSeconds(5),
-                Duration.ofMinutes(60),
                 virtualTimeScheduler,
                 Schedulers.immediate()
         );
@@ -69,7 +68,7 @@ class ScheduledTaskTest {
 
         verify(eventServiceMock, times(2)).getExpiredEvents();
         verify(discordServiceMock, times(2)).deactivateEvents(expiredEvents);
-        verify(eventServiceMock, times(2)).getReminderCandidates(Duration.ofMinutes(60));
+        verify(eventServiceMock, times(2)).getReminderCandidates();
         verify(discordServiceMock, times(2)).sendEventReminders(reminderEvents);
     }
 
@@ -82,7 +81,7 @@ class ScheduledTaskTest {
                 .thenThrow(new RuntimeException("database unavailable"))
                 .thenReturn(expiredEvents);
         when(discordServiceMock.deactivateEvents(expiredEvents)).thenReturn(Flux.empty());
-        when(eventServiceMock.getReminderCandidates(Duration.ofMinutes(60))).thenReturn(reminderEvents);
+        when(eventServiceMock.getReminderCandidates()).thenReturn(reminderEvents);
         when(discordServiceMock.sendEventReminders(reminderEvents)).thenReturn(Flux.empty());
 
         // Assert
@@ -98,7 +97,7 @@ class ScheduledTaskTest {
 
         verify(eventServiceMock, times(2)).getExpiredEvents();
         verify(discordServiceMock, times(1)).deactivateEvents(expiredEvents);
-        verify(eventServiceMock, times(1)).getReminderCandidates(Duration.ofMinutes(60));
+        verify(eventServiceMock, times(1)).getReminderCandidates();
         verify(discordServiceMock, times(1)).sendEventReminders(reminderEvents);
     }
 
@@ -137,7 +136,7 @@ class ScheduledTaskTest {
     private void stubScheduledCycle(List<Event> expiredEvents, List<Event> reminderEvents) {
         when(eventServiceMock.getExpiredEvents()).thenReturn(expiredEvents);
         when(discordServiceMock.deactivateEvents(expiredEvents)).thenReturn(Flux.empty());
-        when(eventServiceMock.getReminderCandidates(Duration.ofMinutes(60))).thenReturn(reminderEvents);
+        when(eventServiceMock.getReminderCandidates()).thenReturn(reminderEvents);
         when(discordServiceMock.sendEventReminders(reminderEvents)).thenReturn(Flux.empty());
     }
 }

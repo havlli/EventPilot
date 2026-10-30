@@ -88,10 +88,11 @@ class GlobalCommandRegistrarTest {
                         "create-event",
                         "delete-event",
                         "event-info",
+                        "event-options",
                         "list-events",
                         "reopen-event"
                 );
-        assertThat(commandsByName).hasSize(9);
+        assertThat(commandsByName).hasSize(10);
         assertThat(capturedCommands)
                 .allSatisfy(command -> assertThat(command.defaultMemberPermissions()).contains("16"));
         assertMessageIdOption(commandsByName.get("cancel-event"));
@@ -99,6 +100,15 @@ class GlobalCommandRegistrarTest {
         assertMessageIdOption(commandsByName.get("delete-event"));
         assertMessageIdOption(commandsByName.get("event-info"));
         assertMessageIdOption(commandsByName.get("reopen-event"));
+        assertMessageIdOption(commandsByName.get("event-options"));
+        ApplicationCommandOptionData minutes = findOption(commandsByName.get("event-options"), "reminder-minutes");
+        assertThat(minutes.type()).isEqualTo(4);
+        assertThat(minutes.required().toOptional()).contains(false);
+        assertThat(minutes.minValue().toOptional()).contains(1.0);
+        assertThat(minutes.maxValue().toOptional()).contains(10080.0);
+        ApplicationCommandOptionData reset = findOption(commandsByName.get("event-options"), "reset");
+        assertThat(reset.type()).isEqualTo(5);
+        assertThat(reset.required().toOptional()).contains(false);
         assertListEventsOptions(commandsByName.get("list-events"));
     }
 

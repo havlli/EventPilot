@@ -6,14 +6,12 @@ import java.util.Optional;
 
 public interface EventDAO {
     void saveEvent(Event event);
-    List<Event> getEvents();
-    void deleteEvent(Event event);
     void deleteById(String id);
     void deleteAllEvents(List<Event> events);
     List<Event> getExpiredEvents();
     List<Event> getReminderCandidates(Instant reminderCutoff);
+    Integer getMaxReminderLeadMinutes();
     boolean existsById(String id);
-    List<Event> getLastFiveEvents();
     List<Event> getEventsForGuild(String guildId, List<EventStatus> statuses, int limit);
     Optional<Event> findById(String id);
     Optional<Event> findByIdAndGuildId(String id, String guildId);

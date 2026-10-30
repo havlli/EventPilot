@@ -1,6 +1,3 @@
-server:
-  shutdown: immediate
-
 spring:
   main:
     banner-mode: off

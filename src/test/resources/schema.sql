@@ -24,9 +24,11 @@ CREATE TABLE event
     member_size  VARCHAR(5)  NOT NULL,
     status       VARCHAR(20) NOT NULL DEFAULT 'OPEN',
     reminder_sent BOOLEAN    NOT NULL DEFAULT FALSE,
+    reminder_lead_minutes INTEGER,
     guild_id     VARCHAR(30) NOT NULL,
     embed_type   BIGINT         NOT NULL,
     PRIMARY KEY (id),
+    CONSTRAINT event_reminder_lead_minutes_check CHECK (reminder_lead_minutes IS NULL OR reminder_lead_minutes BETWEEN 1 AND 10080),
     CONSTRAINT event_status_check CHECK (status IN ('OPEN', 'CLOSED', 'CANCELLED', 'EXPIRED')),
     FOREIGN KEY (guild_id) REFERENCES guild(id) ON DELETE CASCADE,
     FOREIGN KEY (embed_type) REFERENCES embed_type(id) ON DELETE CASCADE
@@ -49,33 +51,3 @@ CREATE TABLE participant
 
 INSERT INTO embed_type (name, structure)
 VALUES ('default', '{"-1":"Absence","-2":"Late","1":"Tank","-3":"Tentative","2":"Melee","3":"Ranged","4":"Healer","5":"Support"}');
-
-CREATE TABLE users
-(
-    id          BIGSERIAL NOT NULL,
-    username    VARCHAR(35) NOT NULL UNIQUE,
-    email       VARCHAR(60) NOT NULL UNIQUE,
-    password    VARCHAR(150) NOT NULL,
-    PRIMARY KEY (id)
-);
-
-CREATE TABLE role
-(
-    id          BIGSERIAL NOT NULL,
-    name        VARCHAR(20) NOT NULL,
-    PRIMARY KEY (id)
-);
-
-CREATE TABLE user_role
-(
-    id          BIGSERIAL NOT NULL,
-    user_id     BIGINT NOT NULL,
-    role_id     BIGINT NOT NULL,
-    PRIMARY KEY (id),
-    FOREIGN KEY (user_id) REFERENCES users (id),
-    FOREIGN KEY (role_id) REFERENCES role (id)
-);
-
-INSERT INTO role(name) VALUES('USER');
-INSERT INTO role(name) VALUES('MODERATOR');
-INSERT INTO role(name) VALUES('ADMIN');

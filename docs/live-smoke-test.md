@@ -3,6 +3,9 @@
 Use this checklist to validate EventPilot against a real Discord test server. Keep the server,
 channel names, and users generic so the same run can also produce portfolio-safe screenshots.
 
+Discord4J is 3.3.3. The offline component tests check JSON shape only; live Discord behaviour is
+unverified by those tests.
+
 ## Preconditions
 
 - Docker is running.
@@ -17,7 +20,6 @@ Required local values:
 
 ```dotenv
 DISCORD_BOT_TOKEN=...
-JWT_SECRET=...
 POSTGRES_DB=eventpilot
 POSTGRES_USER=eventpilot
 POSTGRES_PASSWORD=...
@@ -62,12 +64,29 @@ Expected organizer commands:
 /create-embed-type
 /list-events
 /event-info
+/event-options
 /close-event
 /reopen-event
 /cancel-event
 /delete-event
 /clear-expired
 ```
+
+## Optional Health Check
+
+For a local application run, set `EVENTPILOT_HEALTH_ENABLED=true` before starting the bot.
+Optionally set `EVENTPILOT_HEALTH_PORT` (default `8081`), then run on the same host:
+
+```shell
+curl --fail http://127.0.0.1:8081/health
+```
+
+Expect HTTP 200 and `{"status":"UP","discord":"UP","database":"UP"}` once Discord and the
+database are available. HTTP 503 marks failing checks `DOWN` without error details. Confirm the
+startup log shows `127.0.0.1`; with health disabled, no health listener should start. For container
+runs, pass the variables through a local Compose environment override and run the probe inside the
+container using an installed probe tool; no published port is needed. This can serve as a container
+healthcheck. The supplied Compose file does not add one because the image may lack a probe tool.
 
 ## Event Creation
 
@@ -154,6 +173,33 @@ Expected result:
 
 - response is `Event not found in this server.`
 
+## Event Reminder Options
+
+Use an open or closed event whose reminder has not been sent. Replies should be ephemeral.
+
+1. Run `/event-options message-id:<event-message-id>`.
+   Expect `Reminder lead: 60 minutes (instance default). Reminder: not sent.` with the standard
+   instance setting, or the configured lead (for example, `5` with the fast-reminder setup).
+2. Run `/event-options message-id:<event-message-id> reminder-minutes:10`.
+   Expect `Event options saved.` followed by
+   `Reminder lead: 10 minutes (event override). Reminder: not sent.`
+3. Show the options again; expect the same override without the saved line.
+4. Run `/event-options message-id:<event-message-id> reset:true`.
+   Expect `Event options saved.` followed by the instance default and `Reminder: not sent.`
+5. Set a lead that includes the event's start time and wait for the scheduler interval.
+   Expect one reminder. Change or reset the lead afterward; expect `Reminder: already sent.` and
+   `The reminder was already sent; this change will not trigger another reminder.` No second
+   reminder should appear.
+6. Supply both `reminder-minutes:10` and `reset:true`.
+   Expect `Use either reminder-minutes or reset:true, not both.`
+7. Show a missing ID or an ID belonging to another server.
+   Expect `Event not found in this server.` Trying to change it, or a cancelled or expired event,
+   should return `Open or closed event not found in this server.`
+8. Try the command as an ordinary player. Discord may hide it; if invoked, expect
+   `You do not have permission to use this command.` and no change. Values outside 1–10080 should
+   be rejected by Discord; if received by the bot, expect
+   `Reminder minutes must be between 1 and 10080.`
+
 ## Lifecycle Controls
 
 1. Run `/close-event message-id:<event-message-id>`.
@@ -206,6 +252,25 @@ Expected result:
 
 - response is `Event deleted!` if database state existed
 - repeating the command returns `Event not found!`
+
+## Channel obfuscation (2026-11-16)
+
+From 2026-11-16, Discord will hide names of channels the bot cannot view: Gateway payloads carry
+`___hidden___` and `CHANNEL_OBFUSCATED` (`1 << 17`), while `GET /guilds/{id}/channels` omits them.
+Interaction payloads are not obfuscated. Impact is expected to be low: EventPilot uses interactions
+and known destination IDs. Its destination string select uses the guild channel list from
+`PromptService` (gateway store with REST fallback), which now filters `Channel.isObfuscated()`.
+`DiscordService` uses `getChannelById` / `getMessageById` for known destination channels without
+listing; other channel references come from interactions, including the selected destination ID.
+
+TODO: complete this check before 2026-11-16 on a real test server.
+
+- [ ] Enable **Private Channel Obfuscation** in the developer portal and give the bot view access
+  to some test channels while denying it access to others. Reconnect the bot to refresh gateway state.
+- [ ] Create an event; confirm the destination channel list shows only channels the bot can view,
+  with no `___hidden___` entries, and confirm posting to a visible channel works.
+- [ ] Confirm reminders still post to the saved destination channel.
+- [ ] Run `/clear-expired` for an expired event and confirm cleanup still works.
 
 ## Automated Verification
 

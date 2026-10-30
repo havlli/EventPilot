@@ -1,0 +1,27 @@
+{
+  "name": "event-options",
+  "description": "Show or change reminder options for an event.",
+  "default_member_permissions": "16",
+  "options": [
+    {
+      "name": "message-id",
+      "description": "Discord message ID of the event signup",
+      "type": 3,
+      "required": true
+    },
+    {
+      "name": "reminder-minutes",
+      "description": "Minutes before event start to send the reminder",
+      "type": 4,
+      "required": false,
+      "min_value": 1,
+      "max_value": 10080
+    },
+    {
+      "name": "reset",
+      "description": "Clear event overrides and use the instance default",
+      "type": 5,
+      "required": false
+    }
+  ]
+}

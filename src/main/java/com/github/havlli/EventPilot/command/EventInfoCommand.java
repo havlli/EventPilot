@@ -5,7 +5,6 @@ import com.github.havlli.EventPilot.entity.event.EventService;
 import com.github.havlli.EventPilot.session.UserSessionValidator;
 import discord4j.common.util.Snowflake;
 import discord4j.core.event.domain.interaction.ChatInputInteractionEvent;
-import discord4j.core.object.command.ApplicationCommandInteractionOption;
 import discord4j.core.object.entity.Message;
 import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Component;
@@ -18,7 +17,6 @@ import java.util.Optional;
 public class EventInfoCommand extends OrganizerCommand {
 
     private static final String EVENT_NAME = "event-info";
-    private static final String OPTION_MESSAGE_ID = "message-id";
     private final EventService eventService;
     private final OrganizerEventFormatter organizerEventFormatter;
 
@@ -54,10 +52,4 @@ public class EventInfoCommand extends OrganizerCommand {
                         .orElseGet(() -> sendMessage(event, getMessage("interaction.event-info.event-not-found"))));
     }
 
-    private String targetMessageId(ChatInputInteractionEvent event) {
-        return event.getOption(OPTION_MESSAGE_ID)
-                .flatMap(ApplicationCommandInteractionOption::getValue)
-                .map(value -> Snowflake.of(value.asString()).asString())
-                .orElse(Snowflake.of(0).asString());
-    }
 }

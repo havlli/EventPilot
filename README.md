@@ -46,8 +46,8 @@ to know:
 - who marked themselves absent, late, or tentative
 - whether an event is open, closed, cancelled, or expired
 
-The bot is intentionally centered on Discord messages and buttons. The REST/admin API exists for
-supporting operations, but the main product surface is the Discord server.
+The bot is centered on Discord messages and buttons. It runs as a non-web application and exposes
+no HTTP port by default. An optional health endpoint is available on loopback only.
 
 ## Feature Set
 
@@ -114,14 +114,16 @@ Useful screenshots or GIFs for a portfolio page:
 | `/create-embed-type` | Creates a reusable role layout for event buttons and embed grouping. |
 | `/list-events status:<filter> limit:<count>` | Lists recent events in the current server with roster and waitlist counts. |
 | `/event-info message-id:<id>` | Shows detailed event status, roster groups, and waitlist for one signup post. |
+| `/event-options message-id:<id> [reminder-minutes:<n>] [reset:true]` | Shows or changes the reminder lead for an event in this server. |
 | `/close-event message-id:<id>` | Closes an event to prevent further signups without deleting the post. |
 | `/reopen-event message-id:<id>` | Reopens a previously closed event. |
 | `/cancel-event message-id:<id>` | Cancels an event without deleting its historical signup state. |
 | `/delete-event message-id:<id>` | Deletes a bot-owned Discord event message and removes matching database state. |
 | `/clear-expired` | Deactivates expired event signups in the current channel. |
 
-The `message-id` is the Discord message ID of the event signup post. Event embeds also show the event
-ID so organizers can copy it when using lifecycle and inspection commands. Organizer commands require
+These 10 commands are organizer commands. The `message-id` is the Discord message ID of the event
+signup post. Event embeds also show the event ID so organizers can copy it when using lifecycle and
+inspection commands. Organizer commands require
 `Manage Channels`; command JSON also sets Discord `default_member_permissions` for supported clients.
 
 ## Signup Rules
@@ -180,12 +182,11 @@ Key implementation points:
 - Java 17
 - Spring Boot 4
 - Project Reactor
-- Discord4J
+- Discord4J 3.3.3
 - Spring Data JPA
 - PostgreSQL
 - Flyway
 - Redis
-- Spring Security and JWT
 - JUnit 5
 - Mockito
 - Reactor Test
@@ -214,14 +215,12 @@ The root [docker-compose.yml](docker-compose.yml) starts the bot, PostgreSQL, an
 
 ```shell
 cp .env.example .env
-openssl rand -base64 32
 docker compose up -d
 ```
 
 Before starting, edit `.env` and set at least:
 
 - `DISCORD_BOT_TOKEN`
-- `JWT_SECRET`
 - `POSTGRES_DB`
 - `POSTGRES_USER`
 - `POSTGRES_PASSWORD`
@@ -248,7 +247,6 @@ mvn -ntp -Dmaven.repo.local=.m2/repository spring-boot:run
 | Variable | Required | Default | Purpose |
 | --- | --- | --- | --- |
 | `DISCORD_BOT_TOKEN` | yes | none | Discord bot token. |
-| `JWT_SECRET` | yes | none | Base64-encoded JWT signing secret. Use `openssl rand -base64 32`. |
 | `POSTGRES_DB` | yes for Docker | `eventpilot` in local service compose | PostgreSQL database name. |
 | `POSTGRES_USER` | yes for Docker | `eventpilot` in local service compose | PostgreSQL username. |
 | `POSTGRES_PASSWORD` | yes for Docker | `eventpilot` in local service compose | PostgreSQL password. |
@@ -259,7 +257,42 @@ mvn -ntp -Dmaven.repo.local=.m2/repository spring-boot:run
 | `SPRING_DATA_REDIS_PORT` | no | `6379` | Redis port. |
 | `DISCORD_SCHEDULER_INTERVAL_SECONDS` | no | `60` | Scheduled job polling interval. |
 | `DISCORD_REMINDER_LEAD_MINUTES` | no | `60` | How long before event start the reminder is sent. |
-| `CORS_ALLOWED_ORIGINS` | no | local frontend origins | Allowed origins for REST/admin API calls. |
+| `EVENTPILOT_HEALTH_ENABLED` | no | `false` | Enable the loopback health endpoint. |
+| `EVENTPILOT_HEALTH_PORT` | no | `8081` | Health endpoint port (1–65535). |
+
+### Configuration layers
+
+Reminder lead settings resolve in this order: per-event override →
+`DISCORD_REMINDER_LEAD_MINUTES` → built-in default of 60 minutes. Use `/event-options` with
+`reminder-minutes:1` through `reminder-minutes:10080` to override an open or closed event, or
+`reset:true` to return to the instance default. Omit both options to show the current setting.
+Changing the lead after a reminder was sent does not send it again. Per-guild settings and a
+`/config` command are not built yet.
+
+### Health check
+
+Set `EVENTPILOT_HEALTH_ENABLED=true` in the application's environment to enable
+`GET /health`; optionally set `EVENTPILOT_HEALTH_PORT` (default `8081`). It binds only to
+`127.0.0.1` and is disabled in the `test` profile. No port is required with the default settings.
+
+```shell
+curl --fail http://127.0.0.1:8081/health
+```
+
+The response is HTTP 200 with `{"status":"UP","discord":"UP","database":"UP"}` when every
+Discord gateway shard reports connected and a database connection passes `isValid(2)`. Failures
+return HTTP 503 with the affected checks marked `DOWN`, without internal error details. The gateway
+check has a two-second timeout; database connection acquisition also depends on the pool timeout.
+Redis is not checked.
+
+This uses the JDK's `jdk.httpserver` module without a Spring web starter, Actuator, Spring Security,
+or new dependencies. Standard JDK/JRE distributions include the module; a custom `jlink` runtime
+must include `jdk.httpserver` (for example, in its `--add-modules` list).
+
+The endpoint can back a container healthcheck run inside the container, with no published port.
+Compose is unchanged because the bot image does not guarantee a probe tool such as `curl`.
+To opt in with Compose, pass the two variables through a local service environment override and
+provide a probe tool in the image. A host-side probe cannot reach a container's loopback listener.
 
 ## Testing
 
@@ -276,7 +309,7 @@ mvn -ntp -Dmaven.repo.local=.m2/repository verify
 ```
 
 `verify` requires Docker. The integration suite starts PostgreSQL and Redis containers and validates
-repository behavior, migrations, application startup, and API journeys.
+repository behavior, migrations, and application startup.
 
 The current hardening pass has been verified locally with:
 
@@ -286,6 +319,24 @@ The current hardening pass has been verified locally with:
 - `git diff --check`
 
 ## Discord Bot Setup
+
+### Channel obfuscation (2026-11-16)
+
+From 2026-11-16, Discord will send channels the bot cannot view over the Gateway with name
+`___hidden___` and `CHANNEL_OBFUSCATED` (`1 << 17`). `GET /guilds/{id}/channels` omits those
+channels; interaction payloads are not obfuscated.
+
+Impact is expected to be low. EventPilot uses interactions and known destination channel IDs.
+The exception is the destination string select in `/create-event`: `PromptService` builds its
+text-channel list through the gateway client's store with REST fallback. It now filters out
+`Channel.isObfuscated()` before `ChannelSelectMenu` turns channel names into options, preserving
+normal channels. `DiscordService` uses `getChannelById` / `getMessageById` for known destinations,
+without listing channels; other channel references come from interactions, including the selected
+destination ID.
+
+TODO before 2026-11-16: enable the developer portal **Private Channel Obfuscation** toggle on a
+real test server and run the [obfuscation smoke checklist](docs/live-smoke-test.md#channel-obfuscation-2026-11-16).
+Discord4J 3.3.3 component tests check JSON shape only; live Discord behaviour is unverified.
 
 ### Get A Bot Token
 
@@ -325,7 +376,6 @@ Useful next improvements:
 
 - capture the demo screenshots or GIFs from the scripted guide
 - add CI workflow documentation and badge cleanup if needed
-- decide whether the REST/admin API is a supported product surface or legacy support tooling
 - add production deployment notes for hosting, secrets, logs, and backups
 
 ## License

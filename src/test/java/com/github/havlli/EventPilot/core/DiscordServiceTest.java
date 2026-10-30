@@ -7,7 +7,7 @@ import com.github.havlli.EventPilot.entity.event.EventService;
 import com.github.havlli.EventPilot.generator.EmbedGenerator;
 import discord4j.common.util.Snowflake;
 import discord4j.core.GatewayDiscordClient;
-import discord4j.core.object.component.LayoutComponent;
+import discord4j.core.object.component.ActionRow;
 import discord4j.core.object.component.MessageComponent;
 import discord4j.core.object.entity.Message;
 import discord4j.core.object.entity.channel.MessageChannel;
@@ -171,7 +171,7 @@ class DiscordServiceTest {
         when(eventOneMock.getDestinationChannelId()).thenReturn(eventOneChannel);
 
         Message messageOneMock = mock(Message.class);
-        LayoutComponent layoutComponentMock = mock(LayoutComponent.class);
+        ActionRow layoutComponentMock = mock(ActionRow.class);
         when(messageOneMock.getComponents()).thenReturn(List.of(layoutComponentMock));
         MessageComponent messageComponentMock = mock(MessageComponent.class);
         when(layoutComponentMock.getChildren()).thenReturn(List.of(messageComponentMock));
@@ -203,7 +203,7 @@ class DiscordServiceTest {
         when(eventOneMock.getDestinationChannelId()).thenReturn(eventOneChannel);
 
         Message messageOneMock = mock(Message.class);
-        LayoutComponent layoutComponentMock = mock(LayoutComponent.class);
+        ActionRow layoutComponentMock = mock(ActionRow.class);
         when(messageOneMock.getComponents()).thenReturn(List.of(layoutComponentMock));
         MessageComponent messageComponentMock = mock(MessageComponent.class);
         when(layoutComponentMock.getChildren()).thenReturn(List.of(messageComponentMock));
@@ -245,7 +245,7 @@ class DiscordServiceTest {
 
         Message messageOneMock = mock(Message.class);
         Message messageTwoMock = mock(Message.class);
-        LayoutComponent layoutComponentMock = mock(LayoutComponent.class);
+        ActionRow layoutComponentMock = mock(ActionRow.class);
         when(messageOneMock.getComponents()).thenReturn(List.of(layoutComponentMock));
         when(messageTwoMock.getComponents()).thenReturn(List.of(layoutComponentMock));
         MessageComponent messageComponentMock = mock(MessageComponent.class);
@@ -291,7 +291,7 @@ class DiscordServiceTest {
         when(eventTwoMock.getDestinationChannelId()).thenReturn(eventTwoChannel);
 
         Message messageOneMock = mock(Message.class);
-        LayoutComponent layoutComponentMock = mock(LayoutComponent.class);
+        ActionRow layoutComponentMock = mock(ActionRow.class);
         when(messageOneMock.getComponents()).thenReturn(List.of(layoutComponentMock));
         MessageComponent messageComponentMock = mock(MessageComponent.class);
         when(layoutComponentMock.getChildren()).thenReturn(List.of(messageComponentMock));
@@ -300,7 +300,7 @@ class DiscordServiceTest {
         when(componentDataMock.customId()).thenReturn(Possible.of("not-expired"));
 
         Message messageTwoMock = mock(Message.class);
-        LayoutComponent layoutComponentSecondMock = mock(LayoutComponent.class);
+        ActionRow layoutComponentSecondMock = mock(ActionRow.class);
         when(messageTwoMock.getComponents()).thenReturn(List.of(layoutComponentSecondMock));
         MessageComponent messageComponentSecondMock = mock(MessageComponent.class);
         when(layoutComponentSecondMock.getChildren()).thenReturn(List.of(messageComponentSecondMock));
@@ -340,7 +340,7 @@ class DiscordServiceTest {
         when(eventOneMock.getDestinationChannelId()).thenReturn(eventOneChannel);
 
         Message messageOneMock = mock(Message.class);
-        LayoutComponent layoutComponentMock = mock(LayoutComponent.class);
+        ActionRow layoutComponentMock = mock(ActionRow.class);
         when(messageOneMock.getComponents()).thenReturn(List.of(layoutComponentMock));
         MessageComponent messageComponentMock = mock(MessageComponent.class);
         when(layoutComponentMock.getChildren()).thenReturn(List.of(messageComponentMock));
