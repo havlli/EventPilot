@@ -20,7 +20,7 @@ eventpilot:
     port: ${EVENTPILOT_HEALTH_PORT:8081}
 
 discord:
-  token: ${DISCORD_BOT_TOKEN}
+  token: ${DISCORD_BOT_TOKEN:}
   commands:
     folder: commands
   scheduler:

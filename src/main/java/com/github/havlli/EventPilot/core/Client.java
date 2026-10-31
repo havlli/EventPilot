@@ -20,7 +20,11 @@ public class Client {
 
     @Bean
     public GatewayDiscordClient createDiscordClient() {
-        return DiscordClient.create(discordProperties.token())
+        String token = discordProperties.token();
+        if (token == null || token.isBlank()) {
+            throw new IllegalStateException(DiscordProperties.MISSING_TOKEN_MESSAGE);
+        }
+        return DiscordClient.create(token)
                 .gateway()
                 .setInitialPresence(__ -> ClientPresence.online(ClientActivity.listening("to /commands")))
                 .login()
