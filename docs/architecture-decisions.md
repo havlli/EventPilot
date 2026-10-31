@@ -195,7 +195,7 @@ The test suite is organized around risk:
 - generator tests cover embed fields, roster counts, and waitlist rendering
 - repository integration tests cover constraints, migrations, locking queries, reminder candidates,
   and status filtering
-- Testcontainers runs PostgreSQL and Redis for integration verification
+- Testcontainers runs PostgreSQL for integration verification
 
 The intended acceptance command for a complete local verification is:
 
