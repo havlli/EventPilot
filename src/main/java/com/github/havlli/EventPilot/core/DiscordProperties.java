@@ -10,10 +10,13 @@ import org.springframework.validation.annotation.Validated;
 @Validated
 @ConfigurationProperties(prefix = "discord")
 public record DiscordProperties(
-        @NotBlank String token,
+        @NotBlank(message = DiscordProperties.MISSING_TOKEN_MESSAGE) String token,
         @Valid @NotNull Commands commands,
         @Valid @NotNull Scheduler scheduler
 ) {
+
+    public static final String MISSING_TOKEN_MESSAGE =
+            "Discord bot token is missing. Set the DISCORD_BOT_TOKEN environment variable (property discord.token).";
 
     public record Commands(@NotBlank String folder) {
     }
