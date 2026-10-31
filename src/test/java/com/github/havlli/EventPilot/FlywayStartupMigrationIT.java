@@ -1,6 +1,5 @@
 package com.github.havlli.EventPilot;
 
-import com.redis.testcontainers.RedisContainer;
 import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
@@ -29,10 +28,9 @@ class FlywayStartupMigrationIT {
             .withUsername("user")
             .withPassword("password");
 
-    private static final RedisContainer REDIS = new RedisContainer("redis:7.2.1-alpine");
 
     static {
-        Startables.deepStart(Stream.of(POSTGRES, REDIS)).join();
+        Startables.deepStart(Stream.of(POSTGRES)).join();
     }
 
     @DynamicPropertySource
@@ -40,8 +38,6 @@ class FlywayStartupMigrationIT {
         registry.add("spring.datasource.url", POSTGRES::getJdbcUrl);
         registry.add("spring.datasource.username", POSTGRES::getUsername);
         registry.add("spring.datasource.password", POSTGRES::getPassword);
-        registry.add("spring.data.redis.host", REDIS::getHost);
-        registry.add("spring.data.redis.port", REDIS::getFirstMappedPort);
         registry.add("discord.token", () -> "test");
     }
 

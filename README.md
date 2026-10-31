@@ -65,7 +65,7 @@ no HTTP port by default. An optional health endpoint is available on loopback on
 - Scheduled reminders before event start time with roster and waitlist summary.
 - Expired event deactivation and stale database cleanup.
 - Flyway-managed PostgreSQL schema with constraints for participant consistency.
-- Unit and integration tests, including Testcontainers-backed PostgreSQL and Redis coverage.
+- Unit and integration tests, including Testcontainers-backed PostgreSQL coverage.
 
 ## Demo Flow
 
@@ -186,7 +186,6 @@ Key implementation points:
 - Spring Data JPA
 - PostgreSQL
 - Flyway
-- Redis
 - JUnit 5
 - Mockito
 - Reactor Test
@@ -211,7 +210,7 @@ mise install
 
 ### Run With Docker Compose
 
-The root [docker-compose.yml](docker-compose.yml) starts the bot, PostgreSQL, and Redis.
+The root [docker-compose.yml](docker-compose.yml) starts the bot and PostgreSQL.
 
 ```shell
 cp .env.example .env
@@ -230,7 +229,7 @@ been invited.
 
 ### Run The App Locally
 
-Start only PostgreSQL and Redis:
+Start only PostgreSQL:
 
 ```shell
 docker compose -f src/main/resources/docker-compose-services.yml up -d
@@ -253,8 +252,6 @@ mvn -ntp -Dmaven.repo.local=.m2/repository spring-boot:run
 | `SPRING_DATASOURCE_URL` | no | local PostgreSQL URL | JDBC URL override. |
 | `SPRING_DATASOURCE_USERNAME` | no | `POSTGRES_USER` | Datasource username override. |
 | `SPRING_DATASOURCE_PASSWORD` | no | `POSTGRES_PASSWORD` | Datasource password override. |
-| `SPRING_DATA_REDIS_HOST` | no | `localhost` | Redis host. |
-| `SPRING_DATA_REDIS_PORT` | no | `6379` | Redis port. |
 | `DISCORD_SCHEDULER_INTERVAL_SECONDS` | no | `60` | Scheduled job polling interval. |
 | `DISCORD_REMINDER_LEAD_MINUTES` | no | `60` | How long before event start the reminder is sent. |
 | `EVENTPILOT_HEALTH_ENABLED` | no | `false` | Enable the loopback health endpoint. |
@@ -283,7 +280,6 @@ The response is HTTP 200 with `{"status":"UP","discord":"UP","database":"UP"}` w
 Discord gateway shard reports connected and a database connection passes `isValid(2)`. Failures
 return HTTP 503 with the affected checks marked `DOWN`, without internal error details. The gateway
 check has a two-second timeout; database connection acquisition also depends on the pool timeout.
-Redis is not checked.
 
 This uses the JDK's `jdk.httpserver` module without a Spring web starter, Actuator, Spring Security,
 or new dependencies. Standard JDK/JRE distributions include the module; a custom `jlink` runtime
@@ -308,7 +304,7 @@ Run the full verification suite, including Testcontainers integration tests:
 mvn -ntp -Dmaven.repo.local=.m2/repository verify
 ```
 
-`verify` requires Docker. The integration suite starts PostgreSQL and Redis containers and validates
+`verify` requires Docker. The integration suite starts a PostgreSQL container and validates
 repository behavior, migrations, and application startup.
 
 The current hardening pass has been verified locally with:

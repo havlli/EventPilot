@@ -7,14 +7,11 @@ services:
       SPRING_DATASOURCE_URL: jdbc:postgresql://database:5432/${POSTGRES_DB:?Set POSTGRES_DB in .env}
       SPRING_DATASOURCE_USERNAME: ${POSTGRES_USER:?Set POSTGRES_USER in .env}
       SPRING_DATASOURCE_PASSWORD: ${POSTGRES_PASSWORD:?Set POSTGRES_PASSWORD in .env}
-      SPRING_DATA_REDIS_HOST: cache
-      SPRING_DATA_REDIS_PORT: 6379
       DISCORD_BOT_TOKEN: ${DISCORD_BOT_TOKEN:?Set DISCORD_BOT_TOKEN in .env}
       DISCORD_SCHEDULER_INTERVAL_SECONDS: ${DISCORD_SCHEDULER_INTERVAL_SECONDS:-60}
       DISCORD_REMINDER_LEAD_MINUTES: ${DISCORD_REMINDER_LEAD_MINUTES:-60}
     depends_on:
       - database
-      - cache
   database:
     container_name: eventpilot-postgres
     image: postgres:15-alpine
@@ -26,13 +23,6 @@ services:
       - database:/data/postgres
     ports:
       - 5554:5432
-    restart: unless-stopped
-  cache:
-    container_name: eventpilot-redis
-    image: redis:7-alpine
-    hostname: cache
-    ports:
-      - 6378:6379
     restart: unless-stopped
 
 volumes:

@@ -1,7 +1,6 @@
 package com.github.havlli.EventPilot;
 
 import com.github.havlli.EventPilot.entity.guild.Guild;
-import com.redis.testcontainers.RedisContainer;
 import org.flywaydb.core.Flyway;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -48,10 +47,9 @@ public abstract class TestDatabaseContainer {
             .withUsername("user")
             .withPassword("password");
 
-    protected static RedisContainer redisContainer = new RedisContainer("redis:7.2.1-alpine");
 
     static {
-        Startables.deepStart(Stream.of(postgresSQLContainer, redisContainer)).join();
+        Startables.deepStart(Stream.of(postgresSQLContainer)).join();
     }
 
     @DynamicPropertySource
@@ -59,8 +57,6 @@ public abstract class TestDatabaseContainer {
         registry.add("spring.datasource.url", () -> postgresSQLContainer.getJdbcUrl());
         registry.add("spring.datasource.username", () -> postgresSQLContainer.getUsername());
         registry.add("spring.datasource.password", () -> postgresSQLContainer.getPassword());
-        registry.add("spring.data.redis.host", () -> redisContainer.getHost());
-        registry.add("spring.data.redis.port", () -> redisContainer.getFirstMappedPort());
         registry.add("discord.token", () -> "test");
     }
 

@@ -234,5 +234,5 @@ A concise caption for the demo:
 ```text
 EventPilot coordinates Discord gaming sessions with role-based signups, capacity enforcement,
 automatic waitlists, event lifecycle controls, and scheduled reminders. The implementation uses
-Java, Spring Boot, Project Reactor, Discord4J, PostgreSQL, Flyway, Redis, and Testcontainers.
+Java, Spring Boot, Project Reactor, Discord4J, PostgreSQL, Flyway, and Testcontainers.
 ```
